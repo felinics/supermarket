@@ -35,6 +35,9 @@ mcps:
     transport: http
     url: https://xquik.com/mcp
     auth_ref: xquik_api_key
+    headers:
+      - key: x-api-key
+        description: Xquik API key supplied by the XQUIK_API_KEY user secret.
     visibility: hidden
     capabilities:
       - tweet-search
