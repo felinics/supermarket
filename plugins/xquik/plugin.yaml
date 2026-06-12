@@ -1,0 +1,46 @@
+schema_version: "1"
+id: xquik
+name: Xquik
+version: 0.1.0
+description: Xquik MCP server for X data, monitoring, webhooks, and posting workflows.
+author:
+  name: Xquik
+  email: support@xquik.com
+icon:
+  kind: external_url
+  url: https://xquik.com/icon.svg
+homepage: https://docs.xquik.com/mcp/overview
+tags:
+  - x
+  - twitter
+  - social-media
+  - automation
+capabilities:
+  - tweet-search
+  - user-lookup
+  - follower-extraction
+  - media-download
+  - monitoring
+  - webhooks
+  - posting
+auth_requirements:
+  - key: xquik_api_key
+    type: user_secret
+    variables:
+      - XQUIK_API_KEY
+mcps:
+  - key: xquik
+    display_name: Xquik MCP
+    description: Remote Xquik MCP resource for X data and automation workflows.
+    transport: http
+    url: https://xquik.com/mcp
+    auth_ref: xquik_api_key
+    visibility: hidden
+    capabilities:
+      - tweet-search
+      - user-lookup
+      - follower-extraction
+      - media-download
+      - monitoring
+      - webhooks
+      - posting
