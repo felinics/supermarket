@@ -38,6 +38,7 @@ mcps:
     headers:
       - key: x-api-key
         description: Xquik API key supplied by the XQUIK_API_KEY user secret.
+        defaultValue: "${XQUIK_API_KEY}"
     visibility: hidden
     capabilities:
       - tweet-search
