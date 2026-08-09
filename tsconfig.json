@@ -2,7 +2,30 @@
   "extends": ["nitro/tsconfig"],
   "compilerOptions": {
     "paths": {
-      "~/*": ["./*"]
+      "~/*": ["./*"],
+      "#*": ["./*"]
     }
-  }
+  },
+  "include": [
+    ".wrangler/types/api.d.ts",
+    "client/**/*.ts",
+    "lib/**/*.ts",
+    "nitro.config.mjs",
+    "registry/**/*.ts",
+    "scripts/**/*.ts",
+    "server/**/*.ts",
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "test/**/*.ts",
+    "vite.config.ts",
+    "workers/**/*.ts"
+  ],
+  "exclude": [
+    ".data/**",
+    ".output/**",
+    ".wrangler/tmp/**",
+    "dist/**",
+    "node_modules/**",
+    "registries/**"
+  ]
 }

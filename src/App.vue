@@ -6,13 +6,13 @@
     <div class="card">
       <div class="icon">🏗️</div>
       <h1>Supermarket</h1>
-      <p class="subtitle">Plugins & Skills Marketplace</p>
+      <p class="subtitle">Skill Registry</p>
       <div class="badge">WORK IN PROGRESS</div>
       <p class="desc">
-        A marketplace for discovering, searching, and installing Memoh plugins and AI skills.
+        Discover and install Skill Packages for Memoh.
       </p>
       <div class="links">
-        <a href="/api/plugins" target="_blank">API: Plugins</a>
+        <a href="/api/packages" target="_blank">API: Packages</a>
         <a href="/api/skills" target="_blank">API: Skills</a>
       </div>
     </div>

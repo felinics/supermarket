@@ -1,0 +1,13 @@
+schema_version: "1"
+id: openai
+name: OpenAI
+enabled: true
+priority: 100
+adapter:
+  type: codex_marketplace_skills
+  catalog_path: .agents/plugins/marketplace.json
+source:
+  type: git
+  url: https://github.com/openai/plugins.git
+  revision: 11c74d6ba24d3a6d48f54a194cd00ef3beea18f9
+  tracking_ref: main

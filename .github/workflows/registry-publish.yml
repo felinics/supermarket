@@ -1,0 +1,60 @@
+name: Publish approved Registries
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: R2 environment to publish
+        required: true
+        default: test
+        type: choice
+        options:
+          - test
+          - production
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'production' }}
+    concurrency:
+      group: registry-publish-${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'production' }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: .bun-version
+      - name: Require current main before production validation
+        if: ${{ (github.event_name != 'workflow_dispatch' || inputs.environment == 'production') }}
+        run: |
+          git fetch origin main --depth=1
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+      - run: bun install --frozen-lockfile
+      - name: Validate test publication
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.environment == 'test' }}
+        run: bun run registry:validate
+      - name: Verify approved production publication
+        if: ${{ (github.event_name != 'workflow_dispatch' || inputs.environment == 'production') }}
+        run: |
+          bun test
+          bun run typecheck
+          bun run build
+      - name: Recheck current main before production publication
+        if: ${{ (github.event_name != 'workflow_dispatch' || inputs.environment == 'production') }}
+        run: |
+          git fetch origin main --depth=1
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+      - name: Publish pinned Registry revisions
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          TARGET_ENVIRONMENT: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'production' }}
+        run: bun run registry:publish -- --environment "$TARGET_ENVIRONMENT"

@@ -2,14 +2,10 @@ import { defineNitroConfig } from "nitro/config";
 
 export default defineNitroConfig({
   serverDir: "./server",
-  compatibilityDate: "2024-09-19",
+  compatibilityDate: "2026-07-28",
   preset: "cloudflare_module",
   cloudflare: {
-    deployConfig: true,
+    deployConfig: false,
     nodeCompat: true,
   },
-  serverAssets: [
-    { baseName: "plugins", dir: "./plugins" },
-    { baseName: "skills", dir: "./skills" },
-  ],
 });
