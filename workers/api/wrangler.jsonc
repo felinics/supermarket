@@ -34,7 +34,7 @@
       ]
     },
     "production": {
-      "name": "memohai-supermarket",
+      "name": "supermarket",
       "workers_dev": false,
       "preview_urls": false,
       "routes": [
