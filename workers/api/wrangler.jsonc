@@ -46,7 +46,7 @@
       "r2_buckets": [
         {
           "binding": "SKILL_REGISTRY_BUCKET",
-          "bucket_name": "memoh-supermarket"
+          "bucket_name": "memoh-supermarket-resource"
         }
       ]
     }
