@@ -1,6 +1,6 @@
 # Supermarket
 
-Official Skill Registry for [Memoh](https://github.com/memohai/Memoh).
+Official Skill Registry for [Memoh](https://github.com/felinics/Memoh).
 
 ## Project Structure
 

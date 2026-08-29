@@ -10,7 +10,7 @@ metadata:
     - automation
     - cli
     - testing
-  homepage: https://github.com/memohai/Autofish
+  homepage: https://github.com/felinics/Autofish
 license: Complete terms in LICENSE.txt
 ---
 
