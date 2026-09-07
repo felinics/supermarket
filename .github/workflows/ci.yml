@@ -19,5 +19,7 @@ jobs:
           bun-version-file: .bun-version
       - run: bun install --frozen-lockfile
       - run: bun test
+      - name: Check dependency scripts
+        run: shellcheck -s sh registries/memoh/dependencies/*/*.sh
       - run: bun run typecheck
       - run: bun run build
