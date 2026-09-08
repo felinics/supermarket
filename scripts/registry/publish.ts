@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { SkillRegistryDefinition } from '#registry/types'
-import { SkillRegistryPublisher, type SkillRegistryPublishProgress } from '#registry/publish/publisher'
+import { SkillRegistryPublisher, type SkillRegistryPublishProgress, type SkillRegistryPublishResult } from '#registry/publish/publisher'
 import { buildSkillRegistryCandidate, type SkillRegistryCandidate } from '#registry/publish/candidate'
 import { assertReleaseCandidate, loadRegistryReleaseLock } from '#registry/publish/release-lock'
 import type { RegistryReleaseLock } from '#registry/publish/release-lock'
@@ -154,16 +154,14 @@ async function preflightPartialPublication(input: {
   return candidate
 }
 
-if (import.meta.main) {
-  const projectRoot = path.resolve(import.meta.dirname, '../..')
-  const registryID = option('--registry')
-  const kind = option('--kind') ?? 'all'
-  if (!['all', 'skills', 'dependencies'].includes(kind)) throw new Error('--kind must be all, skills, or dependencies')
-  const rawEnvironment = option('--environment')
-  if (rawEnvironment && rawEnvironment !== 'test' && rawEnvironment !== 'production') {
-    throw new Error('--environment must be test or production')
-  }
-  const environment = rawEnvironment as DeploymentEnvironment | undefined
+export async function publishRegistries(input: {
+  projectRoot: string
+  registryID?: string
+  kind?: 'all' | 'skills' | 'dependencies'
+  stores: { skills: SkillRegistryStore; dependencies: DependencyRegistryStore }
+  onProgress?: (progress: SkillRegistryPublishProgress) => void
+}) {
+  const { projectRoot, registryID, kind = 'all', stores } = input
   const loaded = await loadSkillRegistryDefinitionResults(projectRoot)
   const definitions = registryID
     ? loaded.definitions.filter((definition) => definition.id === registryID)
@@ -175,36 +173,42 @@ if (import.meta.main) {
     throw new Error(`Registry not found: ${registryID}`)
   }
 
-  const stores = await createStores(projectRoot, environment)
   const store = stores.skills
-  // Validate the dependency lock before publishing any reader-visible state.
-  const dependencyCandidate = kind !== 'skills' && (!registryID || registryID === 'memoh')
-    ? await approvedDependencies(projectRoot) : undefined
-  if (dependencyCandidate) {
-    const official = loaded.definitions.find((item) => item.id === 'memoh')
-    if (!official) throw new Error('Official memoh Registry definition is missing')
-    await stores.dependencies.publish(dependencyCandidate, official.enabled)
-    console.log({ registry: 'memoh', kind: 'dependencies', revision: dependencyCandidate.revision, dependencies: dependencyCandidate.releases.length })
-  }
-  if (kind === 'dependencies') {
-    if (!dependencyCandidate) throw new Error('Only the memoh dependency registry is supported')
-  } else {
+  // Complete lock validation and scoped source preflight before publishing
+  // either resource kind. Each kind still has its own publication pointer.
   const locks = new Map<string, RegistryReleaseLock>()
-  for (const definition of definitions) {
-    if (!definition.enabled) continue
-    locks.set(definition.id, await loadRegistryReleaseLock(projectRoot, definition))
+  if (kind !== 'dependencies') {
+    for (const definition of definitions) {
+      if (!definition.enabled) continue
+      locks.set(definition.id, await loadRegistryReleaseLock(projectRoot, definition))
+    }
   }
   let prebuiltCandidate: SkillRegistryCandidate | undefined
-  if (registryID && definitions.length) {
+  if (kind !== 'dependencies' && registryID && definitions.length) {
     prebuiltCandidate = await preflightPartialPublication({
       projectRoot,
       definition: definitions[0]!,
     })
   }
+  const dependencyCandidate = kind !== 'skills' && (!registryID || registryID === 'memoh')
+    ? await approvedDependencies(projectRoot) : undefined
+  const results: Array<SkillRegistryPublishResult | {
+    registry: string; kind: 'dependencies'; revision: string; dependencies: number
+  }> = []
+  if (dependencyCandidate) {
+    const official = loaded.definitions.find((item) => item.id === 'memoh')
+    if (!official) throw new Error('Official memoh Registry definition is missing')
+    await stores.dependencies.publish(dependencyCandidate, official.enabled)
+    results.push({ registry: 'memoh', kind: 'dependencies', revision: dependencyCandidate.revision, dependencies: dependencyCandidate.releases.length })
+  }
+  if (kind === 'dependencies') {
+    if (!dependencyCandidate) throw new Error('Only the memoh dependency registry is supported')
+    return { results, failures: [] }
+  }
   const outcome = await publishSkillRegistries({
     definitions,
     store,
-    publisher: new SkillRegistryPublisher(store, projectRoot, createSkillRegistryProgressRenderer()),
+    publisher: new SkillRegistryPublisher(store, projectRoot, input.onProgress),
     locks,
     candidates: prebuiltCandidate
       ? new Map([[prebuiltCandidate.definition.id, prebuiltCandidate]])
@@ -214,17 +218,35 @@ if (import.meta.main) {
       ...loaded.failures.map((failure) => failure.registry),
     ],
   })
-  for (const result of outcome.results) console.log(result)
+  results.push(...outcome.results)
   const failures: Array<{ registry: string; error: unknown }> = [
     ...definitionFailures.map((failure) => ({ registry: failure.registry, error: failure.error })),
     ...outcome.failures,
   ]
-  for (const failure of failures) {
+  return { results, failures }
+}
+
+if (import.meta.main) {
+  const projectRoot = path.resolve(import.meta.dirname, '../..')
+  const registryID = option('--registry')
+  const kind = option('--kind') ?? 'all'
+  if (kind !== 'all' && kind !== 'skills' && kind !== 'dependencies') throw new Error('--kind must be all, skills, or dependencies')
+  const rawEnvironment = option('--environment')
+  if (rawEnvironment && rawEnvironment !== 'test' && rawEnvironment !== 'production') {
+    throw new Error('--environment must be test or production')
+  }
+  const environment = rawEnvironment as DeploymentEnvironment | undefined
+  const outcome = await publishRegistries({
+    projectRoot, registryID, kind,
+    stores: await createStores(projectRoot, environment),
+    onProgress: createSkillRegistryProgressRenderer(),
+  })
+  for (const result of outcome.results) console.log(result)
+  for (const failure of outcome.failures) {
     console.error({
       registry: failure.registry,
       error: failure.error instanceof Error ? failure.error.message : String(failure.error),
     })
   }
-  if (failures.length) process.exitCode = 1
-  }
+  if (outcome.failures.length) process.exitCode = 1
 }

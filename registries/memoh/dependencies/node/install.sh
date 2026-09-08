@@ -1,22 +1,21 @@
 # shellcheck shell=sh
 # Install a Node.js overlay into versions/<version> on top of the image baseline, then switch `current`.
 #
-# The body runs inside the runner's prelude (design §5.3): `set -eu` is
+# The body runs inside the runner's prelude: `set -eu` is
 # already active and dep_log / dep_result / dep_switch are provided; do not
 # redefine them. Environment: MEMOH_DEP_HOME, MEMOH_DEP_VERSION (empty or
 # "latest" selects the newest LTS release; "22" or "22.12" selects the newest
 # matching release; "22.12.0" is taken as is), MEMOH_DEP_OS / _ARCH / _LIBC,
-# MEMOH_DEP_RESULT, NODEJS_MIRROR and NODEJS_MUSL_MIRROR (§5.4, same defaults
+# MEMOH_DEP_RESULT, NODEJS_MIRROR (same defaults
 # as docker/toolkit/install.sh). npm and npx ship inside the release archive.
-# Never hard-code the workspace data mount path (WD-EXEC-001).
+# Never hard-code the workspace data mount path.
 
 mirror="${NODEJS_MIRROR:-https://nodejs.org/dist}"
-suffix=""
 case "$MEMOH_DEP_OS" in
   linux)
-    if [ "${MEMOH_DEP_LIBC:-}" = musl ]; then
-      mirror="${NODEJS_MUSL_MIRROR:-https://unofficial-builds.nodejs.org/download/release}"
-      suffix="-musl"
+    if [ "${MEMOH_DEP_LIBC:-glibc}" != glibc ]; then
+      dep_log "Node.js overlays require glibc on Linux"
+      exit 1
     fi
     ;;
   darwin) ;;
@@ -34,25 +33,44 @@ case "$MEMOH_DEP_ARCH" in
     ;;
 esac
 
-# commit_staged <staged tree> <version dir>: make <version dir> the staged tree
-# and switch `current` to it. When <version dir> already exists (re-install of
-# the version in use) it is set aside first and deleted only after the switch,
-# so `current` never points at a half-built tree (WD-FS-001).
+# A failed replacement must retain the last usable tree. Recover the rename
+# left by an interrupted older recipe before any download or staging cleanup.
+recover_previous() {
+  for saved in "$MEMOH_DEP_HOME/versions/"*.previous-*; do
+    [ -d "$saved" ] || continue
+    original="${saved%.previous-*}"
+    if [ ! -e "$original" ]; then
+      mv "$saved" "$original" || return 1
+    fi
+  done
+}
+recover_previous
+
+# Publish only after the result has been written successfully. Each fallible
+# rename/switch is checked explicitly: set -e alone skips the restoration.
 commit_staged() {
+  backup="$2.previous-$$"
   if [ -e "$2" ]; then
-    mv "$2" "$2.previous-$$"
-    mv "$1" "$2"
-    dep_switch "$2"
-    rm -rf "$2.previous-$$"
-  else
-    mv "$1" "$2"
-    dep_switch "$2"
+    mv "$2" "$backup" || return 1
   fi
+  if ! mv "$1" "$2"; then
+    if [ -e "$backup" ]; then mv "$backup" "$2" || return 1; fi
+    return 1
+  fi
+  if ! dep_switch "$2"; then
+    if [ -e "$backup" ]; then
+      rm -rf "$2" || return 1
+      mv "$backup" "$2" || return 1
+    fi
+    return 1
+  fi
+  # Cleanup cannot turn an already committed installation into a failure.
+  rm -rf "$backup" || dep_log "Could not remove saved tree $backup"
 }
 
 versions="$MEMOH_DEP_HOME/versions"
 stage="$versions/.staging-$MEMOH_DEP_ID.$$"
-rm -rf "$versions/.staging-$MEMOH_DEP_ID."* "$versions/"*.previous-*
+rm -rf "$versions/.staging-$MEMOH_DEP_ID."*
 mkdir -p "$stage/root"
 
 # Resolve the request to an exact release. index.json lists one release per
@@ -86,11 +104,42 @@ if [ -z "$ver" ]; then
   exit 1
 fi
 
-archive="node-v$ver-$MEMOH_DEP_OS-$arch$suffix.tar.gz"
+# Only an exact release may become a path component or checksum URL.
+if ! printf '%s\n' "$ver" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'; then
+  dep_log "invalid resolved release version"
+  rm -rf "$stage"
+  exit 1
+fi
+
+archive="node-v$ver-$MEMOH_DEP_OS-$arch.tar.gz"
 url="$mirror/v$ver/$archive"
 dep_log "Downloading $url"
 if ! curl -fsSL --retry 3 -o "$stage/$archive" "$url"; then
   dep_log "download of $url failed"
+  rm -rf "$stage"
+  exit 1
+fi
+# A mirror controls archive transport, never the expected checksum. Obtain
+# the digest over HTTPS from the upstream release authority before unpacking.
+checksum_url="https://nodejs.org/dist/v$ver/SHASUMS256.txt"
+if ! curl --proto '=https' --proto-redir '=https' -fsSL --retry 3 -o "$stage/checksums" "$checksum_url"; then
+  dep_log "could not fetch official Node.js checksums"
+  rm -rf "$stage"
+  exit 1
+fi
+expected=$(awk -v file="$archive" '$2 == file { print $1 }' "$stage/checksums")
+if ! printf '%s\n' "$expected" | grep -Eq '^[0-9a-fA-F]{64}$'; then
+  dep_log "official checksum is missing or malformed for $archive"
+  rm -rf "$stage"
+  exit 1
+fi
+if command -v sha256sum >/dev/null 2>&1; then
+  digest=$(sha256sum "$stage/$archive" | awk '{ print $1 }')
+else
+  digest=$(shasum -a 256 "$stage/$archive" | awk '{ print $1 }')
+fi
+if [ "$digest" != "$expected" ]; then
+  dep_log "SHA256 mismatch for $archive"
   rm -rf "$stage"
   exit 1
 fi
@@ -102,7 +151,7 @@ if ! tar -xzf "$stage/$archive" --strip-components=1 -C "$stage/root"; then
 fi
 rm -f "$stage/$archive" "$stage/index.json"
 
-# Verify the staged tree before anything can become `current` (WD-FS-001).
+# Verify the staged tree before anything can become `current`.
 for cmd in node npm npx; do
   if [ ! -x "$stage/root/bin/$cmd" ]; then
     dep_log "Node.js v$ver unpacked but bin/$cmd is missing or not executable"
@@ -117,7 +166,7 @@ if ! actual=$("$stage/root/bin/node" --version); then
 fi
 actual="${actual#v}"
 
-commit_staged "$stage/root" "$versions/$actual"
-rm -rf "$stage"
 bin="$MEMOH_DEP_HOME/current/bin"
 dep_result "{\"version\":\"$actual\",\"entrypoints\":{\"node\":\"$bin/node\",\"npm\":\"$bin/npm\",\"npx\":\"$bin/npx\"}}"
+commit_staged "$stage/root" "$versions/$actual"
+rm -rf "$stage" || dep_log "Could not remove staging directory $stage"

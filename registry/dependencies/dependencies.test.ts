@@ -2,11 +2,17 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import { parse as parseYAML } from 'yaml'
 import { buildDependencyCandidate } from './build'
 import { lockDependencies, approvedDependencies } from './release-lock'
 import { dependencyJSON, parseDependencyManifest, validateDependencyGraph } from './types'
 import { DependencyRegistryStore } from './store'
 import { LocalBlobBackend } from '../storage/local'
+import { BlobSkillRegistryStore } from '../storage/blob'
+import { loadSkillRegistryDefinitions } from '../definitions/repository'
+import { buildSkillRegistryCandidate } from '../publish/candidate'
+import { writeRegistryReleaseLock } from '../publish/release-lock'
+import { publishRegistries } from '#scripts/registry/publish'
 import { sha256 } from '#lib/digest'
 import { parseGzipTarArchive } from '#client/archive'
 
@@ -40,6 +46,21 @@ async function fixture() {
 }
 
 describe('Dependency publication', () => {
+  test('preserves translated whitespace in metadata so it matches the archived manifest', async () => {
+    const { root, dir } = await fixture()
+    const filename = path.join(dir, 'dependency.yaml')
+    await writeFile(filename, (await readFile(filename, 'utf8'))
+      .replace('name: Demo', 'name: " Demo "')
+      .replace('translations: {zh: {name: 示例}}', 'translations: {zh: {name: " 示例 ", description: "说明\\n"}}'))
+    const candidate = await buildDependencyCandidate(root)
+    const release = candidate.releases[0]!
+    const files = await parseGzipTarArchive(candidate.artifacts.get(release.artifact.digest)!)
+    const archived = parseYAML(new TextDecoder().decode(files.get('dependency.yaml')!.bytes))
+    expect(release.manifest.name).toBe('Demo')
+    expect(release.manifest.translations).toEqual(archived.translations)
+    expect(() => parseDependencyManifest({ ...release.manifest, translations: { zh: { name: ' \n ' } } })).toThrow('empty')
+  })
+
   test('builds deterministic releases, archives and an independently locked snapshot', async () => {
     const { root, dir } = await fixture()
     const first = await lockDependencies(root)
@@ -103,6 +124,50 @@ describe('Dependency publication', () => {
     expect(await store.current()).toBeNull()
     expect(await store.release('demo', first.snapshot.dependencies[0]!.revision)).not.toBeNull()
     expect(await backend.get('skill-registries/memoh/state.json')).toEqual(skillState)
+  })
+
+  test('keeps both published pointers unchanged when combined publication preflight fails', async () => {
+    const { root, dir } = await fixture()
+    const registryDir = path.join(root, 'registries/memoh')
+    await writeFile(path.join(registryDir, 'registry.yaml'), `schema_version: "1"
+id: memoh
+name: Memoh
+enabled: true
+priority: 100
+adapter: {type: skill_directory}
+source: {type: local, path: skills}
+`)
+    const skillDir = path.join(registryDir, 'skills/demo')
+    await mkdir(skillDir, { recursive: true })
+    await writeFile(path.join(skillDir, 'SKILL.md'), '---\nname: Demo\ndescription: A synthetic example.\n---\n\nExample\n')
+    const definition = (await loadSkillRegistryDefinitions(root))[0]!
+    const skillCandidate = await buildSkillRegistryCandidate(definition, root)
+    const skillLock = { snapshot_revision: skillCandidate.revision }
+    await writeRegistryReleaseLock(root, definition, skillLock)
+    await lockDependencies(root)
+    const backend = new LocalBlobBackend(path.join(root, 'store'))
+    const stores = { skills: new BlobSkillRegistryStore(backend), dependencies: new DependencyRegistryStore(backend) }
+    expect((await publishRegistries({ projectRoot: root, registryID: 'memoh', stores })).failures).toEqual([])
+    const previousDependency = (await stores.dependencies.current())!.revision
+    const previousSkill = (await stores.skills.getState('memoh'))!.current_snapshot
+    await writeFile(path.join(dir, 'install.sh'), 'printf "changed dependency"\n')
+    await lockDependencies(root)
+
+    await rm(path.join(registryDir, 'release.lock.json'))
+    await expect(publishRegistries({ projectRoot: root, stores })).rejects.toThrow('release.lock.json')
+    expect((await stores.dependencies.current())!.revision).toBe(previousDependency)
+    expect((await stores.skills.getState('memoh'))!.current_snapshot).toBe(previousSkill)
+
+    await writeRegistryReleaseLock(root, definition, skillLock)
+    await writeFile(path.join(skillDir, 'SKILL.md'), '---\nname: Demo\ndescription: Changed without approval.\n---\n\nExample\n')
+    await expect(publishRegistries({ projectRoot: root, registryID: 'memoh', stores })).rejects.toThrow('locks Snapshot')
+    expect((await stores.dependencies.current())!.revision).toBe(previousDependency)
+    expect((await stores.skills.getState('memoh'))!.current_snapshot).toBe(previousSkill)
+
+    const dependencyOnly = await publishRegistries({ projectRoot: root, kind: 'dependencies', stores })
+    expect(dependencyOnly.failures).toEqual([])
+    expect((await stores.dependencies.current())!.revision).not.toBe(previousDependency)
+    expect((await stores.skills.getState('memoh'))!.current_snapshot).toBe(previousSkill)
   })
 
   test('rejects corrupted release, snapshot and artifact bytes', async () => {

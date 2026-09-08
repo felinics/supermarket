@@ -219,6 +219,30 @@ locks, progress streams and software rollback. Supermarket does not execute the
 scripts or host the CLI binaries. New management operations resolve the current
 definition; a prepared operation keeps one revision through preview and execution.
 
+The current recipes support Linux with glibc (amd64/arm64) and macOS arm64.
+They deliberately do not advertise musl support. Node.js and uv archives are
+verified against upstream SHA256 files obtained over HTTPS before extraction.
+`NODEJS_MIRROR` and `UV_RELEASES_URL` change the archive location, but never the
+checksum authority; these installs still require access to `nodejs.org` or
+GitHub for verification. Memoh must explicitly pass the configured mirror
+variables into the runner; exporting them only inside a client shell is not
+sufficient. npm uses `NPM_MIRROR`, and Python uses uv's
+`UV_PYTHON_INSTALL_MIRROR`.
+
+npm lifecycle scripts are disabled, including when npm's strict script policy
+is enabled. The Claude Code recipe links its platform binary itself. npm and
+uv download caches created by these recipes stay under the dependency home
+and are removed with the overlay; pre-existing shared user caches are retained.
+Stable Python requests such as `3.15` never select alpha, beta or release
+candidate builds; request an exact prerelease explicitly if it is required.
+
+Install and update write their result before switching `current`. A failed
+rename or switch restores the previous tree, and retries recover a saved tree
+left by an interrupted replacement before doing network work. Unused saved
+trees are retained when their ownership is ambiguous; uninstall removes the
+whole dependency home. Server state and shim publication remain the consumer's
+responsibility.
+
 Recipe changes within schema version 1 must retain the managed layout/result
 contract and handle installations made by prior revisions, including uninstall.
 Third-party dependency registries and recursive prerequisite installation are not

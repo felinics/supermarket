@@ -15,7 +15,9 @@ export default defineHandler(async (event) => {
   const dependencies = (current?.snapshot.dependencies ?? []).filter((item) =>
     (!registry || registry === item.registry_id)
     && (!category || category === item.manifest.category)
-    && JSON.stringify([item.dependency_id, item.manifest.name, item.manifest.description, item.manifest.translations]).toLowerCase().includes(q))
+    && [item.dependency_id, item.manifest.name, item.manifest.description,
+      ...Object.values(item.manifest.translations ?? {}).flatMap((translation) => [translation.name, translation.description]),
+    ].some((value) => value?.toLowerCase().includes(q)))
   setResponseHeader(event, 'cache-control', 'no-cache')
   return { total: dependencies.length, page, limit, revision: current?.revision,
     data: dependencies.slice((page - 1) * limit, page * limit) }

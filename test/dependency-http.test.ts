@@ -50,6 +50,14 @@ describe('Dependency HTTP protocol', () => {
     const catalog = await response.json() as { total: number; data: Array<{ dependency_id: string }> }
     expect(catalog.total).toBe(1)
     expect(catalog.data[0]!.dependency_id).toBe('codex')
+    for (const q of ['description', 'zh']) {
+      const matches = await (await request(`/api/dependencies?q=${q}`)).json() as { total: number }
+      expect(matches.total).toBe(0)
+    }
+    const translation = candidate.snapshot.dependencies.find((item) => item.dependency_id === 'codex')!.manifest.translations!.zh!
+    const translatedText = translation.name ?? translation.description!
+    const translated = await (await request(`/api/dependencies?q=${encodeURIComponent(translatedText)}`)).json() as { data: Array<{ dependency_id: string }> }
+    expect(translated.data.map((item) => item.dependency_id)).toContain('codex')
     for (const query of ['limit=999', 'page=0', 'page=1&page=2', 'q=a&q=b', 'category=wrong']) expect((await request(`/api/dependencies?${query}`)).status).toBe(400)
     expect((await request('/api/registries/third-party/dependencies/codex')).status).toBe(404)
     expect((await request('/api/registries/memoh/dependencies/missing')).status).toBe(404)

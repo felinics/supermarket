@@ -8,9 +8,12 @@ export const MAX_DEPENDENCY_INDEX_BYTES = 4 * 1024 * 1024
 export const MAX_DEPENDENCIES = 256
 const id = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(80)
 const text = z.string().trim().min(1).max(4096)
+// Memoh preserves translation values when comparing release metadata with
+// the archived YAML, unlike the normalized top-level display fields.
+const translatedText = z.string().max(4096).refine((value) => value.trim().length > 0, 'Translation must not be empty')
 const file = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/).max(128)
 const timeout = z.number().int().positive().max(3600)
-const translation = z.object({ name: text.optional(), description: text.optional() }).strict()
+const translation = z.object({ name: translatedText.optional(), description: translatedText.optional() }).strict()
 
 export const dependencyManifestSchema = z.object({
   schema_version: z.literal('1'),
