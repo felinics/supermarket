@@ -1,6 +1,6 @@
 # Supermarket
 
-Official Skill Registry for [Memoh](https://github.com/felinics/Memoh).
+Official Skill and workspace dependency registry for [Memoh](https://github.com/felinics/Memoh).
 
 ## Project Structure
 
@@ -179,3 +179,80 @@ Use the `test` environment to validate publication before production.
 ---
 
 Built with [Nitro](https://nitro.build) and [Cloudflare Workers](https://workers.cloudflare.com).
+
+## Workspace dependencies
+
+The official `memoh` registry also publishes workspace dependency definitions for
+Codex, Claude Code, Node.js, Python and uv. Recipes live under
+`registries/memoh/dependencies/<id>/`: `dependency.yaml`, referenced POSIX sh
+scripts, and an optional icon. The manifest includes platform support, commands,
+prerequisites, timeouts and English/Chinese/Japanese display metadata.
+
+Dependencies have their own immutable releases and snapshot pointer; publishing
+them does not change Skill Package releases. `dependencies.lock.json` records the
+reviewed dependency snapshot. Existing registry commands publish both resource
+kinds by default; `--kind` selects an independent workflow:
+
+```bash
+bun run registry:lock -- --kind dependencies
+bun run registry:validate -- --kind dependencies
+bun run registry:publish -- --kind dependencies
+```
+
+The dependency APIs are:
+
+| Method | Path | Description |
+| --- | --- | --- |
+| GET | `/api/dependencies` | Current catalog (`q`, `registry`, `category`, `page`, `limit`) |
+| GET | `/api/registries/memoh/dependencies/:id` | Current descriptor |
+| GET | `/api/registries/memoh/dependencies/:id/releases/:revision` | Immutable release JSON |
+| GET | `/api/artifacts/dependency/:digest` | Verified gzip/tar artifact |
+
+A **definition revision** hashes the exact release JSON; an **artifact digest**
+hashes the compressed archive. Neither is the **software version** requested by a
+user. Immutable responses include ETag, content digest and immutable cache headers;
+historical releases remain readable after catalog changes or disablement.
+
+Memoh downloads and validates these definitions, caches them persistently, and runs
+the scripts inside the chosen Bot workspace. It owns installation state, overlays,
+locks, progress streams and software rollback. Supermarket does not execute the
+scripts or host the CLI binaries. New management operations resolve the current
+definition; a prepared operation keeps one revision through preview and execution.
+
+The current recipes support Linux with glibc (amd64/arm64) and macOS arm64.
+They deliberately do not advertise musl support. Node.js and uv archives are
+verified against upstream SHA256 files obtained over HTTPS before extraction.
+`NODEJS_MIRROR` and `UV_RELEASES_URL` change the archive location, but never the
+checksum authority; these installs still require access to `nodejs.org` or
+GitHub for verification. Memoh must explicitly pass the configured mirror
+variables into the runner; exporting them only inside a client shell is not
+sufficient. npm uses `NPM_MIRROR`, and Python uses uv's
+`UV_PYTHON_INSTALL_MIRROR`.
+
+npm lifecycle scripts are disabled, including when npm's strict script policy
+is enabled. The Claude Code recipe links its platform binary itself. npm and
+uv download caches created by these recipes stay under the dependency home
+and are removed with the overlay; pre-existing shared user caches are retained.
+Stable Python requests such as `3.15` never select alpha, beta or release
+candidate builds; request an exact prerelease explicitly if it is required.
+
+Install and update write their result before switching `current`. A failed
+rename or switch restores the previous tree, and retries recover a saved tree
+left by an interrupted replacement before doing network work. Unused saved
+trees are retained when their ownership is ambiguous; uninstall removes the
+whole dependency home. Server state and shim publication remain the consumer's
+responsibility.
+
+Recipe changes within schema version 1 must retain the managed layout/result
+contract and handle installations made by prior revisions, including uninstall.
+Third-party dependency registries and recursive prerequisite installation are not
+part of this first release.
+
+The producer's pinned Bun version is required for deterministic archives and locks.
+To regenerate wire fixtures for the Go consumer:
+
+```bash
+bun scripts/registry/export-dependency-fixtures.ts --destination <consumer-testdata-directory>
+```
+
+The fixtures are test data; Memoh does not embed the official catalog in its Server.
