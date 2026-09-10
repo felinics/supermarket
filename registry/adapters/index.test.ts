@@ -18,6 +18,22 @@ async function writeSkill(root: string, relativePath: string, name: string, extr
   if (extra) await writeFile(path.join(directory, 'reference.md'), extra)
 }
 
+async function writePackageManifest(
+  root: string,
+  id: string,
+  extra = '',
+  options: { manifestID?: string; category?: string } = {},
+) {
+  await mkdir(path.join(root, id), { recursive: true })
+  await writeFile(path.join(root, id, 'package.yaml'), `schema_version: "2"
+id: ${options.manifestID ?? id}
+version: 1.2.0
+name: ${id}
+description: ${id} package
+category: ${options.category ?? 'other'}
+${extra}`)
+}
+
 function definition(adapterType: SkillRegistryAdapter['type']): SkillRegistryDefinition {
   const adapter: SkillRegistryAdapter = adapterType === 'codex_marketplace_skills'
     ? { type: adapterType, catalog_path: 'marketplace.json' }
@@ -53,40 +69,70 @@ describe('Skill Registry adapters', () => {
     await writeSkill(root, 'notion/skills/search', 'Search')
     await writeSkill(root, 'notion/skills/write', 'Write')
     await writeSkill(root, 'github/skills/review', 'Review')
-    await writeFile(path.join(root, 'notion/package.yaml'), `schema_version: "1"
-postinstall:
+    await writePackageManifest(root, 'notion', `postinstall:
   - command: npm
     args: [install, --global, opencli]
+tags: [notion, docs]
+translations:
+  zh: { name: Notion 工具, description: 搜索与写入 Notion }
 `)
+    await writePackageManifest(root, 'github', '', { category: 'developer-tools' })
 
     const result = await buildSkillCandidates({
       definition: definition('memoh'), sourceRoot: root,
     })
 
     expect(result.diagnostics).toEqual([])
-    expect(result.packageMetadata.get('notion')).toEqual({
+    expect(result.packages.get('notion')).toMatchObject({
+      package_id: 'notion', reviewed: true, version: '1.2.0', name: 'notion', category: 'other',
+      tags: ['notion', 'docs'], dependencies: [], connectors: [],
+      translations: { zh: { name: 'Notion 工具', description: '搜索与写入 Notion' } },
       postinstall: [{ command: 'npm', args: ['install', '--global', 'opencli'] }],
     })
-    expect(result.packageMetadata.has('github')).toBe(false)
+    expect(result.packages.get('github')).toMatchObject({ category: 'developer-tools' })
+    expect(result.packages.get('github')!.postinstall).toBeUndefined()
     expect(result.skills.map((skill) => ({
       package_id: skill.package_id,
       skill_id: skill.skill_id,
       install_id: skill.install_id,
       source_path: skill.source_path,
+      source_category: skill.source_category,
+      tags: skill.tags,
     }))).toEqual([
       {
         package_id: 'github', skill_id: 'review', install_id: 'example+github+review',
-        source_path: 'github/skills/review',
+        source_path: 'github/skills/review', source_category: 'developer-tools', tags: ['test'],
       },
       {
         package_id: 'notion', skill_id: 'search', install_id: 'example+notion+search',
-        source_path: 'notion/skills/search',
+        source_path: 'notion/skills/search', source_category: 'other', tags: ['test', 'notion', 'docs'],
       },
       {
         package_id: 'notion', skill_id: 'write', install_id: 'example+notion+write',
-        source_path: 'notion/skills/write',
+        source_path: 'notion/skills/write', source_category: 'other', tags: ['test', 'notion', 'docs'],
       },
     ])
+  })
+
+  test('imports Packages that only reference dependencies and connectors', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'package-references-'))
+    roots.push(root)
+    await mkdir(path.join(root, 'codex'), { recursive: true })
+    await writeFile(path.join(root, 'codex/icon.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>')
+    await writePackageManifest(root, 'codex', `icon: icon.svg
+dependencies: [codex]
+connectors:
+  - github
+  - { type: notion, required: false }
+`)
+    const result = await buildSkillCandidates({ definition: definition('memoh'), sourceRoot: root })
+    expect(result.skills).toEqual([])
+    expect(result.packages.get('codex')).toMatchObject({
+      dependencies: ['codex'],
+      connectors: [{ type: 'github', required: true }, { type: 'notion', required: false }],
+      icon: { card: { content_type: 'image/svg+xml' }, detail: { content_type: 'image/svg+xml' } },
+    })
+    expect(result.packages.get('codex')!.icon_assets).toHaveLength(1)
   })
 
   test('rejects malformed package directories', async () => {
@@ -96,17 +142,25 @@ postinstall:
 
     await expect(buildSkillCandidates({
       definition: definition('memoh'), sourceRoot: root,
-    })).rejects.toThrow('package contains no skills')
+    })).rejects.toThrow('package.yaml is required')
+
+    await writePackageManifest(root, 'empty')
+    await expect(buildSkillCandidates({
+      definition: definition('memoh'), sourceRoot: root,
+    })).rejects.toThrow('declares no skills, dependencies or connectors')
+
+    await writePackageManifest(root, 'empty', 'dependencies: [node]\n', { manifestID: 'mismatch' })
+    await expect(buildSkillCandidates({
+      definition: definition('memoh'), sourceRoot: root,
+    })).rejects.toThrow('id must match the package directory')
   })
 
   test('rejects unsafe or unsupported Memoh Package manifests', async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), 'invalid-package-manifest-'))
     roots.push(root)
     await writeSkill(root, 'tools/skills/tools', 'Tools')
-    const manifest = path.join(root, 'tools/package.yaml')
 
-    await writeFile(manifest, `schema_version: "1"
-postinstall:
+    await writePackageManifest(root, 'tools', `postinstall:
   - command: sh
     args: [-c, echo unsafe]
 `)
@@ -114,8 +168,7 @@ postinstall:
       definition: definition('memoh'), sourceRoot: root,
     })).rejects.toThrow('supported executable name')
 
-    await writeFile(manifest, `schema_version: "1"
-postinstall:
+    await writePackageManifest(root, 'tools', `postinstall:
   - command: npm
     args: [install, opencli]
     shell: true
@@ -123,6 +176,25 @@ postinstall:
     await expect(buildSkillCandidates({
       definition: definition('memoh'), sourceRoot: root,
     })).rejects.toThrow('unsupported field shell')
+
+    await writeFile(path.join(root, 'tools/package.yaml'), `schema_version: "1"
+postinstall:
+  - command: npm
+    args: [install, opencli]
+`)
+    await expect(buildSkillCandidates({
+      definition: definition('memoh'), sourceRoot: root,
+    })).rejects.toThrow('unsupported schema_version 1')
+
+    await writePackageManifest(root, 'tools', 'homepage: ftp://example.test\n')
+    await expect(buildSkillCandidates({
+      definition: definition('memoh'), sourceRoot: root,
+    })).rejects.toThrow('homepage')
+
+    await writePackageManifest(root, 'tools', 'connectors: [github, github]\n')
+    await expect(buildSkillCandidates({
+      definition: definition('memoh'), sourceRoot: root,
+    })).rejects.toThrow('duplicate connector types')
 
     expect(() => parsePackagePostinstall([
       { command: 'npm', args: ['\uD800'] },
@@ -134,7 +206,7 @@ postinstall:
     const outside = await mkdtemp(path.join(os.tmpdir(), 'package-manifest-symlink-outside-'))
     roots.push(root, outside)
     await writeSkill(root, 'tools/skills/tools', 'Tools')
-    await writeFile(path.join(outside, 'package.yaml'), 'schema_version: "1"\n')
+    await writeFile(path.join(outside, 'package.yaml'), 'schema_version: "2"\n')
     await symlink(path.join(outside, 'package.yaml'), path.join(root, 'tools/package.yaml'))
 
     await expect(buildSkillCandidates({
@@ -364,7 +436,7 @@ postinstall:
     await writeSkill(outside, '.', 'Outside')
     await symlink(outside, path.join(root, 'escaped'))
     await expect(buildSkillCandidates({ definition: definition('skill_directory'), sourceRoot: root }))
-      .resolves.toEqual({ skills: [], diagnostics: [], packageMetadata: new Map() })
+      .resolves.toEqual({ skills: [], diagnostics: [], packages: new Map() })
 
     await mkdir(path.join(root, 'package'), { recursive: true })
     await symlink(outside, path.join(root, 'package/escaped'))

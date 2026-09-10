@@ -1,0 +1,25 @@
+schema_version: "2"
+id: python
+version: 1.0.0
+name: Python
+description: Python interpreter with pip.
+author:
+  name: Memoh
+  email: hello@memoh.ai
+homepage: https://www.python.org
+repository: https://github.com/felinics/supermarket
+license: Apache-2.0
+icon: icon.svg
+category: runtime
+tags:
+  - pip3
+  - python
+  - python3
+  - runtime
+translations:
+  zh:
+    description: Python 解释器，含 pip
+  ja:
+    description: Python インタープリター（pip 付き）
+dependencies:
+  - python

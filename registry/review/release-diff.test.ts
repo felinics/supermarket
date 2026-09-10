@@ -59,9 +59,12 @@ function candidate(
     registry_id: definition.id,
     registry_priority: definition.priority,
     source: { type: 'local' as const, revision: sourceRevision },
-    packages: compactCatalogPackages(skills, postinstall
-      ? new Map([['tools', { postinstall }]])
-      : new Map()),
+    categories: [],
+    packages: compactCatalogPackages(skills, {
+      packages: postinstall
+        ? new Map([['tools', { package_id: 'tools', reviewed: false, tags: [], dependencies: [], connectors: [], postinstall }]])
+        : new Map(),
+    }),
     diagnostics: [],
   }
   return {

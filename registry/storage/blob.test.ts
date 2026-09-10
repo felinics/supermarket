@@ -46,6 +46,7 @@ function snapshot(
     registry_id: definition.id,
     registry_priority: definition.priority,
     source: { type: 'local', revision: sourceRevision },
+    categories: [],
     packages: [],
     diagnostics: [],
   }
@@ -130,6 +131,7 @@ describe('Immutable digest-addressed uploads', () => {
     stored.packages.push({
       revision: 'a'.repeat(64),
       package_id: 'package', name: 'package', description: '', tags: [],
+      category: 'other', category_name: 'Other', dependencies: [], connectors: [],
       skills: [{
         skill_id: 'skill',
         name: 'Skill',
@@ -175,6 +177,7 @@ describe('Immutable digest-addressed uploads', () => {
     stored.packages = [{
       revision: 'a'.repeat(64),
       package_id: 'package', name: 'package', description: '', tags: [],
+      category: 'other', category_name: 'Other', dependencies: [], connectors: [],
       skills: [structuredClone(skill), structuredClone(skill)],
     }]
     expect(() => validateStoredSnapshot(stored, 'example', 'duplicate-skills'))
@@ -192,6 +195,7 @@ describe('Immutable digest-addressed uploads', () => {
     stored.packages = [{
       revision: 'a'.repeat(64),
       package_id: 'package', name: 'package', description: '', tags: [],
+      category: 'other', category_name: 'Other', dependencies: [], connectors: [],
       skills: Array.from({ length: 65 }, (_, index) => ({
         skill_id: `skill-${index}`, name: `Skill ${index}`, description: '', author: { name: '' },
         tags: [], category: 'other', category_name: 'Other', source_path: `skill-${index}`,

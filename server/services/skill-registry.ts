@@ -6,7 +6,7 @@ import type {
   SkillRegistrySummary,
 } from '#registry/types'
 import type { SkillCatalogSearchOptions } from '#registry/catalog'
-import { searchCatalogSkills, summarizeSkillCategories } from '#registry/catalog'
+import { searchCatalogSkills, summarizePackageCategories } from '#registry/catalog'
 import type { SkillPackageSearchOptions } from '#registry/packages'
 import { catalogPackagesFromSnapshot, packageDescriptorFromRelease, searchSkillPackages } from '#registry/packages'
 import { catalogSkillsFromSnapshot } from '#registry/snapshot'
@@ -212,13 +212,15 @@ export async function getSkillRegistryDetailsForStore(store: SkillRegistryStore,
   return { ...summary, definition: state.definition, source_revision: snapshot?.source.revision, diagnostics: snapshot?.diagnostics ?? [] }
 }
 
-export async function getSkillCategories(event: RuntimeEvent, registryID?: string) {
+/**
+ * Package categories with localized names. Without a registry the result
+ * spans every enabled Registry; with one it is scoped and `undefined` marks an
+ * unknown or disabled Registry.
+ */
+export async function getPackageCategories(event: RuntimeEvent, registryID?: string) {
   const store = await getRuntimeSkillRegistryStore(event)
-  return summarizeSkillCategories((await getEnabledSkillRegistrySnapshots(store, registryID)).flatMap(catalogSkillsFromSnapshot))
-}
-
-export async function getRegistrySkillCategories(event: RuntimeEvent, registryID: string) {
-  const snapshot = await getScopedRegistrySnapshot(await getRuntimeSkillRegistryStore(event), registryID)
+  if (!registryID) return summarizePackageCategories(await getEnabledSkillRegistrySnapshots(store))
+  const snapshot = await getScopedRegistrySnapshot(store, registryID)
   if (snapshot === undefined) return undefined
-  return summarizeSkillCategories(snapshot ? catalogSkillsFromSnapshot(snapshot) : [])
+  return summarizePackageCategories(snapshot ? [snapshot] : [])
 }

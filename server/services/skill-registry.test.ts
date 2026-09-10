@@ -27,6 +27,7 @@ function snapshot(): SkillRegistrySnapshot {
     registry_id: 'example',
     registry_priority: 10,
     source: { type: 'local', revision: 'source' },
+    categories: [],
     packages: [],
     diagnostics: [],
   }

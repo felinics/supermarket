@@ -1,0 +1,24 @@
+schema_version: "2"
+id: uv
+version: 1.0.0
+name: uv
+description: Python package and project manager.
+author:
+  name: Memoh
+  email: hello@memoh.ai
+homepage: https://docs.astral.sh/uv/
+repository: https://github.com/felinics/supermarket
+license: Apache-2.0
+icon: icon.svg
+category: runtime
+tags:
+  - runtime
+  - uv
+  - uvx
+translations:
+  zh:
+    description: Python 包与项目管理器
+  ja:
+    description: Python のパッケージ・プロジェクト管理ツール
+dependencies:
+  - uv

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import type { CatalogSkill, SkillRegistrySnapshot } from './types'
 import { compactCatalogPackages } from './snapshot'
+import { parseCategoryTable } from './categories'
 import { normalizeSkillCategory, searchCatalogSkills, summarizeCurrentSnapshot, summarizeSkillCategories } from './catalog'
 
 function skill(overrides: Partial<CatalogSkill> = {}): CatalogSkill {
@@ -56,7 +57,13 @@ describe('Skill Catalog search', () => {
       registry_id: 'openai',
       registry_priority: 10,
       source: { type: 'git', revision: 'source-revision', repository: 'https://example.test/repo.git' },
-      packages: compactCatalogPackages([skill(), skill({ package_id: 'other', category: 'other', category_name: 'Other' })]),
+      categories: [],
+      packages: compactCatalogPackages(
+        [skill(), skill({ package_id: 'other', category: 'other', category_name: 'Other' })],
+        { categories: parseCategoryTable({ schema_version: '1', categories: [
+          { id: 'productivity', name: { en: 'Productivity' } }, { id: 'other', name: { en: 'Other' } },
+        ] }) },
+      ),
       diagnostics: [{ package_id: 'skipped', code: 'no_skills' as const, message: 'No skills' }],
     }
     expect(summarizeCurrentSnapshot(

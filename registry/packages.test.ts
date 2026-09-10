@@ -24,6 +24,7 @@ function snapshot(skills: CatalogSkill[], registryID = 'openai', priority = 10):
   return {
     schema_version: '1', registry_id: registryID, registry_priority: priority,
     source: { type: 'git', revision: 'a'.repeat(40) },
+    categories: [],
     packages: compactCatalogPackages(skills),
     diagnostics: [],
   }

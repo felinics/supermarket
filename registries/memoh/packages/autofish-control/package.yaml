@@ -1,0 +1,23 @@
+schema_version: "2"
+id: autofish-control
+version: 1.0.0
+name: Autofish Control
+description: Control Android devices with Autofish via the af CLI using observe-act-verify loops,
+  ref-based tapping, overlays, screenshots and recovery steps.
+author:
+  name: MemohAI
+  email: hello@memoh.ai
+homepage: https://github.com/felinics/Autofish
+license: See LICENSE.txt
+category: automation
+tags:
+  - android
+  - automation
+  - autofish
+translations:
+  zh:
+    name: Autofish 控制
+    description: 通过 af 命令行控制 Android 设备：观察、操作、验证循环，基于引用的点击、浮层、截图与恢复步骤。
+  ja:
+    name: Autofish コントロール
+    description: af CLI で Android デバイスを操作します。観察・操作・検証ループ、参照ベースのタップ、オーバーレイ、スクリーンショット、復旧手順に対応。

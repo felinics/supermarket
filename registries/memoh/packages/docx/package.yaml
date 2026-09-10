@@ -1,0 +1,23 @@
+schema_version: "2"
+id: docx
+version: 1.0.0
+name: Word Documents
+description: Create, read, edit and convert Word (.docx) documents, including tracked changes,
+  comments, images and professional formatting.
+author:
+  name: Anthropic
+  email: support@anthropic.com
+homepage: https://github.com/anthropics/skills
+license: Proprietary, see LICENSE.txt
+category: documents
+tags:
+  - docx
+  - word
+  - documents
+translations:
+  zh:
+    name: Word 文档
+    description: 创建、读取、编辑与转换 Word（.docx）文档，支持修订、批注、图片与专业排版。
+  ja:
+    name: Word ドキュメント
+    description: Word（.docx）文書の作成・読み取り・編集・変換。変更履歴、コメント、画像、書式設定に対応。

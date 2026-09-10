@@ -65,8 +65,15 @@ export function validateStoredSnapshot(
     || !Number.isSafeInteger(snapshot.registry_priority)
     || !snapshot.source || (snapshot.source.type !== 'local' && snapshot.source.type !== 'git')
     || typeof snapshot.source.revision !== 'string' || !snapshot.source.revision
-    || !Array.isArray(snapshot.packages) || !Array.isArray(snapshot.diagnostics)) {
+    || !Array.isArray(snapshot.packages) || !Array.isArray(snapshot.diagnostics)
+    || !Array.isArray(snapshot.categories)) {
     throw new Error(`Invalid stored Snapshot: ${key}`)
+  }
+  for (const category of snapshot.categories) {
+    if (!category || typeof category.id !== 'string' || !category.id || !category.name
+      || typeof category.name.en !== 'string' || !Number.isSafeInteger(category.order)) {
+      throw new Error(`Invalid stored Snapshot category: ${key}`)
+    }
   }
   if (snapshot.source.type === 'git' && typeof snapshot.source.repository !== 'string') {
     throw new Error(`Invalid stored Snapshot source: ${key}`)
@@ -79,9 +86,17 @@ export function validateStoredSnapshot(
     try {
       const packageID = assertRegistryComponentID(pkg?.package_id, 'package ID')
       if (packageIDs.has(packageID) || typeof pkg.name !== 'string' || typeof pkg.description !== 'string'
-        || !Array.isArray(pkg.tags) || !Array.isArray(pkg.skills) || !pkg.skills.length
-        || pkg.skills.length > MAX_REGISTRY_PACKAGE_SKILLS) {
+        || !Array.isArray(pkg.tags) || !Array.isArray(pkg.skills)
+        || pkg.skills.length > MAX_REGISTRY_PACKAGE_SKILLS
+        || typeof pkg.category !== 'string' || !pkg.category || typeof pkg.category_name !== 'string'
+        || !Array.isArray(pkg.dependencies) || !Array.isArray(pkg.connectors)
+        || pkg.dependencies.some((item) => typeof item !== 'string' || !item)
+        || pkg.connectors.some((item) => !item || typeof item.type !== 'string' || !item.type
+          || typeof item.required !== 'boolean')) {
         throw new Error('Snapshot contains an invalid Package')
+      }
+      if (!pkg.skills.length && !pkg.dependencies.length && !pkg.connectors.length) {
+        throw new Error('Snapshot contains an empty Package')
       }
       packageIDs.add(packageID)
       if (pkg.postinstall !== undefined) {

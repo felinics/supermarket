@@ -7,10 +7,16 @@ Official Skill and workspace dependency registry for [Memoh](https://github.com/
 ```text
 supermarket/
 ├── registries/
+│   ├── categories.yaml              # Shared Package categories (en/zh/ja)
 │   ├── memoh/
 │   │   ├── registry.yaml
 │   │   ├── release.lock.json
-│   │   └── packages/<package-id>/skills/<skill-id>/
+│   │   ├── dependencies.lock.json
+│   │   ├── dependencies/<dependency-id>/
+│   │   └── packages/<package-id>/
+│   │       ├── package.yaml         # Required Package manifest (schema 2)
+│   │       ├── icon.svg             # Optional
+│   │       └── skills/<skill-id>/   # Optional
 │   └── openai/
 │       ├── registry.yaml
 │       └── release.lock.json
@@ -21,6 +27,8 @@ supermarket/
 ```
 
 Supermarket stores published Registry releases in a local data directory during development and in R2 for hosted environments. Its API provides Registry, Package, Skill, and Artifact access for Memoh clients.
+
+A Package is the unit Memoh users browse and install. It bundles Skills and may reference workspace dependencies and Connect-It connector types; the dependency definitions themselves stay in `registries/memoh/dependencies/` and keep their own releases.
 
 ## Development
 
@@ -63,11 +71,11 @@ Base URL: `https://supermarket.memoh.ai`
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/packages` | Search Skill Packages. Query: `q`, `registry`, `category`, `tag`, `page`, `limit`, `sort` |
+| GET | `/api/packages` | Search Packages. Query: `q`, `registry`, `category`, `tag`, `component` (`skills`, `dependencies`, `connectors`), `page`, `limit`, `sort` |
+| GET | `/api/categories` | List Package categories with localized names and per-registry counts. Query: `registry` |
 | GET | `/api/skills` | Search enabled Registry Skills. Query: `q`, `registry`, `package`, `category`, `tag`, `page`, `limit`, `sort` |
 | GET | `/api/registries` | List Registries and current counts |
 | GET | `/api/registries/:registryId` | Get the approved Registry definition, source revision, and diagnostics |
-| GET | `/api/registries/:registryId/categories` | List categories in one Registry |
 | GET | `/api/registries/:registryId/packages` | Search Packages in one Registry |
 | GET | `/api/registries/:registryId/packages/:packageId` | Get the current Package descriptor |
 | GET | `/api/registries/:registryId/packages/:packageId/releases/:revision` | Get an immutable Package descriptor |
@@ -80,9 +88,38 @@ Skills use `(registry_id, package_id, skill_id)` identities.
 
 ## Contributing
 
-### Adding a Skill
+### Adding a Package
 
-1. Create `registries/memoh/packages/<package-id>/skills/<skill-id>/SKILL.md` with YAML frontmatter. For an independent Skill, use the Skill ID as both the package and Skill ID:
+1. Create `registries/memoh/packages/<package-id>/package.yaml`. Every reviewed Package needs one; `id` must match the directory, `version` is a semantic version shown to users, and `category` must be an ID from `registries/categories.yaml`:
+
+```yaml
+schema_version: "2"
+id: my-package
+version: 1.0.0
+name: My Package
+description: What this Package provides and when to install it.
+author: { name: Your Name, email: you@example.com }
+homepage: https://example.com
+repository: https://github.com/example/my-package
+license: Apache-2.0
+icon: icon.svg                  # optional, SVG/PNG/JPEG/WebP under 512 KiB
+category: productivity
+tags: [example]
+translations:
+  zh: { name: 我的扩展包, description: 中文描述 }
+  ja: { name: マイパッケージ, description: 日本語の説明 }
+dependencies: [node]            # optional, IDs from registries/memoh/dependencies/
+connectors:                     # optional, Connect-It connector types
+  - github
+  - { type: notion, required: false }
+postinstall:                    # optional
+  - command: npm
+    args: [install, --global, opencli]
+```
+
+A Package must contain at least one Skill, dependency reference or connector reference. Package revisions cover the manifest, references and Skills; dependency definitions keep their own revisions, so a Package never pins one. Every dependency also needs a canonical Package with the same ID that references it (see `registries/memoh/packages/node/`).
+
+2. Add Skills under `registries/memoh/packages/<package-id>/skills/<skill-id>/SKILL.md` with YAML frontmatter. For an independent Skill, use the Skill ID as both the package and Skill ID:
 
 ```markdown
 ---
@@ -102,16 +139,7 @@ metadata:
 Instructions and documentation go here.
 ```
 
-A Package that needs a system dependency may add `registries/memoh/packages/<package-id>/package.yaml`:
-
-```yaml
-schema_version: "1"
-postinstall:
-  - command: npm
-    args: [install, --global, opencli]
-```
-
-2. Regenerate the approved Snapshot lock, then validate and publish it locally:
+3. Regenerate the approved Snapshot lock, then validate and publish it locally:
 
 ```bash
 bun run registry:lock -- --registry memoh

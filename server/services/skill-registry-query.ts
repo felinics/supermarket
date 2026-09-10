@@ -56,13 +56,17 @@ export function parseSkillPackageQuery(query: Record<string, unknown>, registry?
   const registryValue = registry ?? scalarQuery(query, 'registry')
   const category = scalarQuery(query, 'category')
   const sortValue = scalarQuery(query, 'sort')
+  const componentValue = scalarQuery(query, 'component')
   const sort = z.optional(z.enum(['relevance', 'name', 'registry']))
   if (!sort.safeParse(sortValue).success) badRequest(`Unsupported sort: ${sortValue}`)
+  const component = z.optional(z.enum(['skills', 'dependencies', 'connectors']))
+  if (!component.safeParse(componentValue).success) badRequest(`Unsupported component: ${componentValue}`)
   return {
     registry: registryValue != null ? requireRegistryID(registryValue) : undefined,
     q: scalarQuery(query, 'q'),
     category: category != null ? requireIdentifier(category.toLowerCase(), 'category ID') : undefined,
     tag: scalarQuery(query, 'tag'),
+    component: componentValue as SkillPackageSearchOptions['component'],
     page: positiveIntegerQuery(scalarQuery(query, 'page'), 'page'),
     limit: positiveIntegerQuery(scalarQuery(query, 'limit'), 'limit', 100),
     sort: sortValue as SkillPackageSearchOptions['sort'],

@@ -1,4 +1,7 @@
 import { MAX_TAR_UNCOMPRESSED_BYTES } from '#lib/archive'
+import type { CategoryNames, PackageLocale, SnapshotCategory } from './categories'
+
+export type { CategoryNames, PackageLocale, SnapshotCategory }
 
 export interface SkillAuthor {
   name: string
@@ -74,7 +77,57 @@ export interface PackagePostinstallCommand {
   args: string[]
 }
 
+export interface PackageTranslation {
+  name?: string
+  description?: string
+}
+
+export type PackageTranslations = Partial<Record<PackageLocale, PackageTranslation>>
+
+/** A Package's reference to a Connect-It connector type. */
+export interface PackageConnectorReference {
+  type: string
+  required: boolean
+}
+
+/** Parsed `package.yaml` (schema 2) of a reviewed Memoh Package. */
+export interface PackageManifest {
+  schema_version: '2'
+  id: string
+  version: string
+  name: string
+  description: string
+  author?: SkillAuthor
+  homepage?: string
+  repository?: string
+  license?: string
+  /** Relative icon path inside the Package directory. */
+  icon?: string
+  category: string
+  tags: string[]
+  translations?: PackageTranslations
+  /** Workspace dependency IDs the Package references; the definitions stay in the dependency registry. */
+  dependencies: string[]
+  connectors: PackageConnectorReference[]
+  postinstall?: PackagePostinstallCommand[]
+}
+
+/**
+ * Package-level metadata shared by Snapshot entries and immutable releases.
+ * Imported registries synthesize it from their Skills; the Memoh registry
+ * takes it from `package.yaml`.
+ */
 export interface SkillPackageMetadata {
+  version?: string
+  author?: SkillAuthor
+  homepage?: string
+  repository?: string
+  license?: string
+  category: string
+  category_name: string
+  translations?: PackageTranslations
+  dependencies: string[]
+  connectors: PackageConnectorReference[]
   postinstall?: PackagePostinstallCommand[]
 }
 
@@ -169,6 +222,8 @@ export interface SkillRegistrySnapshot {
   registry_id: string
   registry_priority: number
   source: SnapshotSource
+  /** Category definitions used by this Snapshot's Packages, with localized names. */
+  categories: SnapshotCategory[]
   packages: SnapshotPackage[]
   diagnostics: RegistryDiagnostic[]
 }
@@ -219,13 +274,25 @@ export interface SkillCategorySummary {
   registries: Array<{ id: string; count: number }>
 }
 
+/** Package-level category listing with localized names and per-registry Package counts. */
+export interface PackageCategorySummary {
+  id: string
+  name: string
+  names: CategoryNames
+  order: number
+  package_count: number
+  registries: Array<{ id: string; count: number }>
+}
+
 export interface SkillPackageCategorySummary {
   id: string
   name: string
   skill_count: number
 }
 
-export interface SkillPackageSummary {
+export type PackageComponent = 'skills' | 'dependencies' | 'connectors'
+
+export interface SkillPackageSummary extends SkillPackageMetadata {
   schema_version: '1'
   registry_id: string
   registry_priority: number
@@ -233,8 +300,11 @@ export interface SkillPackageSummary {
   name: string
   description: string
   tags: string[]
+  /** Skill-level categories present in the Package. */
   categories: SkillPackageCategorySummary[]
   skill_count: number
+  dependency_count: number
+  connector_count: number
   icon?: SkillIcon
 }
 
@@ -242,4 +312,6 @@ export interface SkillPackageDescriptor extends SkillPackageRelease {
   revision: string
   categories: SkillPackageCategorySummary[]
   skill_count: number
+  dependency_count: number
+  connector_count: number
 }

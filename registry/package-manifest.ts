@@ -1,4 +1,6 @@
-import type { PackagePostinstallCommand, SkillPackageMetadata } from './types'
+import { z } from 'zod'
+import type { PackageConnectorReference, PackageManifest, PackagePostinstallCommand, PackageTranslations } from './types'
+import { safeRelativePath } from './definition'
 
 export const MAX_PACKAGE_MANIFEST_BYTES = 64 * 1024
 export const MAX_PACKAGE_POSTINSTALL_COMMANDS = 8
@@ -6,6 +8,10 @@ export const MAX_PACKAGE_POSTINSTALL_ARGS = 64
 export const MAX_PACKAGE_POSTINSTALL_COMMAND_BYTES = 128
 export const MAX_PACKAGE_POSTINSTALL_ARG_BYTES = 4 * 1024
 export const MAX_PACKAGE_POSTINSTALL_BYTES = 64 * 1024
+export const MAX_PACKAGE_DEPENDENCIES = 32
+export const MAX_PACKAGE_CONNECTORS = 32
+export const MAX_PACKAGE_TAGS = 32
+export const PACKAGE_MANIFEST_SCHEMA_VERSION = '2'
 
 const executablePattern = /^[a-z0-9][a-z0-9._+-]*$/i
 const controlCharacterPattern = /[\u0000-\u001f\u007f]/u
@@ -24,6 +30,10 @@ const unsupportedExecutables = new Set([
   'zsh',
 ])
 const encoder = new TextEncoder()
+
+export const dependencyIDPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+export const connectorTypePattern = /^[a-z][a-z0-9_]*$/
+export const semverPattern = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
 
 function isWellFormedUnicode(value: string) {
   for (let index = 0; index < value.length; index += 1) {
@@ -94,13 +104,90 @@ export function parsePackagePostinstall(value: unknown, label: string): PackageP
   return commands
 }
 
-export function parseSkillPackageManifest(raw: unknown, label: string): SkillPackageMetadata {
-  const manifest = object(raw, label)
-  rejectUnknownFields(manifest, new Set(['schema_version', 'postinstall']), label)
-  if (manifest.schema_version !== '1') {
-    throw new Error(`${label} uses unsupported schema_version ${String(manifest.schema_version)}`)
+const text = (maximum: number) => z.string().trim().min(1).max(maximum)
+  .refine(isWellFormedUnicode, 'contains an unpaired UTF-16 surrogate')
+  .refine((value) => !controlCharacterPattern.test(value), 'contains a control character')
+const url = z.string().trim().min(1).max(2048).refine((value) => {
+  try {
+    const parsed = new URL(value)
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:'
+  } catch {
+    return false
   }
-  return manifest.postinstall === undefined
-    ? {}
-    : { postinstall: parsePackagePostinstall(manifest.postinstall, `${label}.postinstall`) }
+}, 'must be an http(s) URL')
+const translation = z.object({ name: text(256).optional(), description: text(4096).optional() }).strict()
+
+const packageManifestSchema = z.object({
+  schema_version: z.literal(PACKAGE_MANIFEST_SCHEMA_VERSION),
+  id: z.string().regex(/^[a-z0-9][a-z0-9._-]*$/).max(128),
+  version: z.string().trim().regex(semverPattern, 'must be a semantic version'),
+  name: text(256),
+  description: text(4096),
+  author: z.object({ name: text(256), email: z.string().trim().max(320).optional() }).strict().optional(),
+  homepage: url.optional(),
+  repository: url.optional(),
+  license: text(128).optional(),
+  icon: z.string().trim().min(1).max(256).optional(),
+  category: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(64),
+  tags: z.array(text(64)).max(MAX_PACKAGE_TAGS).default([]),
+  translations: z.object({ en: translation.optional(), zh: translation.optional(), ja: translation.optional() })
+    .strict().optional(),
+  dependencies: z.array(z.string().regex(dependencyIDPattern).max(80)).max(MAX_PACKAGE_DEPENDENCIES).default([]),
+  connectors: z.array(z.union([
+    z.string().regex(connectorTypePattern).max(80),
+    z.object({ type: z.string().regex(connectorTypePattern).max(80), required: z.boolean().default(true) }).strict(),
+  ])).max(MAX_PACKAGE_CONNECTORS).default([]),
+  postinstall: z.unknown().optional(),
+}).strict()
+
+function firstIssue(error: z.ZodError, label: string) {
+  const issue = error.issues[0]!
+  const where = issue.path.length ? `.${issue.path.join('.')}` : ''
+  if (issue.code === 'unrecognized_keys') {
+    return new Error(`${label} contains unsupported field ${(issue as { keys: string[] }).keys.join(', ')}`)
+  }
+  return new Error(`${label}${where}: ${issue.message}`)
+}
+
+/** Parses a `package.yaml` manifest (schema 2) without touching the file system. */
+export function parsePackageManifest(raw: unknown, label: string): PackageManifest {
+  const data = object(raw, label)
+  if (data.schema_version !== PACKAGE_MANIFEST_SCHEMA_VERSION) {
+    throw new Error(`${label} uses unsupported schema_version ${String(data.schema_version)}`)
+  }
+  const parsed = packageManifestSchema.safeParse(data)
+  if (!parsed.success) throw firstIssue(parsed.error, label)
+  const manifest = parsed.data
+  const tags = [...new Set(manifest.tags.map((tag) => tag.trim()).filter(Boolean))]
+  const dependencies = manifest.dependencies
+  if (new Set(dependencies).size !== dependencies.length) throw new Error(`${label}.dependencies contains duplicates`)
+  const connectors: PackageConnectorReference[] = manifest.connectors.map((item) => typeof item === 'string'
+    ? { type: item, required: true }
+    : { type: item.type, required: item.required })
+  if (new Set(connectors.map((item) => item.type)).size !== connectors.length) {
+    throw new Error(`${label}.connectors contains duplicate connector types`)
+  }
+  const translations: PackageTranslations | undefined = manifest.translations
+    ? Object.fromEntries(Object.entries(manifest.translations).filter(([, value]) => value && Object.keys(value).length))
+    : undefined
+  return {
+    schema_version: PACKAGE_MANIFEST_SCHEMA_VERSION,
+    id: manifest.id,
+    version: manifest.version,
+    name: manifest.name,
+    description: manifest.description,
+    ...(manifest.author ? { author: { name: manifest.author.name, email: manifest.author.email ?? '' } } : {}),
+    ...(manifest.homepage ? { homepage: manifest.homepage } : {}),
+    ...(manifest.repository ? { repository: manifest.repository } : {}),
+    ...(manifest.license ? { license: manifest.license } : {}),
+    ...(manifest.icon ? { icon: safeRelativePath(manifest.icon, `${label}.icon`) } : {}),
+    category: manifest.category,
+    tags,
+    ...(translations && Object.keys(translations).length ? { translations } : {}),
+    dependencies,
+    connectors,
+    ...(manifest.postinstall === undefined
+      ? {}
+      : { postinstall: parsePackagePostinstall(manifest.postinstall, `${label}.postinstall`) }),
+  }
 }

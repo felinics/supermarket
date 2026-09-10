@@ -1,0 +1,23 @@
+schema_version: "2"
+id: codex
+version: 1.0.0
+name: Codex
+description: OpenAI Codex CLI.
+author:
+  name: Memoh
+  email: hello@memoh.ai
+homepage: https://github.com/openai/codex
+repository: https://github.com/felinics/supermarket
+license: Apache-2.0
+icon: icon.svg
+category: agent
+tags:
+  - agent
+  - codex
+translations:
+  zh:
+    description: OpenAI Codex 命令行
+  ja:
+    description: OpenAI Codex コマンドライン
+dependencies:
+  - codex

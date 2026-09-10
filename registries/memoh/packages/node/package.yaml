@@ -1,0 +1,25 @@
+schema_version: "2"
+id: node
+version: 1.0.0
+name: Node.js
+description: JavaScript runtime with npm and npx.
+author:
+  name: Memoh
+  email: hello@memoh.ai
+homepage: https://nodejs.org
+repository: https://github.com/felinics/supermarket
+license: Apache-2.0
+icon: icon.svg
+category: runtime
+tags:
+  - node
+  - npm
+  - npx
+  - runtime
+translations:
+  zh:
+    description: JavaScript 运行时，含 npm 与 npx
+  ja:
+    description: JavaScript ランタイム（npm・npx 付き）
+dependencies:
+  - node

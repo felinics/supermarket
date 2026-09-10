@@ -11,7 +11,7 @@ import registryPackage from '../server/api/registries/[id]/packages/[packageId].
 import registryPackageRelease from '../server/api/registries/[id]/packages/[packageId]/releases/[revision].get'
 import registryPackages from '../server/api/registries/[id]/packages/index.get'
 import registrySkill from '../server/api/registries/[id]/packages/[packageId]/skills/[skillId].get'
-import registryCategories from '../server/api/registries/[id]/categories.get'
+import categories from '../server/api/categories.get'
 import registrySkills from '../server/api/registries/[id]/skills/index.get'
 import registries from '../server/api/registries/index.get'
 import skills from '../server/api/skills/index.get'
@@ -26,7 +26,10 @@ import {
   compactCatalogPackages,
   serializeRegistrySnapshot,
   skillPackageReleaseFromSnapshotPackage,
+  snapshotCategoriesFor,
 } from '#registry/snapshot'
+import { parseCategoryTable } from '#registry/categories'
+import type { PackageCandidate } from '#registry/adapters/types'
 import { R2BlobBackend } from '#registry/storage/r2'
 import { sha256 } from '#lib/digest'
 import { BlobSkillRegistryStore } from '#registry/storage/blob'
@@ -119,11 +122,21 @@ describe('Marketplace HTTP protocol', () => {
     const postinstall: PackagePostinstallCommand[] = [
       { command: 'npm', args: ['install', '--global', 'opencli'] },
     ]
-    const packageMetadata = new Map([['tools', { postinstall }]])
+    const categoryTable = parseCategoryTable({ schema_version: '1', categories: [
+      { id: 'developer-tools', name: { en: 'Developer Tools', zh: '开发工具' }, order: 40 },
+      { id: 'other', name: { en: 'Other' }, order: 1000 },
+    ] })
+    const packageCandidate = (commands: PackagePostinstallCommand[]): PackageCandidate => ({
+      package_id: 'tools', reviewed: false, tags: [], dependencies: [], connectors: [], postinstall: commands,
+    })
+    const snapshotPackages = compactCatalogPackages([skill], {
+      packages: new Map([['tools', packageCandidate(postinstall)]]), categories: categoryTable,
+    })
     const snapshot: SkillRegistrySnapshot = {
       schema_version: '1', registry_id: 'example', registry_priority: 10,
       source: { type: 'local', revision: sourceRevision },
-      packages: compactCatalogPackages([skill], packageMetadata),
+      categories: snapshotCategoriesFor(snapshotPackages, categoryTable),
+      packages: snapshotPackages,
       diagnostics: [],
     }
     await store.putArtifact(artifact, archive)
@@ -139,7 +152,7 @@ describe('Marketplace HTTP protocol', () => {
     app.get('/api/registries', registries)
     app.get('/api/skills', skills)
     app.get('/api/packages', packages)
-    app.get('/api/registries/:id/categories', registryCategories)
+    app.get('/api/categories', categories)
     app.get('/api/registries/:id/skills', registrySkills)
     app.get('/api/registries/:id/packages', registryPackages)
     app.get('/api/registries/:id/packages/:packageId', registryPackage)
@@ -166,7 +179,10 @@ describe('Marketplace HTTP protocol', () => {
     expect(packagesResponse.status).toBe(200)
     expect(await packagesResponse.json()).toMatchObject({
       total: 1,
-      data: [{ registry_id: 'example', package_id: 'tools', name: 'tools', skill_count: 1 }],
+      data: [{
+        registry_id: 'example', package_id: 'tools', name: 'tools', skill_count: 1,
+        category: 'developer-tools', category_name: 'Developer Tools', dependency_count: 0, connector_count: 0,
+      }],
     })
     expect((await app.fetch(new Request('http://local/api/packages?sort=package'))).status).toBe(400)
     const scopedPackages = await app.fetch(new Request('http://local/api/registries/example/packages'))
@@ -207,12 +223,17 @@ describe('Marketplace HTTP protocol', () => {
     expect(scopedSkills.status).toBe(200)
     expect((await scopedSkills.json() as any).total).toBe(1)
 
-    const categoriesResponse = await app.fetch(new Request('http://local/api/registries/example/categories'))
+    const categoriesResponse = await app.fetch(new Request('http://local/api/categories?registry=example'))
     expect(categoriesResponse.status).toBe(200)
     expect((await categoriesResponse.json() as any).data).toEqual([{
-      id: 'developer-tools', name: 'Developer Tools', count: 1,
-      registries: [{ id: 'example', count: 1 }],
+      id: 'developer-tools', name: 'Developer Tools', names: { en: 'Developer Tools', zh: '开发工具' }, order: 40,
+      package_count: 1, registries: [{ id: 'example', count: 1 }],
     }])
+    expect((await (await app.fetch(new Request('http://local/api/categories'))).json() as any).data).toHaveLength(1)
+    expect((await app.fetch(new Request('http://local/api/categories?registry=missing'))).status).toBe(404)
+    expect((await app.fetch(new Request('http://local/api/packages?component=dependencies'))).status).toBe(200)
+    expect((await (await app.fetch(new Request('http://local/api/packages?component=dependencies'))).json() as any).total).toBe(0)
+    expect((await app.fetch(new Request('http://local/api/packages?component=hooks'))).status).toBe(400)
     expect((await app.fetch(new Request('http://local/api/registries/missing/skills'))).status).toBe(404)
 
     const detailResponse = await app.fetch(new Request('http://local/api/registries/example/packages/tools/skills/demo'))
@@ -248,7 +269,9 @@ describe('Marketplace HTTP protocol', () => {
     const updatedSnapshot: SkillRegistrySnapshot = {
       ...snapshot,
       source: { ...snapshot.source, revision: 'f'.repeat(64) },
-      packages: compactCatalogPackages([skill], new Map([['tools', { postinstall: updatedPostinstall }]])),
+      packages: compactCatalogPackages([skill], {
+        packages: new Map([['tools', packageCandidate(updatedPostinstall)]]), categories: categoryTable,
+      }),
     }
     expect(updatedSnapshot.packages[0]!.revision).not.toBe(snapshot.packages[0]!.revision)
     await store.putPackageRelease(

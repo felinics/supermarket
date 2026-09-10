@@ -6,8 +6,10 @@ import type {
   SkillRegistryDefinition,
   SkillRegistrySnapshot,
 } from '../types'
+import { readdir } from 'node:fs/promises'
 import path from 'node:path'
 import { buildSkillCandidates, skillAdapterBootstrapPaths } from '../adapters/index'
+import type { SkillAdapterResult, SkillCandidate } from '../adapters/types'
 import { packageSkill } from '../artifacts/build'
 import { sha256 } from '#lib/digest'
 import { materializeSkillRegistrySource } from '../sources/index'
@@ -15,7 +17,10 @@ import {
   compactCatalogPackages,
   registrySnapshotRevision,
   serializeRegistrySnapshot,
+  snapshotCategoriesFor,
 } from '../snapshot'
+import { CategoryTable, loadCategoryTable } from '../categories'
+import { DEPENDENCY_REGISTRY } from '../dependencies/types'
 import { compareCanonicalText } from '#lib/order'
 import {
   MAX_REGISTRY_SNAPSHOT_BYTES,
@@ -64,7 +69,7 @@ export interface SkillRegistryCandidate {
 export type SkillRegistryBuildProgress =
   | { type: 'source'; registry: string }
   | { type: 'source_ready'; registry: string; revision: string }
-  | { type: 'scanned'; registry: string; skills: number; diagnostics: number }
+  | { type: 'scanned'; registry: string; skills: number; packages: number; diagnostics: number }
 
 export interface SkillRegistryBuildOptions {
   includeReview?: boolean
@@ -91,6 +96,60 @@ function artifactDiagnosticMessage(error: unknown, sourceRoot: string) {
   return `Skipped package: ${stable}`
 }
 
+/** IDs of the workspace dependency definitions published next to the official Packages. */
+export async function listDependencyIDs(projectRoot: string): Promise<Set<string>> {
+  const root = path.join(projectRoot, 'registries', DEPENDENCY_REGISTRY, 'dependencies')
+  try {
+    const entries = await readdir(root, { withFileTypes: true })
+    return new Set(entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name))
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return new Set()
+    throw error
+  }
+}
+
+/**
+ * Cross-resource rules that adapters cannot check on their own: reviewed
+ * categories must exist, dependency and connector references are limited to
+ * the official registry, referenced dependencies must be published, and every
+ * dependency needs a canonical Package with the same ID.
+ */
+export function validatePackageCandidates(
+  definition: SkillRegistryDefinition,
+  result: Pick<SkillAdapterResult, 'packages'>,
+  categories: CategoryTable,
+  dependencyIDs: ReadonlySet<string>,
+) {
+  const official = definition.id === DEPENDENCY_REGISTRY
+  for (const candidate of result.packages.values()) {
+    const label = `${definition.id}/${candidate.package_id}`
+    if (candidate.reviewed && candidate.category) categories.require(candidate.category, label)
+    if ((candidate.dependencies.length || candidate.connectors.length) && !official) {
+      throw new Error(`${label}: dependencies and connectors are only supported in the ${DEPENDENCY_REGISTRY} registry`)
+    }
+    for (const dependency of candidate.dependencies) {
+      if (!dependencyIDs.has(dependency)) throw new Error(`${label}: unknown dependency "${dependency}"`)
+    }
+  }
+  if (!official) return
+  for (const dependency of [...dependencyIDs].sort(compareCanonicalText)) {
+    const canonical = result.packages.get(dependency)
+    if (!canonical || !canonical.dependencies.includes(dependency)) {
+      throw new Error(`${definition.id}: dependency "${dependency}" requires a package "${dependency}" that references it`)
+    }
+  }
+}
+
+/** Maps Skill categories onto the shared table when an alias matches; unknown values are kept. */
+export function applyCategoryTable(skills: SkillCandidate[], categories: CategoryTable) {
+  for (const skill of skills) {
+    const resolved = categories.lookup(skill.source_category ?? skill.category)
+    if (!resolved) continue
+    skill.category = resolved.id
+    skill.category_name = resolved.name.en
+  }
+}
+
 export async function buildSkillRegistryCandidate(
   definition: SkillRegistryDefinition,
   projectRoot: string,
@@ -98,6 +157,10 @@ export async function buildSkillRegistryCandidate(
 ): Promise<SkillRegistryCandidate> {
   const onProgress = options.onProgress ?? (() => {})
   const budget = new RegistryBuildBudget()
+  const [categories, dependencyIDs] = await Promise.all([
+    loadCategoryTable(projectRoot),
+    listDependencyIDs(projectRoot),
+  ])
   onProgress({ type: 'source', registry: definition.id })
   const source = await materializeSkillRegistrySource(
     definition,
@@ -112,10 +175,13 @@ export async function buildSkillRegistryCandidate(
       ensurePaths: source.ensurePaths,
       budget,
     })
+    validatePackageCandidates(definition, result, categories, dependencyIDs)
+    applyCategoryTable(result.skills, categories)
     onProgress({
       type: 'scanned',
       registry: definition.id,
       skills: result.skills.length,
+      packages: new Set([...result.packages.keys(), ...result.skills.map((skill) => skill.package_id)]).size,
       diagnostics: result.diagnostics.length,
     })
 
@@ -130,6 +196,7 @@ export async function buildSkillRegistryCandidate(
       packageSkills.push(candidate)
       packages.set(candidate.package_id, packageSkills)
     }
+    const skippedPackages = new Set<string>()
     for (const [packageID, candidates] of packages) {
       let packagedCandidates: Array<{
         candidate: (typeof candidates)[number]
@@ -147,6 +214,7 @@ export async function buildSkillRegistryCandidate(
           code: 'package_invalid',
           message: artifactDiagnosticMessage(error, source.root),
         })
+        skippedPackages.add(packageID)
         continue
       }
 
@@ -210,15 +278,26 @@ export async function buildSkillRegistryCandidate(
         }
       }
     }
+    const packageCandidates = new Map(
+      [...result.packages].filter(([packageID]) => !skippedPackages.has(packageID)),
+    )
+    for (const candidate of packageCandidates.values()) {
+      for (const image of candidate.icon_assets ?? []) images.set(image.descriptor.digest, image)
+    }
 
     skills.sort((a, b) => compareCanonicalText(a.name, b.name)
       || compareCanonicalText(a.package_id, b.package_id)
       || compareCanonicalText(a.skill_id, b.skill_id))
-    if (!skills.length) {
-      throw new Error(`${definition.id}: Registry build produced zero skills`)
-    }
     diagnostics.sort((a, b) => compareCanonicalText(a.package_id ?? '', b.package_id ?? '')
       || compareCanonicalText(a.code, b.code))
+    const snapshotPackages = compactCatalogPackages(skills, {
+      registry: definition.id,
+      packages: packageCandidates,
+      categories,
+    })
+    if (!snapshotPackages.length) {
+      throw new Error(`${definition.id}: Registry build produced zero packages`)
+    }
     const snapshot: SkillRegistrySnapshot = {
       schema_version: '1',
       registry_id: definition.id,
@@ -228,7 +307,8 @@ export async function buildSkillRegistryCandidate(
         revision: source.revision,
         ...(definition.source.type === 'git' ? { repository: definition.source.url } : {}),
       },
-      packages: compactCatalogPackages(skills, result.packageMetadata),
+      categories: snapshotCategoriesFor(snapshotPackages, categories),
+      packages: snapshotPackages,
       diagnostics,
     }
     const snapshotBytes = serializeRegistrySnapshot(snapshot)
