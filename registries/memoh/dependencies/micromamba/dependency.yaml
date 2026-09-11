@@ -1,0 +1,37 @@
+schema_version: "1"
+id: micromamba
+name: Micromamba
+description: Micromamba installed in an isolated, versioned workspace directory.
+category: tool
+source: managed
+requires:
+  - python
+provides:
+  - micromamba
+platforms:
+  - os: linux
+    arch:
+      - amd64
+      - arm64
+    libc: glibc
+  - os: darwin
+    arch:
+      - arm64
+timeouts:
+  install: 3600
+  update: 3600
+  remove: 300
+  check_update: 300
+  version: 60
+scripts:
+  install: install.sh
+  update: install.sh
+  remove: remove.sh
+  check_update: check-update.sh
+translations:
+  en:
+    description: Micromamba tools
+  zh:
+    description: Micromamba 命令行工具
+  ja:
+    description: Micromamba コマンドラインツール

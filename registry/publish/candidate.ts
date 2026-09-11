@@ -111,8 +111,8 @@ export async function listDependencyIDs(projectRoot: string): Promise<Set<string
 /**
  * Cross-resource rules that adapters cannot check on their own: reviewed
  * categories must exist, dependency and connector references are limited to
- * the official registry, referenced dependencies must be published, and every
- * dependency needs a canonical App with the same ID.
+ * the official registry, and referenced dependencies must be published. Shared
+ * implementation dependencies do not require separate user-facing Apps.
  */
 export function validateAppCandidates(
   definition: SkillRegistryDefinition,
@@ -129,13 +129,6 @@ export function validateAppCandidates(
     }
     for (const dependency of candidate.dependencies) {
       if (!dependencyIDs.has(dependency)) throw new Error(`${label}: unknown dependency "${dependency}"`)
-    }
-  }
-  if (!official) return
-  for (const dependency of [...dependencyIDs].sort(compareCanonicalText)) {
-    const canonical = result.apps.get(dependency)
-    if (!canonical || !canonical.dependencies.includes(dependency)) {
-      throw new Error(`${definition.id}: dependency "${dependency}" requires an app "${dependency}" that references it`)
     }
   }
 }

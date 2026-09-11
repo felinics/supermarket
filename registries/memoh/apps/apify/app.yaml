@@ -1,8 +1,8 @@
 schema_version: "2"
 id: apify
-version: 1.0.0
+version: 1.1.0
 name: Apify
-description: Connect Apify for web data collection and automation.
+description: Connect Apify and develop, test and publish Actors.
 author:
   name: Memoh
 homepage: https://apify.com
@@ -17,9 +17,11 @@ tags:
   - data
 translations:
   zh:
-    description: 连接 Apify，使用网页数据采集与自动化服务。
+    description: 连接 Apify，开发、测试与发布 Actor。
   ja:
-    description: Apify に接続して、Web データ収集と自動化を利用します。
+    description: Apify に接続し、Actor を開発・テスト・公開します。
 connectors:
   - type: apify
     required: true
+dependencies:
+  - apify-cli

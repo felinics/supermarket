@@ -1,8 +1,8 @@
 schema_version: "2"
 id: node
-version: 1.0.0
+version: 1.1.0
 name: Node.js
-description: JavaScript runtime with npm and npx.
+description: JavaScript runtime with npm, npx and pnpm project workflows.
 author:
   name: Memoh
   email: hello@memoh.ai
@@ -18,8 +18,9 @@ tags:
   - runtime
 translations:
   zh:
-    description: JavaScript 运行时，含 npm 与 npx
+    description: JavaScript 运行时，含 npm、npx 与 pnpm 项目工作流。
   ja:
-    description: JavaScript ランタイム（npm・npx 付き）
+    description: npm・npx・pnpm による開発に対応した JavaScript ランタイム。
 dependencies:
   - node
+  - pnpm

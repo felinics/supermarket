@@ -1,8 +1,8 @@
 schema_version: "2"
 id: supabase
-version: 1.0.0
+version: 1.1.0
 name: Supabase
-description: Connect Supabase for databases and backend development.
+description: Connect Supabase and manage projects, migrations and functions.
 author:
   name: Memoh
 homepage: https://supabase.com
@@ -17,9 +17,11 @@ tags:
   - database
 translations:
   zh:
-    description: 连接 Supabase，使用数据库与后端开发服务。
+    description: 连接 Supabase，管理项目、数据库迁移与函数。
   ja:
-    description: Supabase に接続して、データベースとバックエンド開発を利用します。
+    description: Supabase に接続し、プロジェクト・マイグレーション・関数を管理します。
 connectors:
   - type: supabase
     required: true
+dependencies:
+  - supabase-cli

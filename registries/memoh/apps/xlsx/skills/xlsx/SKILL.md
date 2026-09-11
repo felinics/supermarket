@@ -146,7 +146,7 @@ This applies to ALL calculations - totals, percentages, ratios, differences, etc
 4. **Save**: Write to file
 5. **Recalculate formulas (MANDATORY IF USING FORMULAS)**: Use the scripts/recalc.py script
    ```bash
-   python scripts/recalc.py output.xlsx
+   document-python scripts/recalc.py output.xlsx
    ```
 6. **Verify and fix any errors**: 
    - The script returns JSON with error details
@@ -219,12 +219,12 @@ wb.save('modified.xlsx')
 Excel files created or modified by openpyxl contain formulas as strings but not calculated values. Use the provided `scripts/recalc.py` script to recalculate formulas:
 
 ```bash
-python scripts/recalc.py <excel_file> [timeout_seconds]
+document-python scripts/recalc.py <excel_file> [timeout_seconds]
 ```
 
 Example:
 ```bash
-python scripts/recalc.py output.xlsx 30
+document-python scripts/recalc.py output.xlsx 30
 ```
 
 The script:
@@ -300,3 +300,7 @@ The script returns JSON with error details:
 - Add comments to cells with complex formulas or important assumptions
 - Document data sources for hardcoded values
 - Include notes for key calculations and model sections
+
+## Installed Memoh tools
+
+Use `document-python` to run Python snippets and bundled scripts; it contains the document libraries. Use `document-node` for JavaScript snippets and document-generation scripts; it resolves the shared document modules. These commands preserve the caller’s working directory. Use the project interpreter only when you have explicitly installed the same libraries there. The App also installs its required native tools; do not use global pip/npm installs to repair module lookup.

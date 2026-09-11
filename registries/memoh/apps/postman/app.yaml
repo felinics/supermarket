@@ -1,8 +1,8 @@
 schema_version: "2"
 id: postman
-version: 1.0.0
+version: 1.1.0
 name: Postman
-description: Connect Postman for API development and collaboration.
+description: Connect Postman and run API collections and regression tests.
 author:
   name: Memoh
 homepage: https://www.postman.com
@@ -16,9 +16,11 @@ tags:
   - developer_tools
 translations:
   zh:
-    description: 连接 Postman，使用API 开发与协作服务。
+    description: 连接 Postman，运行接口集合与回归测试。
   ja:
-    description: Postman に接続して、API 開発と共同作業を利用します。
+    description: Postman に接続し、API コレクションと回帰テストを実行します。
 connectors:
   - type: postman
     required: true
+dependencies:
+  - postman-cli

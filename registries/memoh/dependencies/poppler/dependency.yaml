@@ -1,0 +1,40 @@
+schema_version: "1"
+id: poppler
+name: Poppler
+description: Poppler installed in an isolated, versioned workspace directory.
+category: tool
+source: managed
+requires:
+  - python
+  - micromamba
+provides:
+  - pdftotext
+  - pdftoppm
+  - pdfinfo
+platforms:
+  - os: linux
+    arch:
+      - amd64
+      - arm64
+    libc: glibc
+  - os: darwin
+    arch:
+      - arm64
+timeouts:
+  install: 3600
+  update: 3600
+  remove: 300
+  check_update: 300
+  version: 60
+scripts:
+  install: install.sh
+  update: install.sh
+  remove: remove.sh
+  check_update: check-update.sh
+translations:
+  en:
+    description: Poppler tools
+  zh:
+    description: Poppler 工具及运行库
+  ja:
+    description: Poppler ツールとランタイム

@@ -1,0 +1,21 @@
+schema_version: "2"
+id: bun
+version: 1.0.0
+author:
+  name: Memoh
+repository: https://github.com/felinics/supermarket
+license: Apache-2.0
+icon: icon.svg
+tags:
+  - bun
+  - runtime
+name: Bun
+category: runtime
+description: Bun and bunx for JavaScript and TypeScript development.
+dependencies:
+  - bun
+translations:
+  zh:
+    description: 使用 Bun 与 bunx 开发 JavaScript 和 TypeScript 项目。
+  ja:
+    description: Bun と bunx による JavaScript・TypeScript 開発。

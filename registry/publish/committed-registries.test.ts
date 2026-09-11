@@ -54,8 +54,6 @@ describe('Repository-owned Skill Registries', () => {
       const app = apps.find((item) => item.app_id === connector.app_id)!
       expect(app).toBeDefined()
       expect(app.connectors).toEqual([{ type: connector.type, required: true }])
-      expect(app.skills).toEqual([])
-      expect(app.dependencies).toEqual([])
       expect(app.category).not.toBe('other')
       expect(app.translations?.zh?.description).toBeTruthy()
       expect(app.translations?.ja?.description).toBeTruthy()
@@ -64,19 +62,25 @@ describe('Repository-owned Skill Registries', () => {
     }
   })
 
-  test('publishes a canonical App for every official dependency', async () => {
+  test('every official dependency is reachable from an App, including shared transitive tools', async () => {
     const projectRoot = path.resolve(import.meta.dirname, '../..')
     const definition = (await loadSkillRegistryDefinitions(projectRoot)).find((item) => item.id === 'memoh')!
     const candidate = await buildSkillRegistryCandidate(definition, projectRoot)
     const dependencyIDs = [...await listDependencyIDs(projectRoot)].sort()
     expect(dependencyIDs.length).toBeGreaterThan(0)
-    for (const dependency of dependencyIDs) {
-      const pkg = candidate.snapshot.apps.find((item) => item.app_id === dependency)
-      expect(pkg).toBeDefined()
-      expect(pkg!.dependencies).toContain(dependency)
-      expect(pkg!.icon?.card).toBeDefined()
-      expect(candidate.images.has(pkg!.icon!.card!.digest)).toBe(true)
+    const reachable = new Set<string>()
+    const { buildDependencyCandidate } = await import('../dependencies/build')
+    const dependencies = await buildDependencyCandidate(projectRoot)
+    const manifests = new Map(dependencies.snapshot.dependencies.map(dep => [dep.dependency_id, dep.manifest]))
+    function visit(id: string) {
+      if (reachable.has(id)) return
+      const manifest = manifests.get(id)
+      expect(manifest, `Missing dependency ${id}`).toBeDefined()
+      reachable.add(id)
+      manifest!.requires.forEach(visit)
     }
+    candidate.snapshot.apps.forEach(app => app.dependencies.forEach(visit))
+    expect([...reachable].sort()).toEqual(dependencyIDs)
     expect(candidate.snapshot.categories.map((category) => category.id))
       .toEqual([...new Set(candidate.snapshot.apps.map((pkg) => pkg.category))]
         .sort((a, b) => candidate.snapshot.categories.findIndex((c) => c.id === a) - candidate.snapshot.categories.findIndex((c) => c.id === b)))

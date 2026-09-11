@@ -76,7 +76,7 @@ def _get_children(parent, tag: str) -> list:
 
 
 def _is_adjacent(elem1, elem2) -> bool:
-    node = elem1.nextSibling
+    document-node = elem1.nextSibling
     while node:
         if node == elem2:
             return True
@@ -84,7 +84,7 @@ def _is_adjacent(elem1, elem2) -> bool:
             return False
         if node.nodeType == node.TEXT_NODE and node.data.strip():
             return False
-        node = node.nextSibling
+        document-node = node.nextSibling
     return False
 
 

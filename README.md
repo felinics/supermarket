@@ -40,8 +40,7 @@ This snapshot contains public provider metadata only, never credentials.
 
 Each App references exactly one required connector type. App IDs use hyphens
 (e.g. `google-calendar`), while connector references preserve Connect-It's exact
-identifier (`google_calendar`). The Apps contain no duplicated tools or Skills:
-Connect-It supplies the connector's implementation and authorization flow.
+identifier (`google_calendar`). Connect-It supplies each connector's implementation and authorization flow. Selected Apps also bundle developer CLIs and workflow Skills; see [the toolchain catalog](docs/toolchain-apps.md).
 Installing an App does not authorize an account; required connections remain
 pending until the user completes authorization. A deployment must configure the
 corresponding provider in Connect-It before that authorization can succeed.
@@ -146,7 +145,7 @@ postinstall:                    # optional
     args: [install, --global, opencli]
 ```
 
-An App must contain at least one Skill, dependency reference or connector reference. App revisions cover the manifest, references and Skills; dependency definitions keep their own revisions, so an App never pins one. Every dependency also needs a canonical App with the same ID that references it (see `registries/memoh/apps/node/`).
+An App must contain at least one Skill, dependency reference or connector reference. App revisions cover the manifest, references and Skills; dependency definitions keep their own revisions, so an App never pins one. Dependencies can be shared by multiple Apps or required transitively; implementation helpers do not need separate storefront Apps.
 
 2. Add Skills under `registries/memoh/apps/<app-id>/skills/<skill-id>/SKILL.md` with YAML frontmatter. For an independent Skill, use the Skill ID as both the app and Skill ID:
 

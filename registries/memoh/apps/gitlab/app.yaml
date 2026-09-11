@@ -1,8 +1,8 @@
 schema_version: "2"
 id: gitlab
-version: 1.0.0
+version: 1.1.0
 name: GitLab
-description: Connect GitLab for code hosting and DevSecOps.
+description: Connect GitLab and manage merge requests, issues and pipelines.
 author:
   name: Memoh
 homepage: https://gitlab.com
@@ -16,9 +16,12 @@ tags:
   - developer_tools
 translations:
   zh:
-    description: 连接 GitLab，使用代码托管与 DevSecOps服务。
+    description: 连接 GitLab，管理合并请求、Issue 与流水线。
   ja:
-    description: GitLab に接続して、コードホスティングと DevSecOpsを利用します。
+    description: GitLab に接続し、MR・Issue・パイプラインを管理します。
 connectors:
   - type: gitlab
     required: true
+dependencies:
+  - gitlab-cli
+  - git

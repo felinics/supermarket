@@ -1,8 +1,8 @@
 schema_version: "2"
 id: cloudflare
-version: 1.0.0
+version: 1.1.0
 name: Cloudflare
-description: Connect Cloudflare for network, security and developer services.
+description: Connect Cloudflare and develop and deploy Workers and Pages.
 author:
   name: Memoh
 homepage: https://www.cloudflare.com
@@ -17,9 +17,11 @@ tags:
   - infrastructure
 translations:
   zh:
-    description: 连接 Cloudflare，使用网络、安全与开发者服务服务。
+    description: 连接 Cloudflare，开发和部署 Workers 与 Pages。
   ja:
-    description: Cloudflare に接続して、ネットワーク、セキュリティ、開発者向けサービスを利用します。
+    description: Cloudflare に接続し、Workers と Pages を開発・デプロイします。
 connectors:
   - type: cloudflare
     required: true
+dependencies:
+  - wrangler

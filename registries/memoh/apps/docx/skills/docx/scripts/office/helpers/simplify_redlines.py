@@ -90,13 +90,13 @@ def _can_merge_tracked(elem1, elem2) -> bool:
     if _get_author(elem1) != _get_author(elem2):
         return False
 
-    node = elem1.nextSibling
+    document-node = elem1.nextSibling
     while node and node != elem2:
         if node.nodeType == node.ELEMENT_NODE:
             return False
         if node.nodeType == node.TEXT_NODE and node.data.strip():
             return False
-        node = node.nextSibling
+        document-node = node.nextSibling
 
     return True
 

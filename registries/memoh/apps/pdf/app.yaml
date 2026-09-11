@@ -1,8 +1,8 @@
 schema_version: "2"
 id: pdf
-version: 1.0.0
+version: 1.1.0
 name: PDF Processing
-description: Read, extract, merge, split, watermark, create, fill and OCR PDF files.
+description: Read, create, merge, split, fill and OCR PDF documents.
 author:
   name: Anthropic
   email: support@anthropic.com
@@ -17,7 +17,13 @@ tags:
 translations:
   zh:
     name: PDF 处理
-    description: 读取、提取、合并、拆分、加水印、创建、填表以及 OCR 处理 PDF 文件。
+    description: 读取、生成、合并、拆分、填表与 OCR 处理 PDF。
   ja:
     name: PDF 処理
-    description: PDF の読み取り、抽出、結合、分割、透かし、作成、フォーム入力、OCR。
+    description: PDF の読み取り・作成・結合・分割・フォーム入力・OCR。
+dependencies:
+  - document-python
+  - document-node
+  - poppler
+  - qpdf
+  - tesseract

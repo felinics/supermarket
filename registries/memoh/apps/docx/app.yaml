@@ -1,9 +1,8 @@
 schema_version: "2"
 id: docx
-version: 1.0.0
+version: 1.1.0
 name: Word Documents
-description: Create, read, edit and convert Word (.docx) documents, including tracked changes,
-  comments, images and professional formatting.
+description: Create, edit, convert and render Word documents with complete tooling.
 author:
   name: Anthropic
   email: support@anthropic.com
@@ -17,7 +16,13 @@ tags:
 translations:
   zh:
     name: Word 文档
-    description: 创建、读取、编辑与转换 Word（.docx）文档，支持修订、批注、图片与专业排版。
+    description: 使用完整工具链生成、编辑、转换与渲染 Word 文档。
   ja:
     name: Word ドキュメント
-    description: Word（.docx）文書の作成・読み取り・編集・変換。変更履歴、コメント、画像、書式設定に対応。
+    description: 必要なツールを備えた Word 文書の作成・編集・変換・描画。
+dependencies:
+  - document-python
+  - document-node
+  - pandoc
+  - libreoffice
+  - poppler

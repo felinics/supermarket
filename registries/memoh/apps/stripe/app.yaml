@@ -1,8 +1,8 @@
 schema_version: "2"
 id: stripe
-version: 1.0.0
+version: 1.1.0
 name: Stripe
-description: Connect Stripe for payments and billing.
+description: Connect Stripe and test payment integrations and webhooks.
 author:
   name: Memoh
 homepage: https://stripe.com
@@ -16,9 +16,11 @@ tags:
   - payments
 translations:
   zh:
-    description: 连接 Stripe，使用支付与账单服务。
+    description: 连接 Stripe，调试支付集成与 webhook。
   ja:
-    description: Stripe に接続して、決済と請求を利用します。
+    description: Stripe に接続し、決済連携と webhook をテストします。
 connectors:
   - type: stripe
     required: true
+dependencies:
+  - stripe-cli

@@ -1,8 +1,8 @@
 schema_version: "2"
 id: github
-version: 1.0.0
+version: 1.1.0
 name: GitHub
-description: Connect GitHub for code hosting and collaboration.
+description: Connect GitHub and work with repositories, pull requests and CI.
 author:
   name: Memoh
 homepage: https://github.com
@@ -16,9 +16,13 @@ tags:
   - developer_tools
 translations:
   zh:
-    description: 连接 GitHub，使用代码托管与协作服务。
+    description: 连接 GitHub，处理代码仓库、PR 评审与 CI。
   ja:
-    description: GitHub に接続して、コードホスティングと共同開発を利用します。
+    description: GitHub に接続し、リポジトリ・PR レビュー・CI を操作します。
 connectors:
   - type: github
     required: true
+dependencies:
+  - github-cli
+  - git
+  - python

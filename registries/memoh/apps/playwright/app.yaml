@@ -1,0 +1,23 @@
+schema_version: "2"
+id: playwright
+version: 1.0.0
+author:
+  name: Memoh
+repository: https://github.com/felinics/supermarket
+license: Apache-2.0
+icon: icon.svg
+tags:
+  - playwright
+  - automation
+name: Browser Testing
+category: automation
+description: Automate browser workflows, capture screenshots and run browser tests.
+dependencies:
+  - playwright
+translations:
+  zh:
+    description: 自动化浏览器操作、截图与端到端测试。
+    name: 浏览器测试
+  ja:
+    description: ブラウザー操作・スクリーンショット・E2E テストを自動化します。
+    name: ブラウザーテスト

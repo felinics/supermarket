@@ -17,7 +17,9 @@
     "registry:client": "bun client/skill-registry-client.ts",
     "registry:api:dev": "bun run build && wrangler dev --config workers/api/wrangler.jsonc --env test",
     "registry:api:deploy:test": "bun run build && wrangler deploy --config workers/api/wrangler.jsonc --env test",
-    "registry:api:deploy:production": "bun run build && wrangler deploy --config workers/api/wrangler.jsonc --env production"
+    "registry:api:deploy:production": "bun run build && wrangler deploy --config workers/api/wrangler.jsonc --env production",
+    "dependencies:generate": "bun scripts/dependencies/generate.ts",
+    "dependencies:smoke": "bun scripts/dependencies/catalog.ts && python3 scripts/dependencies/smoke.py"
   },
   "imports": {
     "#*": "./*.ts"
