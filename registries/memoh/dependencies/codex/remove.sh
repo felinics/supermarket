@@ -1,9 +1,9 @@
 # shellcheck shell=sh
 # Remove every installed version of @openai/codex by deleting the dependency home.
 #
-# The body runs inside the runner's prelude (design §5.3): `set -eu` is
+# The body runs inside the runner's prelude: `set -eu` is
 # already active and dep_log / dep_result are provided; do not redefine them.
-# MEMOH_DEP_HOME is computed by the Server per target (WD-EXEC-001); the lock
+# MEMOH_DEP_HOME is computed by the Server per target; the lock
 # and the result file live outside it, so deleting it is safe.
 
 case "$MEMOH_DEP_HOME" in
