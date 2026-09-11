@@ -1,0 +1,21 @@
+schema_version: "2"
+id: weather
+version: 1.0.0
+name: Weather
+description: Answer current weather and short-range forecast questions for a specific place.
+author:
+  name: Memoh Community
+  email: ""
+homepage: https://github.com/felinics/supermarket
+license: Apache-2.0
+category: lifestyle
+tags:
+  - weather
+  - forecast
+translations:
+  zh:
+    name: 天气
+    description: 回答指定地点的当前天气与短期预报问题。
+  ja:
+    name: 天気
+    description: 指定した場所の現在の天気と短期予報に関する質問に回答します。

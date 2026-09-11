@@ -1,4 +1,7 @@
 import { MAX_TAR_UNCOMPRESSED_BYTES } from '#lib/archive'
+import type { CategoryNames, AppLocale, SnapshotCategory } from './categories'
+
+export type { CategoryNames, AppLocale, SnapshotCategory }
 
 export interface SkillAuthor {
   name: string
@@ -69,20 +72,70 @@ export interface SkillIcon {
   brand_color?: string
 }
 
-export interface PackagePostinstallCommand {
+export interface AppPostinstallCommand {
   command: string
   args: string[]
 }
 
-export interface SkillPackageMetadata {
-  postinstall?: PackagePostinstallCommand[]
+export interface AppTranslation {
+  name?: string
+  description?: string
+}
+
+export type AppTranslations = Partial<Record<AppLocale, AppTranslation>>
+
+/** A App's reference to a Connect-It connector type. */
+export interface AppConnectorReference {
+  type: string
+  required: boolean
+}
+
+/** Parsed `app.yaml` (schema 2) of a reviewed Memoh App. */
+export interface AppManifest {
+  schema_version: '2'
+  id: string
+  version: string
+  name: string
+  description: string
+  author?: SkillAuthor
+  homepage?: string
+  repository?: string
+  license?: string
+  /** Relative icon path inside the App directory. */
+  icon?: string
+  category: string
+  tags: string[]
+  translations?: AppTranslations
+  /** Workspace dependency IDs the App references; the definitions stay in the dependency registry. */
+  dependencies: string[]
+  connectors: AppConnectorReference[]
+  postinstall?: AppPostinstallCommand[]
+}
+
+/**
+ * App-level metadata shared by Snapshot entries and immutable releases.
+ * Imported registries synthesize it from their Skills; the Memoh registry
+ * takes it from `app.yaml`.
+ */
+export interface AppMetadata {
+  version?: string
+  author?: SkillAuthor
+  homepage?: string
+  repository?: string
+  license?: string
+  category: string
+  category_name: string
+  translations?: AppTranslations
+  dependencies: string[]
+  connectors: AppConnectorReference[]
+  postinstall?: AppPostinstallCommand[]
 }
 
 export interface CatalogSkill {
-  schema_version: '1'
+  schema_version: '2'
   registry_id: string
   registry_priority: number
-  package_id: string
+  app_id: string
   skill_id: string
   install_id: string
   name: string
@@ -128,9 +181,9 @@ export interface SnapshotSkill {
   >
 }
 
-export interface SnapshotPackage extends SkillPackageMetadata {
+export interface SnapshotApp extends AppMetadata {
   revision: string
-  package_id: string
+  app_id: string
   name: string
   description: string
   tags: string[]
@@ -138,17 +191,17 @@ export interface SnapshotPackage extends SkillPackageMetadata {
   skills: SnapshotSkill[]
 }
 
-export type SkillPackageReleaseSkill = Omit<CatalogSkill, 'registry_priority' | 'source'>
+export type AppReleaseSkill = Omit<CatalogSkill, 'registry_priority' | 'source'>
 
-export interface SkillPackageRelease extends SkillPackageMetadata {
-  schema_version: '1'
+export interface AppRelease extends AppMetadata {
+  schema_version: '2'
   registry_id: string
-  package_id: string
+  app_id: string
   name: string
   description: string
   tags: string[]
   icon?: SkillIcon
-  skills: SkillPackageReleaseSkill[]
+  skills: AppReleaseSkill[]
 }
 
 export interface SnapshotSource {
@@ -158,18 +211,20 @@ export interface SnapshotSource {
 }
 
 export interface RegistryDiagnostic {
-  package_id?: string
+  app_id?: string
   skill_id?: string
-  code: 'no_skills' | 'package_invalid'
+  code: 'no_skills' | 'app_invalid'
   message: string
 }
 
 export interface SkillRegistrySnapshot {
-  schema_version: '1'
+  schema_version: '2'
   registry_id: string
   registry_priority: number
   source: SnapshotSource
-  packages: SnapshotPackage[]
+  /** Category definitions used by this Snapshot's Apps, with localized names. */
+  categories: SnapshotCategory[]
+  apps: SnapshotApp[]
   diagnostics: RegistryDiagnostic[]
 }
 
@@ -178,7 +233,7 @@ export interface SkillRegistrySnapshot {
  * complete reader-visible view together: its definition and active snapshot.
  */
 export interface SkillRegistryState {
-  schema_version: '1'
+  schema_version: '2'
   definition: SkillRegistryDefinition
   current_snapshot?: string
   current_summary?: SkillRegistryCurrentSummary
@@ -193,9 +248,9 @@ export interface SkillRegistryCurrentSummary {
   source_revision: string
   published_at: string
   skill_count: number
-  package_count: number
+  app_count: number
   category_count: number
-  skipped_package_count: number
+  skipped_app_count: number
 }
 
 export interface SkillRegistrySummary {
@@ -207,9 +262,9 @@ export interface SkillRegistrySummary {
   revision?: string
   published_at?: string
   skill_count: number
-  package_count: number
+  app_count: number
   category_count: number
-  skipped_package_count: number
+  skipped_app_count: number
 }
 
 export interface SkillCategorySummary {
@@ -219,27 +274,44 @@ export interface SkillCategorySummary {
   registries: Array<{ id: string; count: number }>
 }
 
-export interface SkillPackageCategorySummary {
+/** App-level category listing with localized names and per-registry App counts. */
+export interface AppCategorySummary {
+  id: string
+  name: string
+  names: CategoryNames
+  order: number
+  app_count: number
+  registries: Array<{ id: string; count: number }>
+}
+
+export interface AppSkillCategorySummary {
   id: string
   name: string
   skill_count: number
 }
 
-export interface SkillPackageSummary {
-  schema_version: '1'
+export type AppComponent = 'skills' | 'dependencies' | 'connectors'
+
+export interface AppSummary extends AppMetadata {
+  schema_version: '2'
   registry_id: string
   registry_priority: number
-  package_id: string
+  app_id: string
   name: string
   description: string
   tags: string[]
-  categories: SkillPackageCategorySummary[]
+  /** Skill-level categories present in the App. */
+  categories: AppSkillCategorySummary[]
   skill_count: number
+  dependency_count: number
+  connector_count: number
   icon?: SkillIcon
 }
 
-export interface SkillPackageDescriptor extends SkillPackageRelease {
+export interface AppDescriptor extends AppRelease {
   revision: string
-  categories: SkillPackageCategorySummary[]
+  categories: AppSkillCategorySummary[]
   skill_count: number
+  dependency_count: number
+  connector_count: number
 }

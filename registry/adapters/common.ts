@@ -57,37 +57,37 @@ export function hasComponent(value: unknown) {
 
 export async function buildSkillCandidate(input: {
   definition: SkillRegistryDefinition
-  packageID: string
+  appID: string
   skillID: string
   sourcePath: string
   root: string
   allowedRoot: string
-  packageManifest?: Record<string, unknown>
+  appManifest?: Record<string, unknown>
   icon?: SkillIcon
   iconAssets?: Array<{ descriptor: SkillImageAsset; bytes: Uint8Array }>
   sourceCategory?: string
   budget: RegistryBuildBudget
 }): Promise<SkillCandidate> {
   const {
-    definition, packageID, skillID, sourcePath, root, allowedRoot,
-    packageManifest = {}, sourceCategory, icon, iconAssets, budget,
+    definition, appID, skillID, sourcePath, root, allowedRoot,
+    appManifest = {}, sourceCategory, icon, iconAssets, budget,
   } = input
-  budget.addSkill(`${definition.id}/${packageID}/${skillID}`)
+  budget.addSkill(`${definition.id}/${appID}/${skillID}`)
   const files = await readDirectoryFiles(root, allowedRoot, budget)
   const { data, metadata } = parseSkill(files, skillID)
-  const packageAuthor = normalizeAuthor(packageManifest.author)
+  const appAuthor = normalizeAuthor(appManifest.author)
   const category = normalizeSkillCategory(
     String(metadata.category ?? data.category ?? sourceCategory ?? '').trim() || undefined,
   )
   return {
-    package_id: packageID,
+    app_id: appID,
     skill_id: skillID,
-    install_id: skillInstallID(definition.id, packageID, skillID),
+    install_id: skillInstallID(definition.id, appID, skillID),
     name: String(data.name ?? skillID),
     description: String(data.description ?? ''),
-    author: normalizeAuthor(metadata.author, packageAuthor),
-    homepage: metadata.homepage ? String(metadata.homepage) : packageManifest.homepage ? String(packageManifest.homepage) : undefined,
-    tags: uniqueStrings(metadata.tags, data.tags, packageManifest.keywords),
+    author: normalizeAuthor(metadata.author, appAuthor),
+    homepage: metadata.homepage ? String(metadata.homepage) : appManifest.homepage ? String(appManifest.homepage) : undefined,
+    tags: uniqueStrings(metadata.tags, data.tags, appManifest.keywords),
     category: category.id,
     category_name: category.name,
     source_category: category.sourceName,

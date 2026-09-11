@@ -69,7 +69,7 @@ describe('Skill Registry Git sources', () => {
         definition, sourceRoot: source.root, ensurePaths: source.ensurePaths,
       })
       expect(result.skills).toHaveLength(1)
-      expect(result.skills[0]).toMatchObject({ package_id: 'demo', skill_id: 'example' })
+      expect(result.skills[0]).toMatchObject({ app_id: 'demo', skill_id: 'example' })
       expect(await Bun.file(path.join(source.root, 'nested/marketplace.json')).exists()).toBe(false)
       expect(await Bun.file(path.join(source.root, '.gitattributes')).exists()).toBe(false)
       expect(await readFile(path.join(source.root, 'plugins/demo/skills/example/SKILL.md'), 'utf8'))

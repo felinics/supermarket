@@ -4,7 +4,7 @@ import type {
   SkillImageAsset,
   SkillRegistrySnapshot,
   SkillRegistryState,
-  SkillPackageRelease,
+  AppRelease,
 } from '../types'
 import * as z from 'zod/mini'
 import { MAX_SKILL_ARTIFACT_COMPRESSED_BYTES } from '../types'
@@ -15,8 +15,8 @@ import {
   registrySnapshotRevision,
   sameBytes,
   serializeRegistrySnapshot,
-  serializeSkillPackageRelease,
-  skillPackageRevision,
+  serializeAppRelease,
+  appRevision,
 } from '../snapshot'
 import {
   type BlobBackend,
@@ -33,8 +33,8 @@ import {
 } from './validation'
 import { putImmutableObject } from './immutable'
 import { VersionedJSONState } from './versioned-state'
-import { MAX_REGISTRY_PACKAGE_RELEASE_BYTES, MAX_REGISTRY_SNAPSHOT_BYTES } from '../budget'
-import { parsePackagePostinstall } from '../package-manifest'
+import { MAX_REGISTRY_APP_RELEASE_BYTES, MAX_REGISTRY_SNAPSHOT_BYTES } from '../budget'
+import { parseAppPostinstall } from '../app-manifest'
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
@@ -42,13 +42,13 @@ export const MAX_REGISTRY_STATE_BYTES = 256 * 1024
 
 const summaryCountsSchema = z.object({
   skill_count: z.number().check(z.int(), z.minimum(0)),
-  package_count: z.number().check(z.int(), z.minimum(0)),
+  app_count: z.number().check(z.int(), z.minimum(0)),
   category_count: z.number().check(z.int(), z.minimum(0)),
-  skipped_package_count: z.number().check(z.int(), z.minimum(0)),
+  skipped_app_count: z.number().check(z.int(), z.minimum(0)),
 })
 
 function validateState(state: SkillRegistryState, id: string) {
-  if (state.schema_version !== '1' || state.definition?.id !== id) {
+  if (state.schema_version !== '2' || state.definition?.id !== id) {
     throw new Error(`Invalid Registry state: ${id}`)
   }
   if (!state.current_snapshot) {
@@ -136,38 +136,38 @@ export class BlobSkillRegistryStore implements SkillRegistryStore {
     return snapshot
   }
 
-  async putPackageRelease(release: SkillPackageRelease) {
+  async putAppRelease(release: AppRelease) {
     const id = assertRegistryID(release.registry_id, 'registry ID')
-    const packageID = assertRegistryComponentID(release.package_id, 'package ID')
+    const appID = assertRegistryComponentID(release.app_id, 'app ID')
     if (release.postinstall !== undefined) {
-      parsePackagePostinstall(release.postinstall, `Package release ${id}/${packageID}`)
+      parseAppPostinstall(release.postinstall, `App release ${id}/${appID}`)
     }
-    const bytes = serializeSkillPackageRelease(release)
-    if (bytes.length > MAX_REGISTRY_PACKAGE_RELEASE_BYTES) {
-      throw new Error(`Package release exceeds ${MAX_REGISTRY_PACKAGE_RELEASE_BYTES} bytes: ${id}/${packageID}`)
+    const bytes = serializeAppRelease(release)
+    if (bytes.length > MAX_REGISTRY_APP_RELEASE_BYTES) {
+      throw new Error(`App release exceeds ${MAX_REGISTRY_APP_RELEASE_BYTES} bytes: ${id}/${appID}`)
     }
-    const revision = assertDigest(skillPackageRevision(release))
-    const key = `skill-registries/${id}/packages/${packageID}/${revision}.json`
-    return { revision, stored: await putImmutableObject(this.backend, key, bytes, 'Package release') }
+    const revision = assertDigest(appRevision(release))
+    const key = `skill-registries/${id}/apps/${appID}/${revision}.json`
+    return { revision, stored: await putImmutableObject(this.backend, key, bytes, 'App release') }
   }
 
-  async getPackageRelease(registryID: string, packageID: string, revision: string) {
+  async getAppRelease(registryID: string, appID: string, revision: string) {
     const id = assertRegistryID(registryID, 'registry ID')
-    const normalizedPackageID = assertRegistryComponentID(packageID, 'package ID')
+    const normalizedAppID = assertRegistryComponentID(appID, 'app ID')
     const digest = assertDigest(revision)
-    const key = `skill-registries/${id}/packages/${normalizedPackageID}/${digest}.json`
+    const key = `skill-registries/${id}/apps/${normalizedAppID}/${digest}.json`
     const bytes = await this.backend.get(key)
     if (!bytes) return null
-    if (bytes.length > MAX_REGISTRY_PACKAGE_RELEASE_BYTES) {
-      throw new Error(`Stored Package release exceeds ${MAX_REGISTRY_PACKAGE_RELEASE_BYTES} bytes: ${key}`)
+    if (bytes.length > MAX_REGISTRY_APP_RELEASE_BYTES) {
+      throw new Error(`Stored App release exceeds ${MAX_REGISTRY_APP_RELEASE_BYTES} bytes: ${key}`)
     }
-    const release = JSON.parse(decoder.decode(bytes)) as SkillPackageRelease
-    if (release.schema_version !== '1' || release.registry_id !== id || release.package_id !== normalizedPackageID
-      || skillPackageRevision(release) !== digest || !sameBytes(bytes, serializeSkillPackageRelease(release))) {
-      throw new Error(`Invalid stored Package release: ${key}`)
+    const release = JSON.parse(decoder.decode(bytes)) as AppRelease
+    if (release.schema_version !== '2' || release.registry_id !== id || release.app_id !== normalizedAppID
+      || appRevision(release) !== digest || !sameBytes(bytes, serializeAppRelease(release))) {
+      throw new Error(`Invalid stored App release: ${key}`)
     }
     if (release.postinstall !== undefined) {
-      parsePackagePostinstall(release.postinstall, `Stored Package release ${id}/${normalizedPackageID}`)
+      parseAppPostinstall(release.postinstall, `Stored App release ${id}/${normalizedAppID}`)
     }
     return release
   }
@@ -192,7 +192,7 @@ export class BlobSkillRegistryStore implements SkillRegistryStore {
     const publishedAt = options.publishedAt ?? new Date().toISOString()
     if (!Number.isFinite(Date.parse(publishedAt))) throw new Error(`Invalid Snapshot publication time: ${publishedAt}`)
     await this.putState({
-      schema_version: '1',
+      schema_version: '2',
       definition,
       current_snapshot: revision,
       current_summary: summarizeCurrentSnapshot(snapshot, revision, publishedAt),

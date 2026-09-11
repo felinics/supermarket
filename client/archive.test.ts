@@ -128,7 +128,7 @@ describe('Skill Registry client archives', () => {
   })
 
   test('serializes concurrent installs for the same identity', async () => {
-    const installID = 'registry+package+skill'
+    const installID = 'registry+app+skill'
     const files = await parseTarArchive(await createTar({
       'SKILL.md': new TextEncoder().encode('---\nname: skill\n---\n'),
     }, ''))

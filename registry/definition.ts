@@ -53,10 +53,10 @@ export function isRegistryComponentID(value: string): boolean {
   }
 }
 
-export function skillInstallID(registryID: string, packageID: string, skillID: string): string {
+export function skillInstallID(registryID: string, appID: string, skillID: string): string {
   return [
     assertRegistryID(registryID, 'registry ID'),
-    assertRegistryComponentID(packageID, 'package ID'),
+    assertRegistryComponentID(appID, 'app ID'),
     assertRegistryComponentID(skillID, 'skill ID'),
   ].join('+')
 }

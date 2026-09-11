@@ -134,11 +134,20 @@ id: memoh
 name: Memoh
 enabled: true
 priority: 100
-adapter: {type: skill_directory}
-source: {type: local, path: skills}
+adapter: {type: memoh}
+source: {type: local, path: apps}
 `)
-    const skillDir = path.join(registryDir, 'skills/demo')
+    const appDir = path.join(registryDir, 'apps/demo')
+    const skillDir = path.join(appDir, 'skills/demo')
     await mkdir(skillDir, { recursive: true })
+    await writeFile(path.join(appDir, 'app.yaml'), `schema_version: "2"
+id: demo
+version: 1.0.0
+name: Demo
+description: A synthetic example.
+category: other
+dependencies: [demo]
+`)
     await writeFile(path.join(skillDir, 'SKILL.md'), '---\nname: Demo\ndescription: A synthetic example.\n---\n\nExample\n')
     const definition = (await loadSkillRegistryDefinitions(root))[0]!
     const skillCandidate = await buildSkillRegistryCandidate(definition, root)

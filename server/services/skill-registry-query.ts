@@ -1,7 +1,7 @@
 import { HTTPError } from 'nitro'
 import * as z from 'zod/mini'
 import type { SkillCatalogSearchOptions } from '#registry/catalog'
-import type { SkillPackageSearchOptions } from '#registry/packages'
+import type { AppSearchOptions } from '#registry/apps'
 import { assertIdentifier, assertRegistryComponentID, assertRegistryID } from '#registry/definition'
 import { positiveIntegerQuery, scalarQuery } from './query'
 
@@ -35,15 +35,15 @@ export function requireRegistryID(value: string) {
 
 export function parseSkillRegistryQuery(query: Record<string, unknown>, registry?: string): SkillCatalogSearchOptions {
   const registryValue = registry ?? scalarQuery(query, 'registry')
-  const packageValue = scalarQuery(query, 'package')
+  const appValue = scalarQuery(query, 'app')
   const category = scalarQuery(query, 'category')
   const sortValue = scalarQuery(query, 'sort')
-  const sort = z.optional(z.enum(['relevance', 'name', 'registry', 'package']))
+  const sort = z.optional(z.enum(['relevance', 'name', 'registry', 'app']))
   if (!sort.safeParse(sortValue).success) badRequest(`Unsupported sort: ${sortValue}`)
   return {
     registry: registryValue != null ? requireRegistryID(registryValue) : undefined,
     q: scalarQuery(query, 'q'),
-    package: packageValue != null ? requireRegistryComponentID(packageValue, 'package ID') : undefined,
+    app: appValue != null ? requireRegistryComponentID(appValue, 'app ID') : undefined,
     category: category != null ? requireIdentifier(category.toLowerCase(), 'category ID') : undefined,
     tag: scalarQuery(query, 'tag'),
     page: positiveIntegerQuery(scalarQuery(query, 'page'), 'page'),
@@ -52,19 +52,23 @@ export function parseSkillRegistryQuery(query: Record<string, unknown>, registry
   }
 }
 
-export function parseSkillPackageQuery(query: Record<string, unknown>, registry?: string): SkillPackageSearchOptions {
+export function parseAppQuery(query: Record<string, unknown>, registry?: string): AppSearchOptions {
   const registryValue = registry ?? scalarQuery(query, 'registry')
   const category = scalarQuery(query, 'category')
   const sortValue = scalarQuery(query, 'sort')
+  const componentValue = scalarQuery(query, 'component')
   const sort = z.optional(z.enum(['relevance', 'name', 'registry']))
   if (!sort.safeParse(sortValue).success) badRequest(`Unsupported sort: ${sortValue}`)
+  const component = z.optional(z.enum(['skills', 'dependencies', 'connectors']))
+  if (!component.safeParse(componentValue).success) badRequest(`Unsupported component: ${componentValue}`)
   return {
     registry: registryValue != null ? requireRegistryID(registryValue) : undefined,
     q: scalarQuery(query, 'q'),
     category: category != null ? requireIdentifier(category.toLowerCase(), 'category ID') : undefined,
     tag: scalarQuery(query, 'tag'),
+    component: componentValue as AppSearchOptions['component'],
     page: positiveIntegerQuery(scalarQuery(query, 'page'), 'page'),
     limit: positiveIntegerQuery(scalarQuery(query, 'limit'), 'limit', 100),
-    sort: sortValue as SkillPackageSearchOptions['sort'],
+    sort: sortValue as AppSearchOptions['sort'],
   }
 }

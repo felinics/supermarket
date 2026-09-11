@@ -1,0 +1,23 @@
+schema_version: "2"
+id: pptx
+version: 1.0.0
+name: PowerPoint Presentations
+description: Create, read, edit and combine PowerPoint (.pptx) decks, templates, layouts, notes and comments.
+author:
+  name: Anthropic
+  email: support@anthropic.com
+homepage: https://github.com/anthropics/skills
+license: Proprietary, see LICENSE.txt
+category: documents
+tags:
+  - pptx
+  - powerpoint
+  - slides
+  - presentations
+translations:
+  zh:
+    name: PowerPoint 演示文稿
+    description: 创建、读取、编辑与合并 PowerPoint（.pptx）幻灯片、模板、版式、备注与批注。
+  ja:
+    name: PowerPoint プレゼンテーション
+    description: PowerPoint（.pptx）スライド、テンプレート、レイアウト、ノート、コメントの作成・読み取り・編集・結合。

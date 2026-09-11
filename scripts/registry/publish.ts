@@ -50,7 +50,7 @@ export function createSkillRegistryProgressRenderer(
         line(`${progress.registry}: packaging ${progress.skills} Skills (${progress.diagnostics} diagnostics)`)
         break
       case 'skill': {
-        const text = `${progress.registry}: [${progress.index}/${progress.total}] ${progress.package_id}/${progress.skill_id}${progress.uploaded ? ' (uploaded)' : ''}`
+        const text = `${progress.registry}: [${progress.index}/${progress.total}] ${progress.app_id}/${progress.skill_id}${progress.uploaded ? ' (uploaded)' : ''}`
         if (interactive) {
           write(`\r\u001B[2K${text}`)
           openLine = progress.index !== progress.total

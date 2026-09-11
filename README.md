@@ -7,10 +7,16 @@ Official Skill and workspace dependency registry for [Memoh](https://github.com/
 ```text
 supermarket/
 ├── registries/
+│   ├── categories.yaml              # Shared App categories (en/zh/ja)
 │   ├── memoh/
 │   │   ├── registry.yaml
 │   │   ├── release.lock.json
-│   │   └── packages/<package-id>/skills/<skill-id>/
+│   │   ├── dependencies.lock.json
+│   │   ├── dependencies/<dependency-id>/
+│   │   └── apps/<app-id>/
+│   │       ├── app.yaml         # Required App manifest (schema 2)
+│   │       ├── icon.svg             # Optional
+│   │       └── skills/<skill-id>/   # Optional
 │   └── openai/
 │       ├── registry.yaml
 │       └── release.lock.json
@@ -20,7 +26,9 @@ supermarket/
 └── client/                          # Reference client
 ```
 
-Supermarket stores published Registry releases in a local data directory during development and in R2 for hosted environments. Its API provides Registry, Package, Skill, and Artifact access for Memoh clients.
+Supermarket stores published Registry releases in a local data directory during development and in R2 for hosted environments. Its API provides Registry, App, Skill, and Artifact access for Memoh clients.
+
+A App is the unit Memoh users browse and install. It bundles Skills and may reference workspace dependencies and Connect-It connector types; the dependency definitions themselves stay in `registries/memoh/dependencies/` and keep their own releases.
 
 ## Development
 
@@ -63,26 +71,55 @@ Base URL: `https://supermarket.memoh.ai`
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/packages` | Search Skill Packages. Query: `q`, `registry`, `category`, `tag`, `page`, `limit`, `sort` |
-| GET | `/api/skills` | Search enabled Registry Skills. Query: `q`, `registry`, `package`, `category`, `tag`, `page`, `limit`, `sort` |
+| GET | `/api/apps` | Search Apps. Query: `q`, `registry`, `category`, `tag`, `component` (`skills`, `dependencies`, `connectors`), `page`, `limit`, `sort` |
+| GET | `/api/categories` | List App categories with localized names and per-registry counts. Query: `registry` |
+| GET | `/api/skills` | Search enabled Registry Skills. Query: `q`, `registry`, `app`, `category`, `tag`, `page`, `limit`, `sort` |
 | GET | `/api/registries` | List Registries and current counts |
 | GET | `/api/registries/:registryId` | Get the approved Registry definition, source revision, and diagnostics |
-| GET | `/api/registries/:registryId/categories` | List categories in one Registry |
-| GET | `/api/registries/:registryId/packages` | Search Packages in one Registry |
-| GET | `/api/registries/:registryId/packages/:packageId` | Get the current Package descriptor |
-| GET | `/api/registries/:registryId/packages/:packageId/releases/:revision` | Get an immutable Package descriptor |
+| GET | `/api/registries/:registryId/apps` | Search Apps in one Registry |
+| GET | `/api/registries/:registryId/apps/:appId` | Get the current App descriptor |
+| GET | `/api/registries/:registryId/apps/:appId/releases/:revision` | Get an immutable App descriptor |
 | GET | `/api/registries/:registryId/skills` | Search Skills in one Registry |
-| GET | `/api/registries/:registryId/packages/:packageId/skills/:skillId` | Get one Registry Skill |
+| GET | `/api/registries/:registryId/apps/:appId/skills/:skillId` | Get one Registry Skill |
 | GET | `/api/artifacts/skill/:digest` | Download a Skill archive |
 | GET | `/api/artifacts/icon/:digest` | Download a Skill icon |
 
-Skills use `(registry_id, package_id, skill_id)` identities.
+Skills use `(registry_id, app_id, skill_id)` identities.
 
 ## Contributing
 
-### Adding a Skill
+### Adding a App
 
-1. Create `registries/memoh/packages/<package-id>/skills/<skill-id>/SKILL.md` with YAML frontmatter. For an independent Skill, use the Skill ID as both the package and Skill ID:
+1. Create `registries/memoh/apps/<app-id>/app.yaml`. Every reviewed App needs one; `id` must match the directory, `version` is a semantic version shown to users, and `category` must be an ID from `registries/categories.yaml`:
+
+```yaml
+schema_version: "2"
+id: my-app
+version: 1.0.0
+name: My App
+description: What this App provides and when to install it.
+author: { name: Your Name, email: you@example.com }
+homepage: https://example.com
+repository: https://github.com/example/my-app
+license: Apache-2.0
+icon: icon.svg                  # optional, SVG/PNG/JPEG/WebP under 512 KiB
+category: productivity
+tags: [example]
+translations:
+  zh: { name: 我的扩展包, description: 中文描述 }
+  ja: { name: マイパッケージ, description: 日本語の説明 }
+dependencies: [node]            # optional, IDs from registries/memoh/dependencies/
+connectors:                     # optional, Connect-It connector types
+  - github
+  - { type: notion, required: false }
+postinstall:                    # optional
+  - command: npm
+    args: [install, --global, opencli]
+```
+
+A App must contain at least one Skill, dependency reference or connector reference. App revisions cover the manifest, references and Skills; dependency definitions keep their own revisions, so a App never pins one. Every dependency also needs a canonical App with the same ID that references it (see `registries/memoh/apps/node/`).
+
+2. Add Skills under `registries/memoh/apps/<app-id>/skills/<skill-id>/SKILL.md` with YAML frontmatter. For an independent Skill, use the Skill ID as both the app and Skill ID:
 
 ```markdown
 ---
@@ -102,16 +139,7 @@ metadata:
 Instructions and documentation go here.
 ```
 
-A Package that needs a system dependency may add `registries/memoh/packages/<package-id>/package.yaml`:
-
-```yaml
-schema_version: "1"
-postinstall:
-  - command: npm
-    args: [install, --global, opencli]
-```
-
-2. Regenerate the approved Snapshot lock, then validate and publish it locally:
+3. Regenerate the approved Snapshot lock, then validate and publish it locally:
 
 ```bash
 bun run registry:lock -- --registry memoh
@@ -189,7 +217,7 @@ scripts, and an optional icon. The manifest includes platform support, commands,
 prerequisites, timeouts and English/Chinese/Japanese display metadata.
 
 Dependencies have their own immutable releases and snapshot pointer; publishing
-them does not change Skill Package releases. `dependencies.lock.json` records the
+them does not change Skill App releases. `dependencies.lock.json` records the
 reviewed dependency snapshot. Existing registry commands publish both resource
 kinds by default; `--kind` selects an independent workflow:
 
@@ -256,3 +284,18 @@ bun scripts/registry/export-dependency-fixtures.ts --destination <consumer-testd
 ```
 
 The fixtures are test data; Memoh does not embed the official catalog in its Server.
+
+## App protocol cutover
+
+This change ships together with [Memoh #1197](https://github.com/felinics/Memoh/pull/1197).
+Use Bun 1.3.14 to regenerate and validate release locks. Reviewed manifests use
+`app.yaml` (schema 2) under `registries/memoh/apps/`. Application routes and payloads
+use `apps`, `app_id`, and `app_count`; there are no Package compatibility aliases.
+App releases, catalog Skills, snapshots, and registry state use schema 2. Registry
+definitions, categories, dependency documents, and Skill archive formats are unchanged.
+
+Prepare a fresh local data directory or R2 bucket, publish both registries and the
+independent dependency registry, then switch the registry and Memoh together. Old
+state and snapshots cannot be consumed by the new reader. Preserve the old data
+source for rollback; never overwrite immutable releases at their old revisions.
+Upstream Skill/plugin source formats are translated by adapters and remain unchanged.

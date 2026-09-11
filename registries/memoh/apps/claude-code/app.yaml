@@ -1,0 +1,24 @@
+schema_version: "2"
+id: claude-code
+version: 1.0.0
+name: Claude Code
+description: Anthropic Claude Code CLI.
+author:
+  name: Memoh
+  email: hello@memoh.ai
+homepage: https://docs.anthropic.com/en/docs/claude-code
+repository: https://github.com/felinics/supermarket
+license: Apache-2.0
+icon: icon.svg
+category: agent
+tags:
+  - agent
+  - claude
+  - claude-code
+translations:
+  zh:
+    description: Anthropic Claude Code 命令行
+  ja:
+    description: Anthropic Claude Code コマンドライン
+dependencies:
+  - claude-code

@@ -1,0 +1,52 @@
+# Shared Package category table. Reviewed registries must use these IDs;
+# imported registries are mapped through `aliases` and fall back to `other`.
+schema_version: "1"
+categories:
+  - id: agent
+    name: { en: Agents, zh: 智能体, ja: エージェント }
+    aliases: [Agent, Agents]
+    order: 10
+  - id: runtime
+    name: { en: Runtimes, zh: 运行时, ja: ランタイム }
+    aliases: [Runtime, Runtimes]
+    order: 20
+  - id: tool
+    name: { en: Tools, zh: 工具, ja: ツール }
+    aliases: [Tool, Tools]
+    order: 30
+  - id: developer-tools
+    name: { en: Developer Tools, zh: 开发工具, ja: 開発ツール }
+    aliases: [Developer Tools, devtools, Development]
+    order: 40
+  - id: documents
+    name: { en: Documents, zh: 文档处理, ja: ドキュメント }
+    aliases: [Document, Documents, Office]
+    order: 50
+  - id: productivity
+    name: { en: Productivity, zh: 效率, ja: 生産性 }
+    aliases: [Productivity]
+    order: 60
+  - id: automation
+    name: { en: Automation, zh: 自动化, ja: 自動化 }
+    aliases: [Automation]
+    order: 70
+  - id: data-analytics
+    name: { en: Data & Analytics, zh: 数据与分析, ja: データ分析 }
+    aliases: [Data & Analytics, Data, Analytics]
+    order: 80
+  - id: education-research
+    name: { en: Education & Research, zh: 教育与研究, ja: 教育・研究 }
+    aliases: [Education & Research, Education, Research, Scientific Research]
+    order: 90
+  - id: creativity
+    name: { en: Creativity, zh: 创意, ja: クリエイティブ }
+    aliases: [Creativity, Creative, Design]
+    order: 100
+  - id: lifestyle
+    name: { en: Lifestyle, zh: 生活, ja: ライフスタイル }
+    aliases: [Lifestyle, Life]
+    order: 110
+  - id: other
+    name: { en: Other, zh: 其他, ja: その他 }
+    aliases: [Misc, Miscellaneous]
+    order: 1000

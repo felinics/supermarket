@@ -53,12 +53,12 @@ describe('SkillRegistryPublisher', () => {
     const first = await publisher.publish(definition, lock)
     expect(first).toMatchObject({ registry: 'memoh', skills: 1 })
     expect(events.map((event) => event.type)).toEqual([
-      'source', 'source_ready', 'scanned', 'skill', 'publishing',
+      'source', 'source_ready', 'scanned', 'skill', 'app', 'publishing',
     ])
     const firstState = await store.getState('memoh')
     const firstSnapshot = await store.getSnapshot('memoh', firstState!.current_snapshot!)
-    expect(firstSnapshot!.packages[0]!.skills[0]!.artifact.size).toBeGreaterThan(0)
-    const artifact = await store.getArtifact(firstSnapshot!.packages[0]!.skills[0]!.artifact.digest)
+    expect(firstSnapshot!.apps[0]!.skills[0]!.artifact.size).toBeGreaterThan(0)
+    const artifact = await store.getArtifact(firstSnapshot!.apps[0]!.skills[0]!.artifact.digest)
     expect((await parseGzipTarArchive(artifact!.bytes)).has('SKILL.md')).toBe(true)
 
     expect(await publisher.publish(definition, lock)).toMatchObject({
@@ -146,7 +146,7 @@ describe('SkillRegistryPublisher', () => {
     expect(await readdir(dataRoot)).toEqual([])
   })
 
-  test('rejects a Registry build that produces zero skills', async () => {
+  test('rejects a Registry build that produces zero apps', async () => {
     const projectRoot = await mkdtemp(path.join(os.tmpdir(), 'registry-empty-project-'))
     const dataRoot = await mkdtemp(path.join(os.tmpdir(), 'registry-empty-data-'))
     roots.push(projectRoot, dataRoot)
@@ -155,7 +155,7 @@ describe('SkillRegistryPublisher', () => {
     const publisher = new SkillRegistryPublisher(store, projectRoot)
     await expect(publisher.publish(definition, {
       snapshot_revision: '0'.repeat(64),
-    })).rejects.toThrow('produced zero skills')
+    })).rejects.toThrow('produced zero apps')
     expect(await store.getState('memoh')).toBeNull()
   })
 })

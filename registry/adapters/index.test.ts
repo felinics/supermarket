@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { MAX_SKILL_IMAGE_BYTES, type SkillRegistryAdapter, type SkillRegistryDefinition } from '../types'
 import { readDirectoryFiles, readFileBounded } from '../filesystem'
-import { parsePackagePostinstall } from '../package-manifest'
+import { parseAppPostinstall } from '../app-manifest'
 import { buildSkillCandidates } from './index'
 import { detectSkillImageContentType } from './codex-marketplace'
 
@@ -16,6 +16,22 @@ async function writeSkill(root: string, relativePath: string, name: string, extr
   await mkdir(directory, { recursive: true })
   await writeFile(path.join(directory, 'SKILL.md'), `---\nname: ${name}\ndescription: ${name} description\nmetadata:\n  tags: [test]\n---\n\n# ${name}\n`)
   if (extra) await writeFile(path.join(directory, 'reference.md'), extra)
+}
+
+async function writeAppManifest(
+  root: string,
+  id: string,
+  extra = '',
+  options: { manifestID?: string; category?: string } = {},
+) {
+  await mkdir(path.join(root, id), { recursive: true })
+  await writeFile(path.join(root, id, 'app.yaml'), `schema_version: "2"
+id: ${options.manifestID ?? id}
+version: 1.2.0
+name: ${id}
+description: ${id} app
+category: ${options.category ?? 'other'}
+${extra}`)
 }
 
 function definition(adapterType: SkillRegistryAdapter['type']): SkillRegistryDefinition {
@@ -40,73 +56,111 @@ describe('Skill Registry adapters', () => {
     expect(result.diagnostics).toEqual([])
     expect(result.skills).toHaveLength(1)
     expect(result.skills[0]).toMatchObject({
-      package_id: 'alpha', skill_id: 'alpha', install_id: 'example+alpha+alpha',
+      app_id: 'alpha', skill_id: 'alpha', install_id: 'example+alpha+alpha',
       name: 'Alpha', description: 'Alpha description', tags: ['test'],
     })
     expect(Object.keys(result.skills[0]!.files).sort()).toEqual(['SKILL.md', 'reference.md', 'run.sh'])
     expect(result.skills[0]!.files['run.sh']?.mode).toBe(0o755)
   })
 
-  test('imports namespaced skills from package directories', async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), 'package-skills-'))
+  test('imports namespaced skills from app directories', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'app-skills-'))
     roots.push(root)
     await writeSkill(root, 'notion/skills/search', 'Search')
     await writeSkill(root, 'notion/skills/write', 'Write')
     await writeSkill(root, 'github/skills/review', 'Review')
-    await writeFile(path.join(root, 'notion/package.yaml'), `schema_version: "1"
-postinstall:
+    await writeAppManifest(root, 'notion', `postinstall:
   - command: npm
     args: [install, --global, opencli]
+tags: [notion, docs]
+translations:
+  zh: { name: Notion 工具, description: 搜索与写入 Notion }
 `)
+    await writeAppManifest(root, 'github', '', { category: 'developer-tools' })
 
     const result = await buildSkillCandidates({
       definition: definition('memoh'), sourceRoot: root,
     })
 
     expect(result.diagnostics).toEqual([])
-    expect(result.packageMetadata.get('notion')).toEqual({
+    expect(result.apps.get('notion')).toMatchObject({
+      app_id: 'notion', reviewed: true, version: '1.2.0', name: 'notion', category: 'other',
+      tags: ['notion', 'docs'], dependencies: [], connectors: [],
+      translations: { zh: { name: 'Notion 工具', description: '搜索与写入 Notion' } },
       postinstall: [{ command: 'npm', args: ['install', '--global', 'opencli'] }],
     })
-    expect(result.packageMetadata.has('github')).toBe(false)
+    expect(result.apps.get('github')).toMatchObject({ category: 'developer-tools' })
+    expect(result.apps.get('github')!.postinstall).toBeUndefined()
     expect(result.skills.map((skill) => ({
-      package_id: skill.package_id,
+      app_id: skill.app_id,
       skill_id: skill.skill_id,
       install_id: skill.install_id,
       source_path: skill.source_path,
+      source_category: skill.source_category,
+      tags: skill.tags,
     }))).toEqual([
       {
-        package_id: 'github', skill_id: 'review', install_id: 'example+github+review',
-        source_path: 'github/skills/review',
+        app_id: 'github', skill_id: 'review', install_id: 'example+github+review',
+        source_path: 'github/skills/review', source_category: 'developer-tools', tags: ['test'],
       },
       {
-        package_id: 'notion', skill_id: 'search', install_id: 'example+notion+search',
-        source_path: 'notion/skills/search',
+        app_id: 'notion', skill_id: 'search', install_id: 'example+notion+search',
+        source_path: 'notion/skills/search', source_category: 'other', tags: ['test', 'notion', 'docs'],
       },
       {
-        package_id: 'notion', skill_id: 'write', install_id: 'example+notion+write',
-        source_path: 'notion/skills/write',
+        app_id: 'notion', skill_id: 'write', install_id: 'example+notion+write',
+        source_path: 'notion/skills/write', source_category: 'other', tags: ['test', 'notion', 'docs'],
       },
     ])
   })
 
-  test('rejects malformed package directories', async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), 'invalid-package-skills-'))
+  test('imports Apps that only reference dependencies and connectors', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'app-references-'))
+    roots.push(root)
+    await mkdir(path.join(root, 'codex'), { recursive: true })
+    await writeFile(path.join(root, 'codex/icon.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>')
+    await writeAppManifest(root, 'codex', `icon: icon.svg
+dependencies: [codex]
+connectors:
+  - github
+  - { type: notion, required: false }
+`)
+    const result = await buildSkillCandidates({ definition: definition('memoh'), sourceRoot: root })
+    expect(result.skills).toEqual([])
+    expect(result.apps.get('codex')).toMatchObject({
+      dependencies: ['codex'],
+      connectors: [{ type: 'github', required: true }, { type: 'notion', required: false }],
+      icon: { card: { content_type: 'image/svg+xml' }, detail: { content_type: 'image/svg+xml' } },
+    })
+    expect(result.apps.get('codex')!.icon_assets).toHaveLength(1)
+  })
+
+  test('rejects malformed app directories', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'invalid-app-skills-'))
     roots.push(root)
     await mkdir(path.join(root, 'empty/skills'), { recursive: true })
 
     await expect(buildSkillCandidates({
       definition: definition('memoh'), sourceRoot: root,
-    })).rejects.toThrow('package contains no skills')
+    })).rejects.toThrow('app.yaml is required')
+
+    await writeAppManifest(root, 'empty')
+    await expect(buildSkillCandidates({
+      definition: definition('memoh'), sourceRoot: root,
+    })).rejects.toThrow('declares no skills, dependencies or connectors')
+
+    await writeAppManifest(root, 'empty', 'dependencies: [node]\n', { manifestID: 'mismatch' })
+    await expect(buildSkillCandidates({
+      definition: definition('memoh'), sourceRoot: root,
+    })).rejects.toThrow('id must match the app directory')
   })
 
-  test('rejects unsafe or unsupported Memoh Package manifests', async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), 'invalid-package-manifest-'))
+  test('rejects unsafe or unsupported Memoh App manifests', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'invalid-app-manifest-'))
     roots.push(root)
     await writeSkill(root, 'tools/skills/tools', 'Tools')
-    const manifest = path.join(root, 'tools/package.yaml')
 
-    await writeFile(manifest, `schema_version: "1"
-postinstall:
+    await writeAppManifest(root, 'tools', `postinstall:
   - command: sh
     args: [-c, echo unsafe]
 `)
@@ -114,8 +168,7 @@ postinstall:
       definition: definition('memoh'), sourceRoot: root,
     })).rejects.toThrow('supported executable name')
 
-    await writeFile(manifest, `schema_version: "1"
-postinstall:
+    await writeAppManifest(root, 'tools', `postinstall:
   - command: npm
     args: [install, opencli]
     shell: true
@@ -124,57 +177,76 @@ postinstall:
       definition: definition('memoh'), sourceRoot: root,
     })).rejects.toThrow('unsupported field shell')
 
-    expect(() => parsePackagePostinstall([
+    await writeFile(path.join(root, 'tools/app.yaml'), `schema_version: "1"
+postinstall:
+  - command: npm
+    args: [install, opencli]
+`)
+    await expect(buildSkillCandidates({
+      definition: definition('memoh'), sourceRoot: root,
+    })).rejects.toThrow('unsupported schema_version 1')
+
+    await writeAppManifest(root, 'tools', 'homepage: ftp://example.test\n')
+    await expect(buildSkillCandidates({
+      definition: definition('memoh'), sourceRoot: root,
+    })).rejects.toThrow('homepage')
+
+    await writeAppManifest(root, 'tools', 'connectors: [github, github]\n')
+    await expect(buildSkillCandidates({
+      definition: definition('memoh'), sourceRoot: root,
+    })).rejects.toThrow('duplicate connector types')
+
+    expect(() => parseAppPostinstall([
       { command: 'npm', args: ['\uD800'] },
     ], 'postinstall')).toThrow('unpaired UTF-16 surrogate')
   })
 
-  test('rejects Memoh Package manifests that escape through symlinks', async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), 'package-manifest-symlink-source-'))
-    const outside = await mkdtemp(path.join(os.tmpdir(), 'package-manifest-symlink-outside-'))
+  test('rejects Memoh App manifests that escape through symlinks', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'app-manifest-symlink-source-'))
+    const outside = await mkdtemp(path.join(os.tmpdir(), 'app-manifest-symlink-outside-'))
     roots.push(root, outside)
     await writeSkill(root, 'tools/skills/tools', 'Tools')
-    await writeFile(path.join(outside, 'package.yaml'), 'schema_version: "1"\n')
-    await symlink(path.join(outside, 'package.yaml'), path.join(root, 'tools/package.yaml'))
+    await writeFile(path.join(outside, 'app.yaml'), 'schema_version: "2"\n')
+    await symlink(path.join(outside, 'app.yaml'), path.join(root, 'tools/app.yaml'))
 
     await expect(buildSkillCandidates({
       definition: definition('memoh'), sourceRoot: root,
     })).rejects.toThrow('escapes source through a symlink')
   })
 
-  test('imports pure Skill Packages and rejects mixed Codex Packages', async () => {
+  test('imports pure Skill Apps and rejects mixed Codex Apps', async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), 'codex-skills-'))
     roots.push(root)
-    await mkdir(path.join(root, 'packages/usable/.codex-plugin'), { recursive: true })
-    await mkdir(path.join(root, 'packages/blocked/.codex-plugin'), { recursive: true })
+    await mkdir(path.join(root, 'apps/usable/.codex-plugin'), { recursive: true })
+    await mkdir(path.join(root, 'apps/blocked/.codex-plugin'), { recursive: true })
     await writeFile(path.join(root, 'marketplace.json'), JSON.stringify({ plugins: [
-      { name: 'usable', category: 'Developer Tools', source: { source: 'local', path: 'packages/usable' } },
-      { name: 'blocked', source: { source: 'local', path: 'packages/blocked' } },
+      { name: 'usable', category: 'Developer Tools', source: { source: 'local', path: 'apps/usable' } },
+      { name: 'blocked', source: { source: 'local', path: 'apps/blocked' } },
     ] }))
-    await writeFile(path.join(root, 'packages/usable/.codex-plugin/plugin.json'), JSON.stringify({
+    await writeFile(path.join(root, 'apps/usable/.codex-plugin/plugin.json'), JSON.stringify({
       name: 'usable', author: { name: 'OpenAI' }, keywords: ['codex'], skills: './skills',
       interface: {
         composerIcon: './assets/icon.svg', logo: './assets/logo.png', brandColor: '#0b7285',
       },
     }))
-    await mkdir(path.join(root, 'packages/usable/assets'), { recursive: true })
-    await writeFile(path.join(root, 'packages/usable/assets/icon.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>')
-    await writeFile(path.join(root, 'packages/usable/assets/logo.png'), new Uint8Array([
+    await mkdir(path.join(root, 'apps/usable/assets'), { recursive: true })
+    await writeFile(path.join(root, 'apps/usable/assets/icon.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>')
+    await writeFile(path.join(root, 'apps/usable/assets/logo.png'), new Uint8Array([
       0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
     ]))
-    await writeFile(path.join(root, 'packages/blocked/.codex-plugin/plugin.json'), JSON.stringify({
+    await writeFile(path.join(root, 'apps/blocked/.codex-plugin/plugin.json'), JSON.stringify({
       name: 'blocked', skills: './skills', apps: ['./app'],
       mcpServers: { example: { url: 'https://example.test' } }, hooks: { sessionStart: ['./hook'] },
     }))
-    await writeSkill(root, 'packages/usable/skills/demo', 'Demo')
-    await writeSkill(root, 'packages/blocked/skills/blocked', 'Blocked')
+    await writeSkill(root, 'apps/usable/skills/demo', 'Demo')
+    await writeSkill(root, 'apps/blocked/skills/blocked', 'Blocked')
 
     const result = await buildSkillCandidates({
       definition: definition('codex_marketplace_skills'), sourceRoot: root,
     })
     expect(result.skills).toHaveLength(1)
     expect(result.skills[0]).toMatchObject({
-      package_id: 'usable', skill_id: 'demo', category: 'developer-tools',
+      app_id: 'usable', skill_id: 'demo', category: 'developer-tools',
       author: { name: 'OpenAI', email: '' }, tags: ['test', 'codex'],
       icon: {
         card: { content_type: 'image/svg+xml' }, detail: { content_type: 'image/png' }, brand_color: '#0B7285',
@@ -182,13 +254,13 @@ postinstall:
     })
     expect(result.skills[0]!.icon_assets).toHaveLength(2)
     expect(result.diagnostics).toEqual([{
-      package_id: 'blocked',
-      code: 'package_invalid',
-      message: 'Skipped package: declares unsupported components alongside Skills: apps, mcpServers, hooks',
+      app_id: 'blocked',
+      code: 'app_invalid',
+      message: 'Skipped app: declares unsupported components alongside Skills: apps, mcpServers, hooks',
     }])
   })
 
-  test('identifies image MIME from bytes and isolates packages with mislabeled images', async () => {
+  test('identifies image MIME from bytes and isolates apps with mislabeled images', async () => {
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
     expect(detectSkillImageContentType(png)).toBe('image/png')
     expect(detectSkillImageContentType(new TextEncoder().encode(
@@ -197,42 +269,42 @@ postinstall:
 
     const root = await mkdtemp(path.join(os.tmpdir(), 'codex-mislabeled-image-'))
     roots.push(root)
-    await mkdir(path.join(root, 'packages/demo/.codex-plugin'), { recursive: true })
-    await mkdir(path.join(root, 'packages/demo/assets'), { recursive: true })
+    await mkdir(path.join(root, 'apps/demo/.codex-plugin'), { recursive: true })
+    await mkdir(path.join(root, 'apps/demo/assets'), { recursive: true })
     await writeFile(path.join(root, 'marketplace.json'), JSON.stringify({ plugins: [
-      { name: 'demo', source: 'packages/demo' },
+      { name: 'demo', source: 'apps/demo' },
     ] }))
-    await writeFile(path.join(root, 'packages/demo/.codex-plugin/plugin.json'), JSON.stringify({
+    await writeFile(path.join(root, 'apps/demo/.codex-plugin/plugin.json'), JSON.stringify({
       name: 'demo', skills: './skills', interface: { logo: './assets/logo.webp' },
     }))
-    await writeFile(path.join(root, 'packages/demo/assets/logo.webp'), png)
-    await writeSkill(root, 'packages/demo/skills/demo', 'Demo')
+    await writeFile(path.join(root, 'apps/demo/assets/logo.webp'), png)
+    await writeSkill(root, 'apps/demo/skills/demo', 'Demo')
 
     const result = await buildSkillCandidates({
       definition: definition('codex_marketplace_skills'), sourceRoot: root,
     })
     expect(result.skills).toEqual([])
     expect(result.diagnostics).toHaveLength(1)
-    expect(result.diagnostics[0]).toMatchObject({ package_id: 'demo', code: 'package_invalid' })
+    expect(result.diagnostics[0]).toMatchObject({ app_id: 'demo', code: 'app_invalid' })
     expect(result.diagnostics[0]!.message).toContain('content does not match its file extension')
   })
 
-  test('keeps Skill Packages when optional images exceed the image budget', async () => {
+  test('keeps Skill Apps when optional images exceed the image budget', async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), 'codex-oversized-image-'))
     roots.push(root)
-    await mkdir(path.join(root, 'packages/demo/.codex-plugin'), { recursive: true })
-    await mkdir(path.join(root, 'packages/demo/assets'), { recursive: true })
+    await mkdir(path.join(root, 'apps/demo/.codex-plugin'), { recursive: true })
+    await mkdir(path.join(root, 'apps/demo/assets'), { recursive: true })
     await writeFile(path.join(root, 'marketplace.json'), JSON.stringify({ plugins: [
-      { name: 'demo', source: 'packages/demo' },
-      { name: 'app-only', source: 'packages/app-only' },
+      { name: 'demo', source: 'apps/demo' },
+      { name: 'app-only', source: 'apps/app-only' },
     ] }))
-    await writeFile(path.join(root, 'packages/demo/.codex-plugin/plugin.json'), JSON.stringify({
+    await writeFile(path.join(root, 'apps/demo/.codex-plugin/plugin.json'), JSON.stringify({
       name: 'demo', skills: './skills', interface: { logo: './assets/logo.png' },
     }))
-    await writeFile(path.join(root, 'packages/demo/assets/logo.png'), new Uint8Array(MAX_SKILL_IMAGE_BYTES + 1))
-    await writeSkill(root, 'packages/demo/skills/demo', 'Demo')
-    await mkdir(path.join(root, 'packages/app-only/.codex-plugin'), { recursive: true })
-    await writeFile(path.join(root, 'packages/app-only/.codex-plugin/plugin.json'), JSON.stringify({
+    await writeFile(path.join(root, 'apps/demo/assets/logo.png'), new Uint8Array(MAX_SKILL_IMAGE_BYTES + 1))
+    await writeSkill(root, 'apps/demo/skills/demo', 'Demo')
+    await mkdir(path.join(root, 'apps/app-only/.codex-plugin'), { recursive: true })
+    await writeFile(path.join(root, 'apps/app-only/.codex-plugin/plugin.json'), JSON.stringify({
       name: 'app-only', apps: ['./app'],
     }))
 
@@ -240,120 +312,120 @@ postinstall:
       definition: definition('codex_marketplace_skills'), sourceRoot: root,
     })
     expect(result.skills).toHaveLength(1)
-    expect(result.skills[0]).toMatchObject({ package_id: 'demo', skill_id: 'demo' })
+    expect(result.skills[0]).toMatchObject({ app_id: 'demo', skill_id: 'demo' })
     expect(result.skills[0]!.icon).toBeUndefined()
     expect(result.diagnostics).toEqual([])
   })
 
-  test('rejects duplicate Marketplace package identities', async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), 'codex-duplicate-packages-'))
+  test('rejects duplicate Marketplace app identities', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'codex-duplicate-apps-'))
     roots.push(root)
     await writeFile(path.join(root, 'marketplace.json'), JSON.stringify({ plugins: [
-      { name: 'duplicate', source: 'packages/one' },
-      { name: 'duplicate', source: 'packages/two' },
+      { name: 'duplicate', source: 'apps/one' },
+      { name: 'duplicate', source: 'apps/two' },
     ] }))
     await expect(buildSkillCandidates({
       definition: definition('codex_marketplace_skills'), sourceRoot: root,
-    })).rejects.toThrow('duplicate package ID')
+    })).rejects.toThrow('duplicate app ID')
   })
 
   test('imports explicitly declared nested Skill roots', async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), 'codex-overlapping-skills-'))
     roots.push(root)
-    await mkdir(path.join(root, 'packages/demo/.codex-plugin'), { recursive: true })
+    await mkdir(path.join(root, 'apps/demo/.codex-plugin'), { recursive: true })
     await writeFile(path.join(root, 'marketplace.json'), JSON.stringify({ plugins: [
-      { name: 'demo', source: 'packages/demo' },
+      { name: 'demo', source: 'apps/demo' },
     ] }))
-    await writeFile(path.join(root, 'packages/demo/.codex-plugin/plugin.json'), JSON.stringify({
+    await writeFile(path.join(root, 'apps/demo/.codex-plugin/plugin.json'), JSON.stringify({
       name: 'demo', skills: ['./skills', './skills/nested'],
     }))
-    await writeSkill(root, 'packages/demo/skills', 'Root')
-    await writeSkill(root, 'packages/demo/skills/nested', 'Nested')
+    await writeSkill(root, 'apps/demo/skills', 'Root')
+    await writeSkill(root, 'apps/demo/skills/nested', 'Nested')
 
     const result = await buildSkillCandidates({
       definition: definition('codex_marketplace_skills'), sourceRoot: root,
     })
-    expect(result.skills.map((skill) => `${skill.package_id}/${skill.skill_id}`)).toEqual([
+    expect(result.skills.map((skill) => `${skill.app_id}/${skill.skill_id}`)).toEqual([
       'demo/skills',
       'demo/nested',
     ])
     expect(result.diagnostics).toEqual([])
   })
 
-  test('namespaces a shared Skill root declared by different Marketplace packages', async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), 'codex-cross-package-overlap-'))
+  test('namespaces a shared Skill root declared by different Marketplace apps', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'codex-cross-app-overlap-'))
     roots.push(root)
-    await mkdir(path.join(root, 'packages/outer/.codex-plugin'), { recursive: true })
-    await mkdir(path.join(root, 'packages/outer/inner/.codex-plugin'), { recursive: true })
+    await mkdir(path.join(root, 'apps/outer/.codex-plugin'), { recursive: true })
+    await mkdir(path.join(root, 'apps/outer/inner/.codex-plugin'), { recursive: true })
     await writeFile(path.join(root, 'marketplace.json'), JSON.stringify({ plugins: [
-      { name: 'outer', source: 'packages/outer' },
-      { name: 'inner', source: 'packages/outer/inner' },
+      { name: 'outer', source: 'apps/outer' },
+      { name: 'inner', source: 'apps/outer/inner' },
     ] }))
-    await writeFile(path.join(root, 'packages/outer/.codex-plugin/plugin.json'), JSON.stringify({
+    await writeFile(path.join(root, 'apps/outer/.codex-plugin/plugin.json'), JSON.stringify({
       name: 'outer', skills: './inner/skills/demo',
     }))
-    await writeFile(path.join(root, 'packages/outer/inner/.codex-plugin/plugin.json'), JSON.stringify({
+    await writeFile(path.join(root, 'apps/outer/inner/.codex-plugin/plugin.json'), JSON.stringify({
       name: 'inner', skills: './skills/demo',
     }))
-    await writeSkill(root, 'packages/outer/inner/skills/demo', 'Demo')
+    await writeSkill(root, 'apps/outer/inner/skills/demo', 'Demo')
 
     const result = await buildSkillCandidates({
       definition: definition('codex_marketplace_skills'), sourceRoot: root,
     })
-    expect(result.skills.map((skill) => `${skill.package_id}/${skill.skill_id}`)).toEqual([
+    expect(result.skills.map((skill) => `${skill.app_id}/${skill.skill_id}`)).toEqual([
       'outer/demo',
       'inner/demo',
     ])
     expect(result.diagnostics).toEqual([])
   })
 
-  test('isolates per-package failures as diagnostics instead of aborting the registry build', async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), 'codex-package-isolation-'))
+  test('isolates per-app failures as diagnostics instead of aborting the registry build', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'codex-app-isolation-'))
     roots.push(root)
     await writeFile(path.join(root, 'marketplace.json'), JSON.stringify({ plugins: [
-      { name: 'usable', source: { source: 'local', path: 'packages/usable' } },
-      { name: 'missing-dir', source: { source: 'local', path: 'packages/missing-dir' } },
-      { name: 'malformed-json', source: { source: 'local', path: 'packages/malformed-json' } },
-      { name: 'name-mismatch', source: { source: 'local', path: 'packages/name-mismatch' } },
-      { name: 'dup-skill', source: { source: 'local', path: 'packages/dup-skill' } },
+      { name: 'usable', source: { source: 'local', path: 'apps/usable' } },
+      { name: 'missing-dir', source: { source: 'local', path: 'apps/missing-dir' } },
+      { name: 'malformed-json', source: { source: 'local', path: 'apps/malformed-json' } },
+      { name: 'name-mismatch', source: { source: 'local', path: 'apps/name-mismatch' } },
+      { name: 'dup-skill', source: { source: 'local', path: 'apps/dup-skill' } },
     ] }))
 
-    await mkdir(path.join(root, 'packages/usable/.codex-plugin'), { recursive: true })
-    await writeFile(path.join(root, 'packages/usable/.codex-plugin/plugin.json'), JSON.stringify({
+    await mkdir(path.join(root, 'apps/usable/.codex-plugin'), { recursive: true })
+    await writeFile(path.join(root, 'apps/usable/.codex-plugin/plugin.json'), JSON.stringify({
       name: 'usable', skills: './skills',
     }))
-    await writeSkill(root, 'packages/usable/skills/demo', 'Demo')
+    await writeSkill(root, 'apps/usable/skills/demo', 'Demo')
 
-    // packages/missing-dir intentionally does not exist on disk.
+    // apps/missing-dir intentionally does not exist on disk.
 
-    await mkdir(path.join(root, 'packages/malformed-json/.codex-plugin'), { recursive: true })
-    await writeFile(path.join(root, 'packages/malformed-json/.codex-plugin/plugin.json'), '{ this is not json')
+    await mkdir(path.join(root, 'apps/malformed-json/.codex-plugin'), { recursive: true })
+    await writeFile(path.join(root, 'apps/malformed-json/.codex-plugin/plugin.json'), '{ this is not json')
 
-    await mkdir(path.join(root, 'packages/name-mismatch/.codex-plugin'), { recursive: true })
-    await writeFile(path.join(root, 'packages/name-mismatch/.codex-plugin/plugin.json'), JSON.stringify({
+    await mkdir(path.join(root, 'apps/name-mismatch/.codex-plugin'), { recursive: true })
+    await writeFile(path.join(root, 'apps/name-mismatch/.codex-plugin/plugin.json'), JSON.stringify({
       name: 'something-else',
     }))
 
-    await mkdir(path.join(root, 'packages/dup-skill/.codex-plugin'), { recursive: true })
-    await writeFile(path.join(root, 'packages/dup-skill/.codex-plugin/plugin.json'), JSON.stringify({
+    await mkdir(path.join(root, 'apps/dup-skill/.codex-plugin'), { recursive: true })
+    await writeFile(path.join(root, 'apps/dup-skill/.codex-plugin/plugin.json'), JSON.stringify({
       name: 'dup-skill', skills: ['./variant-a/demo', './variant-b/demo'],
     }))
-    await writeSkill(root, 'packages/dup-skill/variant-a/demo', 'DemoA')
-    await writeSkill(root, 'packages/dup-skill/variant-b/demo', 'DemoB')
+    await writeSkill(root, 'apps/dup-skill/variant-a/demo', 'DemoA')
+    await writeSkill(root, 'apps/dup-skill/variant-b/demo', 'DemoB')
 
     const result = await buildSkillCandidates({
       definition: definition('codex_marketplace_skills'), sourceRoot: root,
     })
 
     expect(result.skills).toHaveLength(1)
-    expect(result.skills[0]).toMatchObject({ package_id: 'usable', skill_id: 'demo' })
+    expect(result.skills[0]).toMatchObject({ app_id: 'usable', skill_id: 'demo' })
 
     expect(result.diagnostics).toHaveLength(4)
-    expect(result.diagnostics[0]).toMatchObject({ package_id: 'missing-dir', code: 'package_invalid' })
-    expect(result.diagnostics[1]).toMatchObject({ package_id: 'malformed-json', code: 'package_invalid' })
-    expect(result.diagnostics[2]).toMatchObject({ package_id: 'name-mismatch', code: 'package_invalid' })
+    expect(result.diagnostics[0]).toMatchObject({ app_id: 'missing-dir', code: 'app_invalid' })
+    expect(result.diagnostics[1]).toMatchObject({ app_id: 'malformed-json', code: 'app_invalid' })
+    expect(result.diagnostics[2]).toMatchObject({ app_id: 'name-mismatch', code: 'app_invalid' })
     expect(result.diagnostics[2]!.message).toContain('manifest name does not match')
-    expect(result.diagnostics[3]).toMatchObject({ package_id: 'dup-skill', code: 'package_invalid' })
+    expect(result.diagnostics[3]).toMatchObject({ app_id: 'dup-skill', code: 'app_invalid' })
     expect(result.diagnostics[3]!.message).toContain('duplicate skill ID demo')
   })
 
@@ -364,11 +436,11 @@ postinstall:
     await writeSkill(outside, '.', 'Outside')
     await symlink(outside, path.join(root, 'escaped'))
     await expect(buildSkillCandidates({ definition: definition('skill_directory'), sourceRoot: root }))
-      .resolves.toEqual({ skills: [], diagnostics: [], packageMetadata: new Map() })
+      .resolves.toEqual({ skills: [], diagnostics: [], apps: new Map() })
 
-    await mkdir(path.join(root, 'package'), { recursive: true })
-    await symlink(outside, path.join(root, 'package/escaped'))
-    await expect(readDirectoryFiles(path.join(root, 'package/escaped'), root)).rejects.toThrow('escapes source')
+    await mkdir(path.join(root, 'app'), { recursive: true })
+    await symlink(outside, path.join(root, 'app/escaped'))
+    await expect(readDirectoryFiles(path.join(root, 'app/escaped'), root)).rejects.toThrow('escapes source')
   })
 
   test('enforces a byte limit while reading files', async () => {

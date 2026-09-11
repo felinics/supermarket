@@ -1,15 +1,16 @@
 import { describe, expect, test } from 'bun:test'
 import type { CatalogSkill, SkillRegistrySnapshot } from './types'
-import { compactCatalogPackages } from './snapshot'
+import { compactCatalogApps } from './snapshot'
+import { parseCategoryTable } from './categories'
 import { normalizeSkillCategory, searchCatalogSkills, summarizeCurrentSnapshot, summarizeSkillCategories } from './catalog'
 
 function skill(overrides: Partial<CatalogSkill> = {}): CatalogSkill {
   return {
-    schema_version: '1', registry_id: 'openai', registry_priority: 10,
-    package_id: 'documents', skill_id: 'pdf', install_id: 'openai--documents--pdf',
+    schema_version: '2', registry_id: 'openai', registry_priority: 10,
+    app_id: 'documents', skill_id: 'pdf', install_id: 'openai--documents--pdf',
     name: 'PDF Tools', description: 'Create and inspect PDF documents.', author: { name: 'OpenAI', email: '' },
     tags: ['documents'], category: 'productivity', category_name: 'Productivity',
-    source: { type: 'git', revision: 'abc', path: 'packages/documents/skills/pdf', repository: 'https://example.test/repo.git' },
+    source: { type: 'git', revision: 'abc', path: 'apps/documents/skills/pdf', repository: 'https://example.test/repo.git' },
     files: ['SKILL.md'],
     artifact: {
       format: 'memoh_skill_v1', digest: 'a'.repeat(64), size: 100,
@@ -22,7 +23,7 @@ function skill(overrides: Partial<CatalogSkill> = {}): CatalogSkill {
 
 describe('Skill Catalog search', () => {
   test('searches, filters and keeps namespaced duplicate IDs', () => {
-    const sameID = skill({ registry_id: 'memoh', package_id: 'pdf', install_id: 'memoh--pdf--pdf', registry_priority: 100 })
+    const sameID = skill({ registry_id: 'memoh', app_id: 'pdf', install_id: 'memoh--pdf--pdf', registry_priority: 100 })
     const result = searchCatalogSkills([skill(), sameID], { q: 'pdf' })
     expect(result.total).toBe(2)
     expect(result.data.map((item) => item.registry_id)).toEqual(['memoh', 'openai'])
@@ -52,12 +53,18 @@ describe('Skill Catalog search', () => {
 
   test('builds a compact current Snapshot summary for Registry listings', () => {
     const snapshot: SkillRegistrySnapshot = {
-      schema_version: '1',
+      schema_version: '2',
       registry_id: 'openai',
       registry_priority: 10,
       source: { type: 'git', revision: 'source-revision', repository: 'https://example.test/repo.git' },
-      packages: compactCatalogPackages([skill(), skill({ package_id: 'other', category: 'other', category_name: 'Other' })]),
-      diagnostics: [{ package_id: 'skipped', code: 'no_skills' as const, message: 'No skills' }],
+      categories: [],
+      apps: compactCatalogApps(
+        [skill(), skill({ app_id: 'other', category: 'other', category_name: 'Other' })],
+        { categories: parseCategoryTable({ schema_version: '1', categories: [
+          { id: 'productivity', name: { en: 'Productivity' } }, { id: 'other', name: { en: 'Other' } },
+        ] }) },
+      ),
+      diagnostics: [{ app_id: 'skipped', code: 'no_skills' as const, message: 'No skills' }],
     }
     expect(summarizeCurrentSnapshot(
       snapshot,
@@ -68,9 +75,9 @@ describe('Skill Catalog search', () => {
       source_revision: 'source-revision',
       published_at: '2026-01-01T00:00:00.000Z',
       skill_count: 2,
-      package_count: 2,
+      app_count: 2,
       category_count: 2,
-      skipped_package_count: 1,
+      skipped_app_count: 1,
     })
   })
 })

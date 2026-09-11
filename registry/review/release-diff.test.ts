@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
-import type { CatalogSkill, PackagePostinstallCommand, SkillRegistryDefinition } from '../types'
+import type { CatalogSkill, AppPostinstallCommand, SkillRegistryDefinition } from '../types'
 import type { SkillRegistryCandidate } from '../publish/candidate'
-import { compactCatalogPackages } from '../snapshot'
+import { compactCatalogApps } from '../snapshot'
 import {
   diffRegistryCandidates,
   renderRegistryReleaseDiff,
@@ -20,10 +20,10 @@ const definition: SkillRegistryDefinition = {
 
 function skill(digest: string, description: string): CatalogSkill {
   return {
-    schema_version: '1',
+    schema_version: '2',
     registry_id: 'example',
     registry_priority: 10,
-    package_id: 'tools',
+    app_id: 'tools',
     skill_id: 'demo',
     install_id: 'example+tools+demo',
     name: 'Demo',
@@ -51,17 +51,20 @@ function candidate(
   digest: string,
   description: string,
   markdown: string,
-  postinstall?: PackagePostinstallCommand[],
+  postinstall?: AppPostinstallCommand[],
 ): SkillRegistryCandidate {
   const skills = [skill(digest, description)]
   const snapshot = {
-    schema_version: '1' as const,
+    schema_version: '2' as const,
     registry_id: definition.id,
     registry_priority: definition.priority,
     source: { type: 'local' as const, revision: sourceRevision },
-    packages: compactCatalogPackages(skills, postinstall
-      ? new Map([['tools', { postinstall }]])
-      : new Map()),
+    categories: [],
+    apps: compactCatalogApps(skills, {
+      apps: postinstall
+        ? new Map([['tools', { app_id: 'tools', reviewed: false, tags: [], dependencies: [], connectors: [], postinstall }]])
+        : new Map(),
+    }),
     diagnostics: [],
   }
   return {
@@ -75,7 +78,7 @@ function candidate(
     artifacts: new Map(),
     images: new Map(),
     review: new Map([['tools/demo', {
-      package_id: 'tools',
+      app_id: 'tools',
       skill_id: 'demo',
       files: {
         'SKILL.md': {
@@ -90,7 +93,7 @@ function candidate(
 }
 
 describe('Registry release review', () => {
-  test('groups Skill metadata, file, Artifact, and SKILL.md changes by package', () => {
+  test('groups Skill metadata, file, Artifact, and SKILL.md changes by app', () => {
     const previous = candidate('1'.repeat(40), 'a'.repeat(64), 'Before', '# Before\n')
     const next = candidate(
       '2'.repeat(40),
@@ -102,13 +105,13 @@ describe('Registry release review', () => {
     const report = renderRegistryReleaseDiff(diff)
 
     expect(diff.summary).toEqual({
-      packages_skipped: 0,
-      packages_changed: 1,
+      apps_skipped: 0,
+      apps_changed: 1,
       skills_added: 0,
       skills_removed: 0,
       skills_changed: 1,
     })
-    expect(diff.packages[0]?.skills[0]).toMatchObject({
+    expect(diff.apps[0]?.skills[0]).toMatchObject({
       artifact_before: 'a'.repeat(64),
       artifact_after: 'b'.repeat(64),
       metadata: ['description'],
@@ -125,13 +128,13 @@ describe('Registry release review', () => {
   test('includes a SKILL.md patch when a Skill is added', () => {
     const previous = candidate('1'.repeat(40), 'a'.repeat(64), 'Before', '# Before\n')
     previous.skills = []
-    previous.snapshot.packages = []
+    previous.snapshot.apps = []
     previous.review.clear()
     const next = candidate('2'.repeat(40), 'b'.repeat(64), 'Added', '# Added\n')
 
     const diff = diffRegistryCandidates(previous, next)
 
-    expect(diff.packages[0]?.skills[0]).toMatchObject({
+    expect(diff.apps[0]?.skills[0]).toMatchObject({
       status: 'added',
       text_patches: [{
         path: 'SKILL.md',
@@ -140,7 +143,7 @@ describe('Registry release review', () => {
     })
   })
 
-  test('shows Package postinstall changes even when its Skills are unchanged', () => {
+  test('shows App postinstall changes even when its Skills are unchanged', () => {
     const previous = candidate('1'.repeat(40), 'a'.repeat(64), 'Same', '# Same\n')
     const next = candidate('2'.repeat(40), 'a'.repeat(64), 'Same', '# Same\n', [
       { command: 'npm', args: ['install', '--global', 'opencli'] },
@@ -150,39 +153,39 @@ describe('Registry release review', () => {
     const diff = diffRegistryCandidates(previous, next)
     const report = renderRegistryReleaseDiff(diff)
 
-    expect(diff.summary).toMatchObject({ packages_changed: 1, skills_changed: 0 })
-    expect(diff.packages[0]).toMatchObject({
-      package_id: 'tools',
+    expect(diff.summary).toMatchObject({ apps_changed: 1, skills_changed: 0 })
+    expect(diff.apps[0]).toMatchObject({
+      app_id: 'tools',
       status: 'changed',
       postinstall: {
         after: [{ command: 'npm', args: ['install', '--global', 'opencli'] }],
       },
       skills: [],
     })
-    expect(report).toContain('Package postinstall')
+    expect(report).toContain('App postinstall')
     expect(report).toContain('"opencli"')
   })
 
-  test('includes the concrete error for every skipped Package', () => {
+  test('includes the concrete error for every skipped App', () => {
     const previous = candidate('1'.repeat(40), 'a'.repeat(64), 'Same', '# Same\n')
     const next = candidate('2'.repeat(40), 'a'.repeat(64), 'Same', '# Same\n')
     next.diagnostics.push({
-      package_id: 'broken-package',
-      code: 'package_invalid',
-      message: 'Skipped package: Unsafe tar path:\n scripts/../secret',
+      app_id: 'broken-app',
+      code: 'app_invalid',
+      message: 'Skipped app: Unsafe tar path:\n scripts/../secret',
     })
 
     const diff = diffRegistryCandidates(previous, next)
     const report = renderRegistryReleaseDiff(diff)
 
-    expect(diff.summary.packages_skipped).toBe(1)
-    expect(diff.skipped_packages).toEqual([{
-      package_id: 'broken-package',
-      message: 'Skipped package: Unsafe tar path:\n scripts/../secret',
+    expect(diff.summary.apps_skipped).toBe(1)
+    expect(diff.skipped_apps).toEqual([{
+      app_id: 'broken-app',
+      message: 'Skipped app: Unsafe tar path:\n scripts/../secret',
     }])
-    expect(report).toContain('- Packages skipped: 1')
-    expect(report).toContain('broken-package')
-    expect(report).toContain('Skipped package: Unsafe tar path: scripts/../secret')
+    expect(report).toContain('- Apps skipped: 1')
+    expect(report).toContain('broken-app')
+    expect(report).toContain('Skipped app: Unsafe tar path: scripts/../secret')
   })
 
   test('includes bounded UTF-8 diffs for changed files beyond SKILL.md', () => {
@@ -211,9 +214,9 @@ describe('Registry release review', () => {
       source_after: '2'.repeat(40),
       snapshot_before: 'a'.repeat(64),
       snapshot_after: 'b'.repeat(64),
-      skipped_packages: [],
-      packages: [{
-        package_id: 'tools',
+      skipped_apps: [],
+      apps: [{
+        app_id: 'tools',
         status: 'changed',
         skills: Array.from({ length: 10 }, (_, index) => ({
           skill_id: `skill-${index}`,
@@ -227,8 +230,8 @@ describe('Registry release review', () => {
         })),
       }],
       summary: {
-        packages_skipped: 0,
-        packages_changed: 1,
+        apps_skipped: 0,
+        apps_changed: 1,
         skills_added: 0,
         skills_removed: 0,
         skills_changed: 10,

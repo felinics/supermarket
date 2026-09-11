@@ -5,7 +5,7 @@ import {
   markdownLines,
   renderMarkdownLines,
 } from '#lib/markdown-lines'
-import type { CatalogSkill, PackagePostinstallCommand } from '../types'
+import type { CatalogSkill, AppPostinstallCommand } from '../types'
 import type {
   CandidateFile,
   CandidateSkillReview,
@@ -47,12 +47,12 @@ export interface SkillReleaseDiff {
   text_patches: TextFilePatch[]
 }
 
-export interface PackageReleaseDiff {
-  package_id: string
+export interface AppReleaseDiff {
+  app_id: string
   status: ChangeStatus
   postinstall?: {
-    before?: PackagePostinstallCommand[]
-    after?: PackagePostinstallCommand[]
+    before?: AppPostinstallCommand[]
+    after?: AppPostinstallCommand[]
   }
   skills: SkillReleaseDiff[]
 }
@@ -63,11 +63,11 @@ export interface RegistryReleaseDiff {
   source_after: string
   snapshot_before: string
   snapshot_after: string
-  skipped_packages: Array<{ package_id: string; message: string }>
-  packages: PackageReleaseDiff[]
+  skipped_apps: Array<{ app_id: string; message: string }>
+  apps: AppReleaseDiff[]
   summary: {
-    packages_skipped: number
-    packages_changed: number
+    apps_skipped: number
+    apps_changed: number
     skills_added: number
     skills_removed: number
     skills_changed: number
@@ -152,7 +152,7 @@ function textFilePatches(previous?: CandidateSkillReview, candidate?: CandidateS
 
 function indexSkills(candidate: RegistryReviewCandidate) {
   return new Map(candidate.skills.map((skill) => [
-    `${skill.package_id}/${skill.skill_id}`,
+    `${skill.app_id}/${skill.skill_id}`,
     skill,
   ]))
 }
@@ -166,23 +166,23 @@ export function diffRegistryCandidates(
   }
   const before = indexSkills(previous)
   const after = indexSkills(candidate)
-  const packageIDs = new Set([
-    ...previous.skills.map((skill) => skill.package_id),
-    ...candidate.skills.map((skill) => skill.package_id),
+  const appIDs = new Set([
+    ...previous.skills.map((skill) => skill.app_id),
+    ...candidate.skills.map((skill) => skill.app_id),
   ])
-  const packages: PackageReleaseDiff[] = []
-  for (const packageID of [...packageIDs].sort()) {
-    const previousPackage = previous.snapshot.packages.find((pkg) => pkg.package_id === packageID)
-    const candidatePackage = candidate.snapshot.packages.find((pkg) => pkg.package_id === packageID)
-    const postinstallChanged = JSON.stringify(previousPackage?.postinstall)
-      !== JSON.stringify(candidatePackage?.postinstall)
+  const apps: AppReleaseDiff[] = []
+  for (const appID of [...appIDs].sort()) {
+    const previousApp = previous.snapshot.apps.find((pkg) => pkg.app_id === appID)
+    const candidateApp = candidate.snapshot.apps.find((pkg) => pkg.app_id === appID)
+    const postinstallChanged = JSON.stringify(previousApp?.postinstall)
+      !== JSON.stringify(candidateApp?.postinstall)
     const skillIDs = new Set([
-      ...previous.skills.filter((skill) => skill.package_id === packageID).map((skill) => skill.skill_id),
-      ...candidate.skills.filter((skill) => skill.package_id === packageID).map((skill) => skill.skill_id),
+      ...previous.skills.filter((skill) => skill.app_id === appID).map((skill) => skill.skill_id),
+      ...candidate.skills.filter((skill) => skill.app_id === appID).map((skill) => skill.skill_id),
     ])
     const skills: SkillReleaseDiff[] = []
     for (const skillID of [...skillIDs].sort()) {
-      const key = `${packageID}/${skillID}`
+      const key = `${appID}/${skillID}`
       const oldSkill = before.get(key)
       const newSkill = after.get(key)
       if (!oldSkill && newSkill) {
@@ -222,25 +222,25 @@ export function diffRegistryCandidates(
       })
     }
     if (!skills.length && !postinstallChanged) continue
-    const existed = previous.skills.some((skill) => skill.package_id === packageID)
-    const exists = candidate.skills.some((skill) => skill.package_id === packageID)
-    packages.push({
-      package_id: packageID,
+    const existed = previous.skills.some((skill) => skill.app_id === appID)
+    const exists = candidate.skills.some((skill) => skill.app_id === appID)
+    apps.push({
+      app_id: appID,
       status: !existed ? 'added' : !exists ? 'removed' : 'changed',
       ...(postinstallChanged ? {
         postinstall: {
-          ...(previousPackage?.postinstall ? { before: previousPackage.postinstall } : {}),
-          ...(candidatePackage?.postinstall ? { after: candidatePackage.postinstall } : {}),
+          ...(previousApp?.postinstall ? { before: previousApp.postinstall } : {}),
+          ...(candidateApp?.postinstall ? { after: candidateApp.postinstall } : {}),
         },
       } : {}),
       skills,
     })
   }
 
-  const changedSkills = packages.flatMap((item) => item.skills)
-  const skippedPackages = candidate.diagnostics.flatMap((diagnostic) =>
-    diagnostic.code === 'package_invalid' && diagnostic.package_id
-      ? [{ package_id: diagnostic.package_id, message: diagnostic.message }]
+  const changedSkills = apps.flatMap((item) => item.skills)
+  const skippedApps = candidate.diagnostics.flatMap((diagnostic) =>
+    diagnostic.code === 'app_invalid' && diagnostic.app_id
+      ? [{ app_id: diagnostic.app_id, message: diagnostic.message }]
       : [])
   return {
     registry: previous.definition.id,
@@ -248,11 +248,11 @@ export function diffRegistryCandidates(
     source_after: candidate.source_revision,
     snapshot_before: previous.revision,
     snapshot_after: candidate.revision,
-    skipped_packages: skippedPackages,
-    packages,
+    skipped_apps: skippedApps,
+    apps,
     summary: {
-      packages_skipped: skippedPackages.length,
-      packages_changed: packages.length,
+      apps_skipped: skippedApps.length,
+      apps_changed: apps.length,
       skills_added: changedSkills.filter((skill) => skill.status === 'added').length,
       skills_removed: changedSkills.filter((skill) => skill.status === 'removed').length,
       skills_changed: changedSkills.filter((skill) => skill.status === 'changed').length,
@@ -312,9 +312,9 @@ function renderSkill(skill: SkillReleaseDiff) {
   return lines
 }
 
-function renderPostinstall(change: NonNullable<PackageReleaseDiff['postinstall']>) {
+function renderPostinstall(change: NonNullable<AppReleaseDiff['postinstall']>) {
   return [
-    '#### Package postinstall',
+    '#### App postinstall',
     '',
     'Before:',
     ...fencedCode(JSON.stringify(change.before ?? [], null, 2), 'json'),
@@ -348,8 +348,8 @@ export function renderRegistryReleaseDiff(
     '',
     '### Summary',
     '',
-    `- Packages skipped: ${diff.summary.packages_skipped}`,
-    `- Packages changed: ${diff.summary.packages_changed}`,
+    `- Apps skipped: ${diff.summary.apps_skipped}`,
+    `- Apps changed: ${diff.summary.apps_changed}`,
     `- Skills added: ${diff.summary.skills_added}`,
     `- Skills removed: ${diff.summary.skills_removed}`,
     `- Skills changed: ${diff.summary.skills_changed}`,
@@ -359,19 +359,19 @@ export function renderRegistryReleaseDiff(
   const reservedFooter = approvalNotice.length >= truncationNotice.length
     ? approvalNotice
     : truncationNotice
-  if (diff.skipped_packages.length) {
-    const heading = markdownLines(['### Skipped Packages', ''])
+  if (diff.skipped_apps.length) {
+    const heading = markdownLines(['### Skipped Apps', ''])
     if (combinedMarkdownLength(output, heading, markdownLines(['', reservedFooter, ''])) > maximum) {
       truncated = true
     } else {
       appendMarkdownLines(output, heading)
-      for (const diagnostic of diff.skipped_packages) {
+      for (const diagnostic of diff.skipped_apps) {
         const message = diagnosticMessage(
           diagnostic.message,
           Number.isFinite(maximum) ? 2_000 : Number.POSITIVE_INFINITY,
         )
         const line = markdownLines([
-          `- ${inlineCode(diagnostic.package_id)}: ${inlineCode(message)}`,
+          `- ${inlineCode(diagnostic.app_id)}: ${inlineCode(message)}`,
         ])
         if (combinedMarkdownLength(output, line, markdownLines(['', reservedFooter, ''])) > maximum) {
           truncated = true
@@ -382,39 +382,39 @@ export function renderRegistryReleaseDiff(
       appendMarkdownLines(output, markdownLines(['']))
     }
   }
-  for (const packageDiff of truncated ? [] : diff.packages) {
-    const packageBlock = markdownLines([
+  for (const appDiff of truncated ? [] : diff.apps) {
+    const appBlock = markdownLines([
       '<details>',
-      `<summary><code>${packageDiff.package_id}</code> — ${packageDiff.status}, ${packageDiff.skills.length} Skill(s)</summary>`,
+      `<summary><code>${appDiff.app_id}</code> — ${appDiff.status}, ${appDiff.skills.length} Skill(s)</summary>`,
       '',
     ])
     let included = 0
-    if (packageDiff.postinstall) {
-      const postinstallBlock = markdownLines(renderPostinstall(packageDiff.postinstall))
+    if (appDiff.postinstall) {
+      const postinstallBlock = markdownLines(renderPostinstall(appDiff.postinstall))
       const ending = markdownLines(['</details>', '', reservedFooter, ''])
-      if (combinedMarkdownLength(output, packageBlock, postinstallBlock, ending) > maximum) {
+      if (combinedMarkdownLength(output, appBlock, postinstallBlock, ending) > maximum) {
         truncated = true
         break
       }
-      appendMarkdownLines(packageBlock, postinstallBlock)
+      appendMarkdownLines(appBlock, postinstallBlock)
       included++
     }
-    for (const skill of packageDiff.skills) {
+    for (const skill of appDiff.skills) {
       const skillBlock = markdownLines(renderSkill(skill))
       const ending = markdownLines(['</details>', '', reservedFooter, ''])
-      if (combinedMarkdownLength(output, packageBlock, skillBlock, ending) > maximum) {
+      if (combinedMarkdownLength(output, appBlock, skillBlock, ending) > maximum) {
         truncated = true
         break
       }
-      appendMarkdownLines(packageBlock, skillBlock)
+      appendMarkdownLines(appBlock, skillBlock)
       included++
     }
     if (!included) {
       truncated = true
       break
     }
-    appendMarkdownLines(packageBlock, markdownLines(['</details>', '']))
-    appendMarkdownLines(output, packageBlock)
+    appendMarkdownLines(appBlock, markdownLines(['</details>', '']))
+    appendMarkdownLines(output, appBlock)
     if (truncated) break
   }
   appendMarkdownLines(output, markdownLines([truncated ? truncationNotice : approvalNotice, '']))

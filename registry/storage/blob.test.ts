@@ -42,11 +42,12 @@ function snapshot(
   sourceRevision = 'source',
 ): SkillRegistrySnapshot {
   return {
-    schema_version: '1',
+    schema_version: '2',
     registry_id: definition.id,
     registry_priority: definition.priority,
     source: { type: 'local', revision: sourceRevision },
-    packages: [],
+    categories: [],
+    apps: [],
     diagnostics: [],
   }
 }
@@ -127,9 +128,10 @@ function memoryBackend() {
 describe('Immutable digest-addressed uploads', () => {
   test('rejects invalid or incomplete Snapshot Artifact metadata', () => {
     const stored = snapshot()
-    stored.packages.push({
+    stored.apps.push({
       revision: 'a'.repeat(64),
-      package_id: 'package', name: 'package', description: '', tags: [],
+      app_id: 'app', name: 'app', description: '', tags: [],
+      category: 'other', category_name: 'Other', dependencies: [], connectors: [],
       skills: [{
         skill_id: 'skill',
         name: 'Skill',
@@ -155,14 +157,14 @@ describe('Immutable digest-addressed uploads', () => {
       'registries/example/snapshot.json',
     )).toThrow('Snapshot Artifact reference')
 
-    stored.packages[0]!.skills[0]!.artifact = {
+    stored.apps[0]!.skills[0]!.artifact = {
       digest: 'b'.repeat(64), size: 1, uncompressed_size: 1,
-    } as SkillRegistrySnapshot['packages'][number]['skills'][number]['artifact']
+    } as SkillRegistrySnapshot['apps'][number]['skills'][number]['artifact']
     expect(() => validateStoredSnapshot(stored, 'example', 'incomplete-snapshot'))
       .toThrow('Snapshot Artifact reference')
   })
 
-  test('rejects duplicate Package and nested Skill identities', () => {
+  test('rejects duplicate App and nested Skill identities', () => {
     const skill = {
       skill_id: 'skill', name: 'Skill', description: '', author: { name: '' },
       tags: [], category: 'other', category_name: 'Other', source_path: 'skill',
@@ -172,26 +174,28 @@ describe('Immutable digest-addressed uploads', () => {
       },
     }
     const stored = snapshot()
-    stored.packages = [{
+    stored.apps = [{
       revision: 'a'.repeat(64),
-      package_id: 'package', name: 'package', description: '', tags: [],
+      app_id: 'app', name: 'app', description: '', tags: [],
+      category: 'other', category_name: 'Other', dependencies: [], connectors: [],
       skills: [structuredClone(skill), structuredClone(skill)],
     }]
     expect(() => validateStoredSnapshot(stored, 'example', 'duplicate-skills'))
       .toThrow('Snapshot Artifact reference')
 
-    stored.packages = [stored.packages[0]!, structuredClone(stored.packages[0]!)]
-    stored.packages[0]!.skills = [skill]
-    stored.packages[1]!.skills = [{ ...skill, skill_id: 'other' }]
-    expect(() => validateStoredSnapshot(stored, 'example', 'duplicate-packages'))
+    stored.apps = [stored.apps[0]!, structuredClone(stored.apps[0]!)]
+    stored.apps[0]!.skills = [skill]
+    stored.apps[1]!.skills = [{ ...skill, skill_id: 'other' }]
+    expect(() => validateStoredSnapshot(stored, 'example', 'duplicate-apps'))
       .toThrow('Snapshot Artifact reference')
   })
 
-  test('rejects a Package that exceeds the client install budget', () => {
+  test('rejects an App that exceeds the client install budget', () => {
     const stored = snapshot()
-    stored.packages = [{
+    stored.apps = [{
       revision: 'a'.repeat(64),
-      package_id: 'package', name: 'package', description: '', tags: [],
+      app_id: 'app', name: 'app', description: '', tags: [],
+      category: 'other', category_name: 'Other', dependencies: [], connectors: [],
       skills: Array.from({ length: 65 }, (_, index) => ({
         skill_id: `skill-${index}`, name: `Skill ${index}`, description: '', author: { name: '' },
         tags: [], category: 'other', category_name: 'Other', source_path: `skill-${index}`,
@@ -202,7 +206,7 @@ describe('Immutable digest-addressed uploads', () => {
         },
       })),
     }]
-    expect(() => validateStoredSnapshot(stored, 'example', 'oversized-package'))
+    expect(() => validateStoredSnapshot(stored, 'example', 'oversized-app'))
       .toThrow('Snapshot Artifact reference')
   })
 
@@ -356,7 +360,7 @@ describe('Registry state compare-and-swap', () => {
     // A late write from the first run, still holding the stale version, must
     // not be allowed to overwrite the second run's newer pointer.
     await expect(store.putState({
-      schema_version: '1',
+      schema_version: '2',
       definition,
       current_snapshot: firstRevision,
       current_summary: summarizeCurrentSnapshot(

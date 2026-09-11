@@ -6,9 +6,9 @@ import type {
   SkillRegistrySummary,
 } from '#registry/types'
 import type { SkillCatalogSearchOptions } from '#registry/catalog'
-import { searchCatalogSkills, summarizeSkillCategories } from '#registry/catalog'
-import type { SkillPackageSearchOptions } from '#registry/packages'
-import { catalogPackagesFromSnapshot, packageDescriptorFromRelease, searchSkillPackages } from '#registry/packages'
+import { searchCatalogSkills, summarizeAppCategories } from '#registry/catalog'
+import type { AppSearchOptions } from '#registry/apps'
+import { catalogAppsFromSnapshot, appDescriptorFromRelease, searchApps } from '#registry/apps'
 import { catalogSkillsFromSnapshot } from '#registry/snapshot'
 import { R2BlobBackend } from '#registry/storage/r2'
 import { BlobSkillRegistryStore } from '#registry/storage/blob'
@@ -77,19 +77,19 @@ function publicCatalogSearch(skills: CatalogSkill[], options: SkillCatalogSearch
   return { ...result, data: result.data.map(publicCatalogSkill) }
 }
 
-function publicSkillPackageSummary<T extends { registry_priority: number }>(pkg: T) {
+function publicAppSummary<T extends { registry_priority: number }>(pkg: T) {
   const { registry_priority: _priority, ...value } = pkg
   return value
 }
 
-function publicSkillPackageSearch(packages: ReturnType<typeof catalogPackagesFromSnapshot>, options: SkillPackageSearchOptions) {
-  const result = searchSkillPackages(packages, options)
-  return { ...result, data: result.data.map(publicSkillPackageSummary) }
+function publicAppSearch(apps: ReturnType<typeof catalogAppsFromSnapshot>, options: AppSearchOptions) {
+  const result = searchApps(apps, options)
+  return { ...result, data: result.data.map(publicAppSummary) }
 }
 
-export async function getSkillPackages(event: RuntimeEvent, options: SkillPackageSearchOptions = {}) {
+export async function getApps(event: RuntimeEvent, options: AppSearchOptions = {}) {
   const snapshots = await getEnabledSkillRegistrySnapshots(await getRuntimeSkillRegistryStore(event), options.registry)
-  return publicSkillPackageSearch(snapshots.flatMap(catalogPackagesFromSnapshot), options)
+  return publicAppSearch(snapshots.flatMap(catalogAppsFromSnapshot), options)
 }
 
 async function getScopedRegistrySnapshot(store: SkillRegistryStore, registryID: string) {
@@ -102,27 +102,27 @@ async function getScopedRegistrySnapshot(store: SkillRegistryStore, registryID: 
   return snapshot
 }
 
-export async function getRegistrySkillPackages(
+export async function getRegistryApps(
   event: RuntimeEvent,
   registryID: string,
-  options: SkillPackageSearchOptions = {},
+  options: AppSearchOptions = {},
 ) {
   const snapshot = await getScopedRegistrySnapshot(await getRuntimeSkillRegistryStore(event), registryID)
   if (snapshot === undefined) return undefined
-  return publicSkillPackageSearch(snapshot ? catalogPackagesFromSnapshot(snapshot) : [], {
+  return publicAppSearch(snapshot ? catalogAppsFromSnapshot(snapshot) : [], {
     ...options,
     registry: registryID,
   })
 }
 
-function publicPackageDescriptor(descriptor: ReturnType<typeof packageDescriptorFromRelease>) {
+function publicAppDescriptor(descriptor: ReturnType<typeof appDescriptorFromRelease>) {
   return { ...descriptor, skills: descriptor.skills.map(publicCatalogSkill) }
 }
 
-export async function getCurrentSkillPackage(
+export async function getCurrentApp(
   event: RuntimeEvent,
   registryID: string,
-  packageID: string,
+  appID: string,
 ) {
   const store = await getRuntimeSkillRegistryStore(event)
   const state = await store.getState(registryID)
@@ -130,21 +130,21 @@ export async function getCurrentSkillPackage(
   const snapshot = await cachedSnapshot(store, registryID, state.current_snapshot)
   if (!snapshot) throw new Error(`Current Registry snapshot is missing: ${registryID}/${state.current_snapshot}`)
   snapshotCache(store).assertRequestBudget([snapshot])
-  const pkg = snapshot.packages.find((item) => item.package_id === packageID)
+  const pkg = snapshot.apps.find((item) => item.app_id === appID)
   if (!pkg) return undefined
-  const release = await store.getPackageRelease(registryID, packageID, pkg.revision)
-  if (!release) throw new Error(`Current Package release is missing: ${registryID}/${packageID}/${pkg.revision}`)
-  return publicPackageDescriptor(packageDescriptorFromRelease(release, pkg.revision))
+  const release = await store.getAppRelease(registryID, appID, pkg.revision)
+  if (!release) throw new Error(`Current App release is missing: ${registryID}/${appID}/${pkg.revision}`)
+  return publicAppDescriptor(appDescriptorFromRelease(release, pkg.revision))
 }
 
-export async function getSkillPackageRelease(
+export async function getAppRelease(
   event: RuntimeEvent,
   registryID: string,
-  packageID: string,
+  appID: string,
   revision: string,
 ) {
   const store = await getRuntimeSkillRegistryStore(event)
-  return store.getPackageRelease(registryID, packageID, revision)
+  return store.getAppRelease(registryID, appID, revision)
 }
 
 export async function getRegistryCatalogSkills(
@@ -160,10 +160,10 @@ export async function getRegistryCatalogSkills(
   })
 }
 
-export async function getCatalogSkill(event: RuntimeEvent, registryID: string, packageID: string, skillID: string) {
+export async function getCatalogSkill(event: RuntimeEvent, registryID: string, appID: string, skillID: string) {
   const [snapshot] = await getEnabledSkillRegistrySnapshots(await getRuntimeSkillRegistryStore(event), registryID)
   return snapshot && catalogSkillsFromSnapshot(snapshot)
-    .find((skill) => skill.package_id === packageID && skill.skill_id === skillID)
+    .find((skill) => skill.app_id === appID && skill.skill_id === skillID)
 }
 
 export async function getSkillRegistrySummaries(event: RuntimeEvent): Promise<SkillRegistrySummary[]> {
@@ -193,9 +193,9 @@ function publicRegistrySummary(state: SkillRegistryState): SkillRegistrySummary 
     id: registry.id, name: registry.name, enabled: registry.enabled, priority: registry.priority,
     adapter: registry.adapter.type, revision: current?.revision, published_at: current?.published_at,
     skill_count: current?.skill_count ?? 0,
-    package_count: current?.package_count ?? 0,
+    app_count: current?.app_count ?? 0,
     category_count: current?.category_count ?? 0,
-    skipped_package_count: current?.skipped_package_count ?? 0,
+    skipped_app_count: current?.skipped_app_count ?? 0,
   }
 }
 
@@ -212,13 +212,15 @@ export async function getSkillRegistryDetailsForStore(store: SkillRegistryStore,
   return { ...summary, definition: state.definition, source_revision: snapshot?.source.revision, diagnostics: snapshot?.diagnostics ?? [] }
 }
 
-export async function getSkillCategories(event: RuntimeEvent, registryID?: string) {
+/**
+ * App categories with localized names. Without a registry the result
+ * spans every enabled Registry; with one it is scoped and `undefined` marks an
+ * unknown or disabled Registry.
+ */
+export async function getAppCategories(event: RuntimeEvent, registryID?: string) {
   const store = await getRuntimeSkillRegistryStore(event)
-  return summarizeSkillCategories((await getEnabledSkillRegistrySnapshots(store, registryID)).flatMap(catalogSkillsFromSnapshot))
-}
-
-export async function getRegistrySkillCategories(event: RuntimeEvent, registryID: string) {
-  const snapshot = await getScopedRegistrySnapshot(await getRuntimeSkillRegistryStore(event), registryID)
+  if (!registryID) return summarizeAppCategories(await getEnabledSkillRegistrySnapshots(store))
+  const snapshot = await getScopedRegistrySnapshot(store, registryID)
   if (snapshot === undefined) return undefined
-  return summarizeSkillCategories(snapshot ? catalogSkillsFromSnapshot(snapshot) : [])
+  return summarizeAppCategories(snapshot ? [snapshot] : [])
 }

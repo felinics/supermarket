@@ -1,4 +1,4 @@
-import type { SkillRegistryDefinition } from '../types'
+import type { SkillIcon, SkillRegistryDefinition } from '../types'
 import type { SkillRegistryStore } from '../storage/contracts'
 import { assertReleaseCandidate, type RegistryReleaseLock } from './release-lock'
 import {
@@ -6,19 +6,21 @@ import {
   type SkillRegistryCandidate,
   type SkillRegistryBuildProgress,
 } from './candidate'
-import { skillPackageReleaseFromSnapshotPackage } from '../snapshot'
+import { appReleaseFromSnapshotApp } from '../snapshot'
 
 export interface SkillRegistryPublishResult {
   registry: string
   revision?: string
   skills?: number
+  apps?: number
   diagnostics?: number
   skipped?: 'disabled' | 'unchanged'
 }
 
 export type SkillRegistryPublishProgress =
   | SkillRegistryBuildProgress
-  | { type: 'skill'; registry: string; index: number; total: number; package_id: string; skill_id: string; uploaded: boolean }
+  | { type: 'skill'; registry: string; index: number; total: number; app_id: string; skill_id: string; uploaded: boolean }
+  | { type: 'app'; registry: string; app_id: string; uploaded: boolean }
   | { type: 'publishing'; registry: string; revision: string }
 
 function sameDefinition(left: SkillRegistryDefinition, right: SkillRegistryDefinition) {
@@ -33,6 +35,10 @@ function requireReleaseLock(
   return lock
 }
 
+function iconAssets(icon?: SkillIcon) {
+  return [icon?.card, icon?.detail, icon?.dark]
+}
+
 export class SkillRegistryPublisher {
   constructor(
     private readonly store: SkillRegistryStore,
@@ -43,6 +49,15 @@ export class SkillRegistryPublisher {
   private async publishCandidateAssets(candidate: SkillRegistryCandidate) {
     const uploadedArtifacts = new Map<string, boolean>()
     const uploadedImages = new Map<string, boolean>()
+    const uploadImage = async (digest: string, label: string) => {
+      const known = uploadedImages.get(digest)
+      if (known != null) return known
+      const image = candidate.images.get(digest)
+      if (!image) throw new Error(`Candidate ${label} icon is missing: ${digest}`)
+      const stored = (await this.store.putImage(image.descriptor, image.bytes)).stored
+      uploadedImages.set(digest, stored)
+      return stored
+    }
     for (const [index, skill] of candidate.skills.entries()) {
       let uploaded = uploadedArtifacts.get(skill.artifact.digest)
       if (uploaded == null) {
@@ -51,23 +66,27 @@ export class SkillRegistryPublisher {
         uploaded = (await this.store.putArtifact(artifact.descriptor, artifact.bytes)).stored
         uploadedArtifacts.set(skill.artifact.digest, uploaded)
       }
-      for (const descriptor of [skill.icon?.card, skill.icon?.detail, skill.icon?.dark]) {
-        if (!descriptor || uploadedImages.has(descriptor.digest)) continue
-        const image = candidate.images.get(descriptor.digest)
-        if (!image) throw new Error(`Candidate Skill icon is missing: ${descriptor.digest}`)
-        const stored = (await this.store.putImage(image.descriptor, image.bytes)).stored
-        uploadedImages.set(descriptor.digest, stored)
-        uploaded ||= stored
+      for (const descriptor of iconAssets(skill.icon)) {
+        if (!descriptor) continue
+        uploaded ||= await uploadImage(descriptor.digest, 'Skill')
       }
       this.onProgress({
         type: 'skill',
         registry: candidate.definition.id,
         index: index + 1,
         total: candidate.skills.length,
-        package_id: skill.package_id,
+        app_id: skill.app_id,
         skill_id: skill.skill_id,
         uploaded,
       })
+    }
+    for (const pkg of candidate.snapshot.apps) {
+      let uploaded = false
+      for (const descriptor of iconAssets(pkg.icon)) {
+        if (!descriptor) continue
+        uploaded ||= await uploadImage(descriptor.digest, 'App')
+      }
+      this.onProgress({ type: 'app', registry: candidate.definition.id, app_id: pkg.app_id, uploaded })
     }
   }
 
@@ -83,7 +102,7 @@ export class SkillRegistryPublisher {
       : undefined
     if (!definition.enabled) {
       await this.store.putState({
-        schema_version: '1',
+        schema_version: '2',
         definition,
         current_snapshot: previousState?.current_snapshot,
         current_summary: previousState?.current_summary,
@@ -105,7 +124,7 @@ export class SkillRegistryPublisher {
       if (!sameDefinition(previousState.definition, definition)) {
         await this.store.putState({
           ...previousState,
-          schema_version: '1',
+          schema_version: '2',
           definition,
         }, stateVersion)
       }
@@ -113,18 +132,19 @@ export class SkillRegistryPublisher {
         registry: definition.id,
         revision: candidate.revision,
         skills: candidate.skills.length,
+        apps: candidate.snapshot.apps.length,
         diagnostics: candidate.diagnostics.length,
         skipped: 'unchanged',
       }
     }
 
     await this.publishCandidateAssets(candidate)
-    for (const pkg of candidate.snapshot.packages) {
-      const stored = await this.store.putPackageRelease(
-        skillPackageReleaseFromSnapshotPackage(candidate.snapshot, pkg),
+    for (const pkg of candidate.snapshot.apps) {
+      const stored = await this.store.putAppRelease(
+        appReleaseFromSnapshotApp(candidate.snapshot, pkg),
       )
       if (stored.revision !== pkg.revision) {
-        throw new Error(`${definition.id}/${pkg.package_id}: Package revision does not match its Snapshot`)
+        throw new Error(`${definition.id}/${pkg.app_id}: App revision does not match its Snapshot`)
       }
     }
     this.onProgress({ type: 'publishing', registry: definition.id, revision: candidate.revision })
@@ -133,6 +153,7 @@ export class SkillRegistryPublisher {
       registry: definition.id,
       revision: candidate.revision,
       skills: candidate.skills.length,
+      apps: candidate.snapshot.apps.length,
       diagnostics: candidate.diagnostics.length,
     }
   }

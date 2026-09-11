@@ -23,11 +23,12 @@ const definition: SkillRegistryDefinition = {
 
 function snapshot(): SkillRegistrySnapshot {
   return {
-    schema_version: '1',
+    schema_version: '2',
     registry_id: 'example',
     registry_priority: 10,
     source: { type: 'local', revision: 'source' },
-    packages: [],
+    categories: [],
+    apps: [],
     diagnostics: [],
   }
 }
@@ -49,7 +50,7 @@ describe('Skill Registry loader', () => {
     expect(await getEnabledSkillRegistrySnapshots(store)).toEqual([approved])
 
     await store.putState({
-      schema_version: '1',
+      schema_version: '2',
       definition: { ...definition, enabled: false },
       current_snapshot: revision,
       current_summary: summarizeCurrentSnapshot(approved, revision, '2026-01-01T00:00:00.000Z'),

@@ -84,10 +84,10 @@ export async function readDirectoryFiles(
       if (ignoredDirectories.has(entry.name)) continue
       const target = path.join(directory, entry.name)
       const stats = await lstat(target)
-      if (stats.isSymbolicLink()) throw new Error(`Skill packages cannot contain symlinks: ${target}`)
+      if (stats.isSymbolicLink()) throw new Error(`Skill apps cannot contain symlinks: ${target}`)
       if (stats.isDirectory()) await visit(target)
       else if (stats.isFile()) {
-        if (fileCount >= MAX_SKILL_ARTIFACT_FILES) throw new Error(`Skill package exceeds ${MAX_SKILL_ARTIFACT_FILES} files`)
+        if (fileCount >= MAX_SKILL_ARTIFACT_FILES) throw new Error(`Skill app exceeds ${MAX_SKILL_ARTIFACT_FILES} files`)
         const bytes = await readFileBounded(
           target,
           MAX_SKILL_ARTIFACT_UNCOMPRESSED_BYTES - totalBytes,
@@ -96,7 +96,7 @@ export async function readDirectoryFiles(
         fileCount++
         totalBytes += bytes.length
         if (totalBytes > MAX_SKILL_ARTIFACT_UNCOMPRESSED_BYTES) {
-          throw new Error(`Skill package exceeds ${MAX_SKILL_ARTIFACT_UNCOMPRESSED_BYTES} bytes`)
+          throw new Error(`Skill app exceeds ${MAX_SKILL_ARTIFACT_UNCOMPRESSED_BYTES} bytes`)
         }
         const name = path.relative(physicalRoot, target).replaceAll(path.sep, '/')
         files[name] = { bytes, mode: stats.mode & 0o111 ? 0o755 : 0o644 }

@@ -1,0 +1,22 @@
+schema_version: "2"
+id: skill-creator
+version: 1.0.0
+name: Skill Creator
+description: Create new skills, improve existing skills and measure skill performance with evals and benchmarks.
+author:
+  name: Anthropic
+  email: support@anthropic.com
+homepage: https://github.com/anthropics/skills
+license: See LICENSE.txt
+category: developer-tools
+tags:
+  - skills
+  - evals
+  - authoring
+translations:
+  zh:
+    name: 技能创建器
+    description: 创建新技能、改进已有技能，并通过评测与基准衡量技能表现。
+  ja:
+    name: スキルクリエーター
+    description: スキルの新規作成、既存スキルの改善、評価とベンチマークによる性能測定。
