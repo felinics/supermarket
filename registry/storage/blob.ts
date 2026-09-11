@@ -77,6 +77,8 @@ async function readJSON<T>(backend: BlobBackend, key: string, maxBytes: number):
   return JSON.parse(decoder.decode(value)) as T
 }
 
+// Schema 2 state must not read or overwrite the schema 1 skill-registries namespace.
+// Keeping separate pointers also preserves the old data for a service rollback.
 export class BlobSkillRegistryStore implements SkillRegistryStore {
   private readonly streamingBackend
   private readonly stateStore
@@ -88,15 +90,15 @@ export class BlobSkillRegistryStore implements SkillRegistryStore {
       maxBytes: MAX_REGISTRY_STATE_BYTES,
       normalizeID: (id) => assertRegistryID(id, 'registry ID'),
       stateID: (state: SkillRegistryState) => state.definition.id,
-      key: (id) => `skill-registries/${id}/state.json`,
+      key: (id) => `app-registries/${id}/state.json`,
       validate: validateState,
     })
   }
 
   async listRegistryIDs(): Promise<string[]> {
-    const prefixes = await this.backend.listPrefixes('skill-registries/')
+    const prefixes = await this.backend.listPrefixes('app-registries/')
     return [...new Set(prefixes.flatMap((prefix): string[] => {
-      const match = prefix.match(/^skill-registries\/([^/]+)\/$/)
+      const match = prefix.match(/^app-registries\/([^/]+)\/$/)
       return match?.[1] ? [match[1]] : []
     }))].sort()
   }
@@ -119,7 +121,7 @@ export class BlobSkillRegistryStore implements SkillRegistryStore {
   async getSnapshot(registryID: string, revision: string) {
     const id = assertRegistryID(registryID, 'registry ID')
     const digest = assertDigest(revision)
-    const key = `skill-registries/${id}/snapshots/${digest}.json`
+    const key = `app-registries/${id}/snapshots/${digest}.json`
     const bytes = await this.backend.get(key)
     if (!bytes) return null
     if (bytes.length > MAX_REGISTRY_SNAPSHOT_BYTES) {
@@ -147,7 +149,7 @@ export class BlobSkillRegistryStore implements SkillRegistryStore {
       throw new Error(`App release exceeds ${MAX_REGISTRY_APP_RELEASE_BYTES} bytes: ${id}/${appID}`)
     }
     const revision = assertDigest(appRevision(release))
-    const key = `skill-registries/${id}/apps/${appID}/${revision}.json`
+    const key = `app-registries/${id}/apps/${appID}/${revision}.json`
     return { revision, stored: await putImmutableObject(this.backend, key, bytes, 'App release') }
   }
 
@@ -155,7 +157,7 @@ export class BlobSkillRegistryStore implements SkillRegistryStore {
     const id = assertRegistryID(registryID, 'registry ID')
     const normalizedAppID = assertRegistryComponentID(appID, 'app ID')
     const digest = assertDigest(revision)
-    const key = `skill-registries/${id}/apps/${normalizedAppID}/${digest}.json`
+    const key = `app-registries/${id}/apps/${normalizedAppID}/${digest}.json`
     const bytes = await this.backend.get(key)
     if (!bytes) return null
     if (bytes.length > MAX_REGISTRY_APP_RELEASE_BYTES) {
@@ -187,7 +189,7 @@ export class BlobSkillRegistryStore implements SkillRegistryStore {
       throw new Error(`Registry Snapshot is not canonically serialized: ${id}`)
     }
     const revision = assertDigest(registrySnapshotRevision(bytes))
-    const key = `skill-registries/${id}/snapshots/${revision}.json`
+    const key = `app-registries/${id}/snapshots/${revision}.json`
     await putImmutableObject(this.backend, key, bytes, 'Snapshot')
     const publishedAt = options.publishedAt ?? new Date().toISOString()
     if (!Number.isFinite(Date.parse(publishedAt))) throw new Error(`Invalid Snapshot publication time: ${publishedAt}`)

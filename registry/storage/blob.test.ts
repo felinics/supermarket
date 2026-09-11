@@ -126,6 +126,24 @@ function memoryBackend() {
 }
 
 describe('Immutable digest-addressed uploads', () => {
+  test('publishes Apps beside legacy registry state without reading or replacing it', async () => {
+    const { backend, objects, gets } = memoryBackend()
+    const oldKey = 'skill-registries/example/state.json'
+    const oldBytes = new TextEncoder().encode(JSON.stringify({ schema_version: '1', definition }))
+    objects.set(oldKey, oldBytes)
+    objects.set('skill-registries/legacy-only/state.json', oldBytes)
+    const store = new BlobSkillRegistryStore(backend)
+    expect(await store.getState('example')).toBeNull()
+    expect(await store.listRegistryIDs()).toEqual([])
+    const current = snapshot()
+    const revision = await store.publishSnapshot(serializeRegistrySnapshot(current), definition)
+    expect(await store.getSnapshot('example', revision)).toEqual(current)
+    expect(objects.get(oldKey)).toEqual(oldBytes)
+    expect(gets.has(oldKey)).toBe(false)
+    expect((await store.getState('example'))?.schema_version).toBe('2')
+    expect(await store.listRegistryIDs()).toEqual(['example'])
+  })
+
   test('rejects invalid or incomplete Snapshot Artifact metadata', () => {
     const stored = snapshot()
     stored.apps.push({
@@ -216,7 +234,7 @@ describe('Immutable digest-addressed uploads', () => {
     const bytes = serializeRegistrySnapshot(snapshot())
     const revision = registrySnapshotRevision(bytes)
     objects.set(
-      `skill-registries/example/snapshots/${revision}.json`,
+      `app-registries/example/snapshots/${revision}.json`,
       serializeRegistrySnapshot(snapshot('tampered')),
     )
     await expect(store.getSnapshot('example', revision)).rejects.toThrow('does not match its revision')
@@ -228,7 +246,7 @@ describe('Immutable digest-addressed uploads', () => {
     const firstAttempt = serializeRegistrySnapshot(snapshot('source'))
 
     behavior.failPuts = 1
-    behavior.failKey = 'skill-registries/example/state.json'
+    behavior.failKey = 'app-registries/example/state.json'
     await expect(store.publishSnapshot(firstAttempt, definition, {
       publishedAt: '2026-01-01T00:00:00.000Z',
     })).rejects.toThrow('state.json')
@@ -417,13 +435,13 @@ describe('SkillRegistryStore contract', () => {
     const store = new LocalSkillRegistryStore(root)
     const artifact = await exerciseStore(store)
     const digest = artifact.descriptor.digest
-    const state = JSON.parse(await readFile(path.join(root, 'skill-registries/example/state.json'), 'utf8'))
+    const state = JSON.parse(await readFile(path.join(root, 'app-registries/example/state.json'), 'utf8'))
     const revision = registrySnapshotRevision(serializeRegistrySnapshot(snapshot()))
     expect(state.current_snapshot).toBe(revision)
     expect(state.current_summary).toMatchObject({ revision, skill_count: 0 })
-    await Bun.write(path.join(root, 'skill-registries/example/state.json'), JSON.stringify({ ...state, current_snapshot: '../invalid' }))
+    await Bun.write(path.join(root, 'app-registries/example/state.json'), JSON.stringify({ ...state, current_snapshot: '../invalid' }))
     await expect(store.getState('example')).rejects.toThrow('digest')
-    await Bun.write(path.join(root, 'skill-registries/example/state.json'), JSON.stringify(state))
+    await Bun.write(path.join(root, 'app-registries/example/state.json'), JSON.stringify(state))
     await expect(store.putState({
       ...state,
       definition: { ...state.definition, name: 'x'.repeat(MAX_REGISTRY_STATE_BYTES) },

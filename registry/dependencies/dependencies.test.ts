@@ -111,7 +111,7 @@ describe('Dependency publication', () => {
     const { root, dir } = await fixture()
     const backend = new LocalBlobBackend(path.join(root, 'store'))
     const skillState = new TextEncoder().encode('existing Skill state')
-    await backend.put('skill-registries/memoh/state.json', skillState)
+    await backend.put('app-registries/memoh/state.json', skillState)
     const store = new DependencyRegistryStore(backend)
     const first = await buildDependencyCandidate(root)
     await store.publish(first)
@@ -123,7 +123,7 @@ describe('Dependency publication', () => {
     await store.publish(second, false)
     expect(await store.current()).toBeNull()
     expect(await store.release('demo', first.snapshot.dependencies[0]!.revision)).not.toBeNull()
-    expect(await backend.get('skill-registries/memoh/state.json')).toEqual(skillState)
+    expect(await backend.get('app-registries/memoh/state.json')).toEqual(skillState)
   })
 
   test('keeps both published pointers unchanged when combined publication preflight fails', async () => {

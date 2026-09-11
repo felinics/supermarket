@@ -294,8 +294,10 @@ use `apps`, `app_id`, and `app_count`; there are no Package compatibility aliase
 App releases, catalog Skills, snapshots, and registry state use schema 2. Registry
 definitions, categories, dependency documents, and Skill archive formats are unchanged.
 
-Prepare a fresh local data directory or R2 bucket, publish both registries and the
-independent dependency registry, then switch the registry and Memoh together. Old
-state and snapshots cannot be consumed by the new reader. Preserve the old data
-source for rollback; never overwrite immutable releases at their old revisions.
+App state, snapshots, and releases use the separate `app-registries/` storage
+namespace. The publisher and Worker use the same namespace, so an existing R2
+bucket can retain its schema 1 `skill-registries/` data while publishing schema 2.
+Publish both registries and the independent dependency registry before considering
+the cutover complete; verify `/api/apps` after the Worker and publication finish.
+Preserve the old namespace for rollback; never overwrite its immutable releases.
 Upstream Skill/plugin source formats are translated by adapters and remain unchanged.
