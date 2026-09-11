@@ -1,0 +1,25 @@
+schema_version: "2"
+id: asana
+version: 1.0.0
+name: Asana
+description: Connect Asana for projects, tasks and team collaboration.
+author:
+  name: Memoh
+homepage: https://asana.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: productivity
+tags:
+  - connector
+  - asana
+  - productivity
+  - project_management
+translations:
+  zh:
+    description: 连接 Asana，使用项目、任务与团队协作服务。
+  ja:
+    description: Asana に接続して、プロジェクト、タスク、チーム連携を利用します。
+connectors:
+  - type: asana
+    required: true

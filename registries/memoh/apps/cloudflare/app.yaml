@@ -1,0 +1,25 @@
+schema_version: "2"
+id: cloudflare
+version: 1.0.0
+name: Cloudflare
+description: Connect Cloudflare for network, security and developer services.
+author:
+  name: Memoh
+homepage: https://www.cloudflare.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: developer-tools
+tags:
+  - connector
+  - cloudflare
+  - developer_tools
+  - infrastructure
+translations:
+  zh:
+    description: 连接 Cloudflare，使用网络、安全与开发者服务服务。
+  ja:
+    description: Cloudflare に接続して、ネットワーク、セキュリティ、開発者向けサービスを利用します。
+connectors:
+  - type: cloudflare
+    required: true

@@ -1,0 +1,25 @@
+schema_version: "2"
+id: airtable
+version: 1.0.0
+name: Airtable
+description: Connect Airtable for tables, records and collaborative databases.
+author:
+  name: Memoh
+homepage: https://www.airtable.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: data-analytics
+tags:
+  - connector
+  - airtable
+  - database
+  - productivity
+translations:
+  zh:
+    description: 连接 Airtable，使用数据表、记录与协作数据库服务。
+  ja:
+    description: Airtable に接続して、テーブル、レコード、共同編集データベースを利用します。
+connectors:
+  - type: airtable
+    required: true

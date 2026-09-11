@@ -1,0 +1,24 @@
+schema_version: "2"
+id: one-drive
+version: 1.0.0
+name: OneDrive
+description: Connect OneDrive for cloud files.
+author:
+  name: Memoh
+homepage: https://onedrive.live.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: file-storage
+tags:
+  - connector
+  - one_drive
+  - storage
+translations:
+  zh:
+    description: 连接 OneDrive，使用云端文件服务。
+  ja:
+    description: OneDrive に接続して、クラウドファイルを利用します。
+connectors:
+  - type: one_drive
+    required: true

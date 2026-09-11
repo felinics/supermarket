@@ -1,0 +1,25 @@
+schema_version: "2"
+id: together-ai
+version: 1.0.0
+name: Together AI
+description: Connect Together AI for hosted AI models.
+author:
+  name: Memoh
+homepage: https://www.together.ai
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: ai-models
+tags:
+  - connector
+  - together_ai
+  - ai
+  - developer_tools
+translations:
+  zh:
+    description: 连接 Together AI，使用托管 AI 模型服务。
+  ja:
+    description: Together AI に接続して、ホスト型 AI モデルを利用します。
+connectors:
+  - type: together_ai
+    required: true

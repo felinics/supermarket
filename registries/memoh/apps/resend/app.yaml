@@ -1,0 +1,25 @@
+schema_version: "2"
+id: resend
+version: 1.0.0
+name: Resend
+description: Connect Resend for email delivery.
+author:
+  name: Memoh
+homepage: https://resend.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: communication
+tags:
+  - connector
+  - resend
+  - communication
+  - developer_tools
+translations:
+  zh:
+    description: 连接 Resend，使用邮件投递服务。
+  ja:
+    description: Resend に接続して、メール配信を利用します。
+connectors:
+  - type: resend
+    required: true

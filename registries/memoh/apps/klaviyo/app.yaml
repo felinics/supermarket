@@ -1,0 +1,25 @@
+schema_version: "2"
+id: klaviyo
+version: 1.0.0
+name: Klaviyo
+description: Connect Klaviyo for ecommerce marketing.
+author:
+  name: Memoh
+homepage: https://www.klaviyo.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: marketing
+tags:
+  - connector
+  - klaviyo
+  - marketing
+  - commerce
+translations:
+  zh:
+    description: 连接 Klaviyo，使用电商营销服务。
+  ja:
+    description: Klaviyo に接続して、EC マーケティングを利用します。
+connectors:
+  - type: klaviyo
+    required: true

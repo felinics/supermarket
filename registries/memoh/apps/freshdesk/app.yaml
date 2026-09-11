@@ -1,0 +1,24 @@
+schema_version: "2"
+id: freshdesk
+version: 1.0.0
+name: Freshdesk
+description: Connect Freshdesk for support tickets and customer service.
+author:
+  name: Memoh
+homepage: https://www.freshworks.com/freshdesk
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: customer-support
+tags:
+  - connector
+  - freshdesk
+  - customer_support
+translations:
+  zh:
+    description: 连接 Freshdesk，使用工单与客户服务服务。
+  ja:
+    description: Freshdesk に接続して、サポートチケットとカスタマーサービスを利用します。
+connectors:
+  - type: freshdesk
+    required: true

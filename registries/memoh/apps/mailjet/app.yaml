@@ -1,0 +1,25 @@
+schema_version: "2"
+id: mailjet
+version: 1.0.0
+name: Mailjet
+description: Connect Mailjet for email delivery and campaigns.
+author:
+  name: Memoh
+homepage: https://www.mailjet.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.webp
+category: communication
+tags:
+  - connector
+  - mailjet
+  - communication
+  - marketing
+translations:
+  zh:
+    description: 连接 Mailjet，使用邮件投递与营销活动服务。
+  ja:
+    description: Mailjet に接続して、メール配信とキャンペーンを利用します。
+connectors:
+  - type: mailjet
+    required: true

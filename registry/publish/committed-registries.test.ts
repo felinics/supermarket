@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import type { Dirent } from 'node:fs'
-import { access, readdir } from 'node:fs/promises'
+import { access, readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { buildSkillCandidates } from '../adapters/index'
 import { loadSkillRegistryDefinitions } from '../definitions/repository'
@@ -36,6 +36,32 @@ describe('Repository-owned Skill Registries', () => {
     expect(result.skills.find((skill) => skill.skill_id === 'docx')?.files['scripts/accept_changes.py']?.mode).toBe(0o755)
     expect([...result.apps.keys()].sort()).toEqual(apps.map((entry) => entry.name).sort())
     expect([...result.apps.values()].every((pkg) => pkg.reviewed && pkg.version && pkg.category)).toBe(true)
+  })
+
+  test('publishes every pinned Connect-It connector as an independently authorizable App', async () => {
+    const projectRoot = path.resolve(import.meta.dirname, '../..')
+    const upstream = JSON.parse(await readFile(path.join(projectRoot, 'registries/memoh/connect-it.catalog.json'), 'utf8')) as {
+      connectors: { type: string; app_id: string }[]
+    }
+    const definition = (await loadSkillRegistryDefinitions(projectRoot)).find((item) => item.id === 'memoh')!
+    const candidate = await buildSkillRegistryCandidate(definition, projectRoot)
+    const apps = candidate.snapshot.apps.filter((app) => app.connectors.length)
+    expect(apps.flatMap((app) => app.connectors.map((ref) => ref.type)).sort())
+      .toEqual(upstream.connectors.map((connector) => connector.type).sort())
+    expect(new Set(upstream.connectors.map((connector) => connector.type)).size).toBe(upstream.connectors.length)
+    expect(candidate.diagnostics).toEqual([])
+    for (const connector of upstream.connectors) {
+      const app = apps.find((item) => item.app_id === connector.app_id)!
+      expect(app).toBeDefined()
+      expect(app.connectors).toEqual([{ type: connector.type, required: true }])
+      expect(app.skills).toEqual([])
+      expect(app.dependencies).toEqual([])
+      expect(app.category).not.toBe('other')
+      expect(app.translations?.zh?.description).toBeTruthy()
+      expect(app.translations?.ja?.description).toBeTruthy()
+      expect(app.icon?.card).toBeDefined()
+      expect(candidate.images.has(app.icon!.card!.digest)).toBe(true)
+    }
   })
 
   test('publishes a canonical App for every official dependency', async () => {

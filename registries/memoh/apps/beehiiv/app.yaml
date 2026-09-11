@@ -1,0 +1,25 @@
+schema_version: "2"
+id: beehiiv
+version: 1.0.0
+name: beehiiv
+description: Connect beehiiv for newsletters and subscribers.
+author:
+  name: Memoh
+homepage: https://www.beehiiv.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: marketing
+tags:
+  - connector
+  - beehiiv
+  - marketing
+  - communication
+translations:
+  zh:
+    description: 连接 beehiiv，使用邮件通讯与订阅者服务。
+  ja:
+    description: beehiiv に接続して、ニュースレターと購読者を利用します。
+connectors:
+  - type: beehiiv
+    required: true

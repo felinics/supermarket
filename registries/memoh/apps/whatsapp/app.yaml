@@ -1,0 +1,25 @@
+schema_version: "2"
+id: whatsapp
+version: 1.0.0
+name: WhatsApp
+description: Connect WhatsApp for WhatsApp messaging.
+author:
+  name: Memoh
+homepage: https://www.whatsapp.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: communication
+tags:
+  - connector
+  - whatsapp
+  - communication
+  - social
+translations:
+  zh:
+    description: 连接 WhatsApp，使用WhatsApp 消息服务。
+  ja:
+    description: WhatsApp に接続して、WhatsApp メッセージを利用します。
+connectors:
+  - type: whatsapp
+    required: true

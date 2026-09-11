@@ -1,0 +1,25 @@
+schema_version: "2"
+id: algolia
+version: 1.0.0
+name: Algolia
+description: Connect Algolia for search indexes and search services.
+author:
+  name: Memoh
+homepage: https://www.algolia.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: developer-tools
+tags:
+  - connector
+  - algolia
+  - search
+  - developer_tools
+translations:
+  zh:
+    description: 连接 Algolia，使用搜索索引与搜索服务服务。
+  ja:
+    description: Algolia に接続して、検索インデックスと検索サービスを利用します。
+connectors:
+  - type: algolia
+    required: true

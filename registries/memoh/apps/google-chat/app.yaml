@@ -1,0 +1,24 @@
+schema_version: "2"
+id: google-chat
+version: 1.0.0
+name: Google Chat
+description: Connect Google Chat for team messaging.
+author:
+  name: Memoh
+homepage: https://chat.google.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: communication
+tags:
+  - connector
+  - google_chat
+  - communication
+translations:
+  zh:
+    description: 连接 Google Chat，使用团队消息服务。
+  ja:
+    description: Google Chat に接続して、チームメッセージを利用します。
+connectors:
+  - type: google_chat
+    required: true

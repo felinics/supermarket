@@ -1,0 +1,25 @@
+schema_version: "2"
+id: leadfeeder
+version: 1.0.0
+name: Leadfeeder
+description: Connect Leadfeeder for website visitor leads.
+author:
+  name: Memoh
+homepage: https://www.leadfeeder.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: sales-crm
+tags:
+  - connector
+  - leadfeeder
+  - sales
+  - analytics
+translations:
+  zh:
+    description: 连接 Leadfeeder，使用网站访客线索服务。
+  ja:
+    description: Leadfeeder に接続して、Web サイト訪問者のリードを利用します。
+connectors:
+  - type: leadfeeder
+    required: true

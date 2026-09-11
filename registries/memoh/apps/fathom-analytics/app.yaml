@@ -1,0 +1,24 @@
+schema_version: "2"
+id: fathom-analytics
+version: 1.0.0
+name: Fathom Analytics
+description: Connect Fathom Analytics for website analytics.
+author:
+  name: Memoh
+homepage: https://usefathom.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: data-analytics
+tags:
+  - connector
+  - fathom_analytics
+  - analytics
+translations:
+  zh:
+    description: 连接 Fathom Analytics，使用网站分析服务。
+  ja:
+    description: Fathom Analytics に接続して、Web サイト分析を利用します。
+connectors:
+  - type: fathom_analytics
+    required: true

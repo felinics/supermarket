@@ -1,0 +1,24 @@
+schema_version: "2"
+id: twilio
+version: 1.0.0
+name: Twilio
+description: Connect Twilio for messaging and communication services.
+author:
+  name: Memoh
+homepage: https://www.twilio.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: communication
+tags:
+  - connector
+  - twilio
+  - communication
+translations:
+  zh:
+    description: 连接 Twilio，使用消息与通信服务服务。
+  ja:
+    description: Twilio に接続して、メッセージと通信サービスを利用します。
+connectors:
+  - type: twilio
+    required: true

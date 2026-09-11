@@ -1,0 +1,25 @@
+schema_version: "2"
+id: replicate
+version: 1.0.0
+name: Replicate
+description: Connect Replicate for hosted AI models.
+author:
+  name: Memoh
+homepage: https://replicate.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: ai-models
+tags:
+  - connector
+  - replicate
+  - ai
+  - developer_tools
+translations:
+  zh:
+    description: 连接 Replicate，使用托管 AI 模型服务。
+  ja:
+    description: Replicate に接続して、ホスト型 AI モデルを利用します。
+connectors:
+  - type: replicate
+    required: true

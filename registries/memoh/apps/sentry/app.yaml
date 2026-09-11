@@ -1,0 +1,25 @@
+schema_version: "2"
+id: sentry
+version: 1.0.0
+name: Sentry
+description: Connect Sentry for errors and application performance.
+author:
+  name: Memoh
+homepage: https://sentry.io
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: monitoring
+tags:
+  - connector
+  - sentry
+  - monitoring
+  - developer_tools
+translations:
+  zh:
+    description: 连接 Sentry，使用错误跟踪与应用性能服务。
+  ja:
+    description: Sentry に接続して、エラー追跡とアプリ性能を利用します。
+connectors:
+  - type: sentry
+    required: true

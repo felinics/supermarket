@@ -1,0 +1,25 @@
+schema_version: "2"
+id: dropbox
+version: 1.0.0
+name: Dropbox
+description: Connect Dropbox for cloud files and file collaboration.
+author:
+  name: Memoh
+homepage: https://www.dropbox.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: file-storage
+tags:
+  - connector
+  - dropbox
+  - storage
+  - productivity
+translations:
+  zh:
+    description: 连接 Dropbox，使用云端文件与文件协作服务。
+  ja:
+    description: Dropbox に接続して、クラウドファイルとファイル共有を利用します。
+connectors:
+  - type: dropbox
+    required: true

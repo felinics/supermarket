@@ -1,0 +1,25 @@
+schema_version: "2"
+id: stay-ai
+version: 1.0.0
+name: Stay AI
+description: Connect Stay AI for subscription commerce.
+author:
+  name: Memoh
+homepage: https://stay.ai
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: ecommerce
+tags:
+  - connector
+  - stay_ai
+  - commerce
+  - marketing
+translations:
+  zh:
+    description: 连接 Stay AI，使用订阅电商服务。
+  ja:
+    description: Stay AI に接続して、サブスクリプションコマースを利用します。
+connectors:
+  - type: stay_ai
+    required: true

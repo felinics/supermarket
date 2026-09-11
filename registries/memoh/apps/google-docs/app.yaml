@@ -1,0 +1,24 @@
+schema_version: "2"
+id: google-docs
+version: 1.0.0
+name: Google Docs
+description: Connect Google Docs for online documents.
+author:
+  name: Memoh
+homepage: https://docs.google.com/document
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: documents
+tags:
+  - connector
+  - google_docs
+  - productivity
+translations:
+  zh:
+    description: 连接 Google Docs，使用在线文档服务。
+  ja:
+    description: Google Docs に接続して、オンラインドキュメントを利用します。
+connectors:
+  - type: google_docs
+    required: true

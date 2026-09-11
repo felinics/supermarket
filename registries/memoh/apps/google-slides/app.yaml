@@ -1,0 +1,24 @@
+schema_version: "2"
+id: google-slides
+version: 1.0.0
+name: Google Slides
+description: Connect Google Slides for online presentations.
+author:
+  name: Memoh
+homepage: https://docs.google.com/presentation
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: documents
+tags:
+  - connector
+  - google_slides
+  - productivity
+translations:
+  zh:
+    description: 连接 Google Slides，使用在线演示文稿服务。
+  ja:
+    description: Google Slides に接続して、オンラインプレゼンテーションを利用します。
+connectors:
+  - type: google_slides
+    required: true

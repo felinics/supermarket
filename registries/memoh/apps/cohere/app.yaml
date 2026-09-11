@@ -1,0 +1,25 @@
+schema_version: "2"
+id: cohere
+version: 1.0.0
+name: Cohere
+description: Connect Cohere for language models and text processing.
+author:
+  name: Memoh
+homepage: https://cohere.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: ai-models
+tags:
+  - connector
+  - cohere
+  - ai
+  - developer_tools
+translations:
+  zh:
+    description: 连接 Cohere，使用语言模型与文本处理服务。
+  ja:
+    description: Cohere に接続して、言語モデルとテキスト処理を利用します。
+connectors:
+  - type: cohere
+    required: true

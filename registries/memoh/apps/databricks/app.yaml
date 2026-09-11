@@ -1,0 +1,25 @@
+schema_version: "2"
+id: databricks
+version: 1.0.0
+name: Databricks
+description: Connect Databricks for data and analytics workloads.
+author:
+  name: Memoh
+homepage: https://www.databricks.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: data-analytics
+tags:
+  - connector
+  - databricks
+  - data
+  - developer_tools
+translations:
+  zh:
+    description: 连接 Databricks，使用数据与分析工作负载服务。
+  ja:
+    description: Databricks に接続して、データ処理と分析ワークロードを利用します。
+connectors:
+  - type: databricks
+    required: true

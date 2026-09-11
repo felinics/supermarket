@@ -1,0 +1,25 @@
+schema_version: "2"
+id: shippo
+version: 1.0.0
+name: Shippo
+description: Connect Shippo for shipping and shipment tracking.
+author:
+  name: Memoh
+homepage: https://goshippo.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: ecommerce
+tags:
+  - connector
+  - shippo
+  - shipping
+  - commerce
+translations:
+  zh:
+    description: 连接 Shippo，使用发货与物流追踪服务。
+  ja:
+    description: Shippo に接続して、発送と配送追跡を利用します。
+connectors:
+  - type: shippo
+    required: true

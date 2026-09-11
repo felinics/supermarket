@@ -1,6 +1,6 @@
 # Supermarket
 
-Official Skill and workspace dependency registry for [Memoh](https://github.com/felinics/Memoh).
+Official App, Skill and workspace dependency registry for [Memoh](https://github.com/felinics/Memoh).
 
 ## Project Structure
 
@@ -28,7 +28,36 @@ supermarket/
 
 Supermarket stores published Registry releases in a local data directory during development and in R2 for hosted environments. Its API provides Registry, App, Skill, and Artifact access for Memoh clients.
 
-A App is the unit Memoh users browse and install. It bundles Skills and may reference workspace dependencies and Connect-It connector types; the dependency definitions themselves stay in `registries/memoh/dependencies/` and keep their own releases.
+An App is the unit Memoh users browse and install. It bundles Skills and may reference workspace dependencies and Connect-It connector types; the dependency definitions themselves stay in `registries/memoh/dependencies/` and keep their own releases.
+
+## Connect-It Apps
+
+The Memoh registry includes one App for each of the 112 connector definitions
+registered by Connect-It at `0dcd18de667d4d936203a28b99a2aaf8d58c33ea`.
+The exact source revision and exported catalog are recorded in
+[`registries/memoh/connect-it.catalog.json`](registries/memoh/connect-it.catalog.json).
+This snapshot contains public provider metadata only, never credentials.
+
+Each App references exactly one required connector type. App IDs use hyphens
+(e.g. `google-calendar`), while connector references preserve Connect-It's exact
+identifier (`google_calendar`). The Apps contain no duplicated tools or Skills:
+Connect-It supplies the connector's implementation and authorization flow.
+Installing an App does not authorize an account; required connections remain
+pending until the user completes authorization. A deployment must configure the
+corresponding provider in Connect-It before that authorization can succeed.
+
+Apps have English, Chinese, and Japanese descriptions and are classified by use,
+including communication, sales and CRM, marketing, commerce and logistics,
+finance and payments, customer support, files and storage, identity and security,
+monitoring, and AI models. Icons are bundled from the sources recorded in the
+catalog; the lemlist and Reply.io ICO assets are converted to PNG, and Cyberimpact
+uses its current official favicon. Brand assets remain their owners' trademarks.
+
+When updating Connect-It, export its `packages/connectors.RegisterAll` registry
+again and compare it with the pinned catalog. Add, remove, or revise the matching
+Apps deliberately, refresh the catalog snapshot and affected release locks, then
+run the committed-registry coverage test and registry validation. This catches
+missing connectors, duplicate references, rejected manifests, and missing icons.
 
 ## Development
 
@@ -88,7 +117,7 @@ Skills use `(registry_id, app_id, skill_id)` identities.
 
 ## Contributing
 
-### Adding a App
+### Adding an App
 
 1. Create `registries/memoh/apps/<app-id>/app.yaml`. Every reviewed App needs one; `id` must match the directory, `version` is a semantic version shown to users, and `category` must be an ID from `registries/categories.yaml`:
 
@@ -117,7 +146,7 @@ postinstall:                    # optional
     args: [install, --global, opencli]
 ```
 
-A App must contain at least one Skill, dependency reference or connector reference. App revisions cover the manifest, references and Skills; dependency definitions keep their own revisions, so a App never pins one. Every dependency also needs a canonical App with the same ID that references it (see `registries/memoh/apps/node/`).
+An App must contain at least one Skill, dependency reference or connector reference. App revisions cover the manifest, references and Skills; dependency definitions keep their own revisions, so an App never pins one. Every dependency also needs a canonical App with the same ID that references it (see `registries/memoh/apps/node/`).
 
 2. Add Skills under `registries/memoh/apps/<app-id>/skills/<skill-id>/SKILL.md` with YAML frontmatter. For an independent Skill, use the Skill ID as both the app and Skill ID:
 

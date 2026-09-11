@@ -1,0 +1,25 @@
+schema_version: "2"
+id: n8n
+version: 1.0.0
+name: n8n
+description: Connect n8n for automation workflows.
+author:
+  name: Memoh
+homepage: https://n8n.io
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: automation
+tags:
+  - connector
+  - n8n
+  - automation
+  - developer_tools
+translations:
+  zh:
+    description: 连接 n8n，使用自动化工作流服务。
+  ja:
+    description: n8n に接続して、自動化ワークフローを利用します。
+connectors:
+  - type: n8n
+    required: true

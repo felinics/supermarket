@@ -1,0 +1,25 @@
+schema_version: "2"
+id: dub
+version: 1.0.0
+name: Dub
+description: Connect Dub for links and marketing attribution.
+author:
+  name: Memoh
+homepage: https://dub.co
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: marketing
+tags:
+  - connector
+  - dub
+  - marketing
+  - analytics
+translations:
+  zh:
+    description: 连接 Dub，使用链接与营销归因服务。
+  ja:
+    description: Dub に接続して、リンクとマーケティングのアトリビューションを利用します。
+connectors:
+  - type: dub
+    required: true

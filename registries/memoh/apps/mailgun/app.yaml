@@ -1,0 +1,25 @@
+schema_version: "2"
+id: mailgun
+version: 1.0.0
+name: Mailgun
+description: Connect Mailgun for email delivery.
+author:
+  name: Memoh
+homepage: https://www.mailgun.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: communication
+tags:
+  - connector
+  - mailgun
+  - communication
+  - marketing
+translations:
+  zh:
+    description: 连接 Mailgun，使用邮件投递服务。
+  ja:
+    description: Mailgun に接続して、メール配信を利用します。
+connectors:
+  - type: mailgun
+    required: true

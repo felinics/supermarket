@@ -1,0 +1,25 @@
+schema_version: "2"
+id: gemini
+version: 1.0.0
+name: Gemini
+description: Connect Gemini for Gemini models.
+author:
+  name: Memoh
+homepage: https://ai.google.dev/gemini-api
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: ai-models
+tags:
+  - connector
+  - gemini
+  - ai
+  - developer_tools
+translations:
+  zh:
+    description: 连接 Gemini，使用Gemini 模型服务。
+  ja:
+    description: Gemini に接続して、Gemini モデルを利用します。
+connectors:
+  - type: gemini
+    required: true

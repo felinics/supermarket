@@ -1,0 +1,24 @@
+schema_version: "2"
+id: posthog
+version: 1.0.0
+name: PostHog
+description: Connect PostHog for product analytics, feature flags and experiments.
+author:
+  name: Memoh
+homepage: https://posthog.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: data-analytics
+tags:
+  - connector
+  - posthog
+  - analytics
+translations:
+  zh:
+    description: 连接 PostHog，使用产品分析、功能开关与实验服务。
+  ja:
+    description: PostHog に接続して、プロダクト分析、機能フラグ、実験を利用します。
+connectors:
+  - type: posthog
+    required: true

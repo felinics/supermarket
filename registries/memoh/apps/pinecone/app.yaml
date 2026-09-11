@@ -1,0 +1,25 @@
+schema_version: "2"
+id: pinecone
+version: 1.0.0
+name: Pinecone
+description: Connect Pinecone for vector databases.
+author:
+  name: Memoh
+homepage: https://www.pinecone.io
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: data-analytics
+tags:
+  - connector
+  - pinecone
+  - database
+  - ai
+translations:
+  zh:
+    description: 连接 Pinecone，使用向量数据库服务。
+  ja:
+    description: Pinecone に接続して、ベクトルデータベースを利用します。
+connectors:
+  - type: pinecone
+    required: true

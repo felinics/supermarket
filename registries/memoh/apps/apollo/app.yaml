@@ -1,0 +1,25 @@
+schema_version: "2"
+id: apollo
+version: 1.0.0
+name: Apollo
+description: Connect Apollo for sales contacts and prospecting.
+author:
+  name: Memoh
+homepage: https://www.apollo.io
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: sales-crm
+tags:
+  - connector
+  - apollo
+  - sales
+  - crm
+translations:
+  zh:
+    description: 连接 Apollo，使用销售联系人与潜在客户开发服务。
+  ja:
+    description: Apollo に接続して、営業連絡先と見込み客の開拓を利用します。
+connectors:
+  - type: apollo
+    required: true

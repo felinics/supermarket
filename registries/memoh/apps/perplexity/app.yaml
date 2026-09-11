@@ -1,0 +1,25 @@
+schema_version: "2"
+id: perplexity
+version: 1.0.0
+name: Perplexity
+description: Connect Perplexity for AI search.
+author:
+  name: Memoh
+homepage: https://www.perplexity.ai
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: ai-models
+tags:
+  - connector
+  - perplexity
+  - ai
+  - search
+translations:
+  zh:
+    description: 连接 Perplexity，使用AI 搜索服务。
+  ja:
+    description: Perplexity に接続して、AI 検索を利用します。
+connectors:
+  - type: perplexity
+    required: true

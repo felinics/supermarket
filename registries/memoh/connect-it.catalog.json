@@ -1,0 +1,1775 @@
+{
+  "repository": "https://github.com/felinics/connect-it",
+  "revision": "0dcd18de667d4d936203a28b99a2aaf8d58c33ea",
+  "entrypoint": "packages/connectors.RegisterAll",
+  "connectors": [
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "marketing",
+        "crm"
+      ],
+      "description": "ActiveCampaign official REST API",
+      "homepage": "https://www.activecampaign.com",
+      "icon": "https://www.activecampaign.com/dist/favicon-180x180.png",
+      "name": "ActiveCampaign",
+      "type": "activecampaign",
+      "app_id": "activecampaign",
+      "icon_source": "https://www.activecampaign.com/dist/favicon-180x180.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "payments",
+        "finance"
+      ],
+      "description": "Adyen official REST API",
+      "homepage": "https://www.adyen.com",
+      "icon": "https://cdn.simpleicons.org/adyen",
+      "name": "Adyen",
+      "type": "adyen",
+      "app_id": "adyen",
+      "icon_source": "https://cdn.simpleicons.org/adyen"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "marketing",
+        "analytics"
+      ],
+      "description": "Ahrefs official REST API",
+      "homepage": "https://ahrefs.com",
+      "icon": "https://static.ahrefs.com/favicon.svg?v=2",
+      "name": "Ahrefs",
+      "type": "ahrefs",
+      "app_id": "ahrefs",
+      "icon_source": "https://static.ahrefs.com/favicon.svg?v=2"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "database",
+        "productivity"
+      ],
+      "description": "Airtable database and collaboration platform",
+      "homepage": "https://www.airtable.com",
+      "icon": "https://cdn.simpleicons.org/airtable",
+      "name": "Airtable",
+      "type": "airtable",
+      "app_id": "airtable",
+      "icon_source": "https://cdn.simpleicons.org/airtable"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "search",
+        "developer_tools"
+      ],
+      "description": "Algolia official REST API",
+      "homepage": "https://www.algolia.com",
+      "icon": "https://cdn.simpleicons.org/algolia/_/e5e5e5",
+      "name": "Algolia",
+      "type": "algolia",
+      "app_id": "algolia",
+      "icon_source": "https://cdn.simpleicons.org/algolia/_/e5e5e5"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "ai",
+        "developer_tools"
+      ],
+      "description": "Anthropic official REST API",
+      "homepage": "https://www.anthropic.com",
+      "icon": "https://cdn.simpleicons.org/anthropic/_/e5e5e5",
+      "name": "Anthropic",
+      "type": "anthropic",
+      "app_id": "anthropic",
+      "icon_source": "https://cdn.simpleicons.org/anthropic/_/e5e5e5"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "automation",
+        "data"
+      ],
+      "description": "Apify official REST API",
+      "homepage": "https://apify.com",
+      "icon": "https://api.iconify.design/devicon:apify.svg",
+      "name": "Apify",
+      "type": "apify",
+      "app_id": "apify",
+      "icon_source": "https://api.iconify.design/devicon:apify.svg"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "sales",
+        "crm"
+      ],
+      "description": "Apollo official REST API",
+      "homepage": "https://www.apollo.io",
+      "icon": "https://www.apollo.io/icon.svg?icon.11df6mby0rn6l.svg",
+      "name": "Apollo",
+      "type": "apollo",
+      "app_id": "apollo",
+      "icon_source": "https://www.apollo.io/icon.svg?icon.11df6mby0rn6l.svg"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "productivity",
+        "project_management"
+      ],
+      "description": "Asana project, task and collaboration platform",
+      "homepage": "https://asana.com",
+      "icon": "https://cdn.simpleicons.org/asana",
+      "name": "Asana",
+      "type": "asana",
+      "app_id": "asana",
+      "icon_source": "https://cdn.simpleicons.org/asana"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "identity",
+        "security"
+      ],
+      "description": "Auth0 official REST API",
+      "homepage": "https://auth0.com",
+      "icon": "https://cdn.simpleicons.org/auth0",
+      "name": "Auth0",
+      "type": "auth0",
+      "app_id": "auth0",
+      "icon_source": "https://cdn.simpleicons.org/auth0"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "marketing",
+        "communication"
+      ],
+      "description": "beehiiv official REST API",
+      "homepage": "https://www.beehiiv.com",
+      "icon": "https://beehiiv-marketing-images.s3.amazonaws.com/Redesign2023/favicon.png",
+      "name": "beehiiv",
+      "type": "beehiiv",
+      "app_id": "beehiiv",
+      "icon_source": "https://beehiiv-marketing-images.s3.amazonaws.com/Redesign2023/favicon.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "commerce"
+      ],
+      "description": "BigCommerce official REST API",
+      "homepage": "https://www.bigcommerce.com",
+      "icon": "https://cdn.simpleicons.org/bigcommerce/_/e5e5e5",
+      "name": "BigCommerce",
+      "type": "bigcommerce",
+      "app_id": "bigcommerce",
+      "icon_source": "https://cdn.simpleicons.org/bigcommerce/_/e5e5e5"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "marketing",
+        "developer_tools"
+      ],
+      "description": "Bitly official REST API",
+      "homepage": "https://bitly.com",
+      "icon": "https://cdn.simpleicons.org/bitly",
+      "name": "Bitly",
+      "type": "bitly",
+      "app_id": "bitly",
+      "icon_source": "https://cdn.simpleicons.org/bitly"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "storage",
+        "productivity"
+      ],
+      "description": "Box cloud content management and collaboration platform",
+      "homepage": "https://www.box.com",
+      "icon": "https://cdn.simpleicons.org/box/_/e5e5e5",
+      "name": "Box",
+      "type": "box",
+      "app_id": "box",
+      "icon_source": "https://cdn.simpleicons.org/box/_/e5e5e5"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "communication",
+        "marketing"
+      ],
+      "description": "Brevo official REST API",
+      "homepage": "https://www.brevo.com",
+      "icon": "https://cdn.simpleicons.org/brevo",
+      "name": "Brevo",
+      "type": "brevo",
+      "app_id": "brevo",
+      "icon_source": "https://cdn.simpleicons.org/brevo"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "property_management"
+      ],
+      "description": "Buildium official REST API",
+      "homepage": "https://www.buildium.com",
+      "icon": "https://www.buildium.com/wp-content/uploads/2017/06/Buildium-favicon.png",
+      "name": "Buildium",
+      "type": "buildium",
+      "app_id": "buildium",
+      "icon_source": "https://www.buildium.com/wp-content/uploads/2017/06/Buildium-favicon.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "scheduling",
+        "productivity"
+      ],
+      "description": "Calendly official REST API",
+      "homepage": "https://calendly.com",
+      "icon": "https://cdn.simpleicons.org/calendly",
+      "name": "Calendly",
+      "type": "calendly",
+      "app_id": "calendly",
+      "icon_source": "https://cdn.simpleicons.org/calendly"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "payments",
+        "finance"
+      ],
+      "description": "Chargebee official REST API",
+      "homepage": "https://www.chargebee.com",
+      "icon": "https://www.chargebee.com/static/resources/brand/apple-touch-icon.png?v=1",
+      "name": "Chargebee",
+      "type": "chargebee",
+      "app_id": "chargebee",
+      "icon_source": "https://www.chargebee.com/static/resources/brand/apple-touch-icon.png?v=1"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "commerce",
+        "inventory"
+      ],
+      "description": "Cin7 Core official REST API",
+      "homepage": "https://www.cin7.com/solutions/core",
+      "icon": "https://www.cin7.com/hubfs/image/logo/cin7/cin7-favicon-2023.jpeg",
+      "name": "Cin7 Core",
+      "type": "cin7_core",
+      "app_id": "cin7-core",
+      "icon_source": "https://www.cin7.com/hubfs/image/logo/cin7/cin7-favicon-2023.jpeg"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "crm",
+        "sales"
+      ],
+      "description": "Close official REST API",
+      "homepage": "https://www.close.com",
+      "icon": "https://cdn.prod.website-files.com/61717799a852418a278cfa9b/66268a52e0119bfb4fb75e16_webclip.png",
+      "name": "Close",
+      "type": "close",
+      "app_id": "close",
+      "icon_source": "https://cdn.prod.website-files.com/61717799a852418a278cfa9b/66268a52e0119bfb4fb75e16_webclip.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "developer_tools",
+        "infrastructure"
+      ],
+      "description": "Cloudflare network, security and developer platform",
+      "homepage": "https://www.cloudflare.com",
+      "icon": "https://cdn.simpleicons.org/cloudflare",
+      "name": "Cloudflare",
+      "type": "cloudflare",
+      "app_id": "cloudflare",
+      "icon_source": "https://cdn.simpleicons.org/cloudflare"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "ai",
+        "developer_tools"
+      ],
+      "description": "Cohere official REST API",
+      "homepage": "https://cohere.com",
+      "icon": "https://cohere.com/apple-touch-icon.png",
+      "name": "Cohere",
+      "type": "cohere",
+      "app_id": "cohere",
+      "icon_source": "https://cohere.com/apple-touch-icon.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "marketing",
+        "communication"
+      ],
+      "description": "Customer.io official REST API",
+      "homepage": "https://customer.io",
+      "icon": "https://customer.io/favicon.svg",
+      "name": "Customer.io",
+      "type": "customer_io",
+      "app_id": "customer-io",
+      "icon_source": "https://customer.io/favicon.svg"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "marketing",
+        "communication"
+      ],
+      "description": "Cyberimpact official REST API",
+      "homepage": "https://www.cyberimpact.com",
+      "icon": "https://www.cyberimpact.com/wp-content/uploads/2020/02/cropped-cyberimpact-180x180.png",
+      "name": "Cyberimpact",
+      "type": "cyberimpact",
+      "app_id": "cyberimpact",
+      "icon_source": "https://www.cyberimpact.com/favicon.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "data",
+        "developer_tools"
+      ],
+      "description": "Databricks official REST API",
+      "homepage": "https://www.databricks.com",
+      "icon": "https://cdn.simpleicons.org/databricks",
+      "name": "Databricks",
+      "type": "databricks",
+      "app_id": "databricks",
+      "icon_source": "https://cdn.simpleicons.org/databricks"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "monitoring",
+        "developer_tools"
+      ],
+      "description": "Datadog observability and security platform",
+      "homepage": "https://www.datadoghq.com",
+      "icon": "https://cdn.simpleicons.org/datadog/_/e5e5e5",
+      "name": "Datadog",
+      "type": "datadog",
+      "app_id": "datadog",
+      "icon_source": "https://cdn.simpleicons.org/datadog/_/e5e5e5"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "storage",
+        "productivity"
+      ],
+      "description": "Dropbox cloud storage and file collaboration platform",
+      "homepage": "https://www.dropbox.com",
+      "icon": "https://cdn.simpleicons.org/dropbox",
+      "name": "Dropbox",
+      "type": "dropbox",
+      "app_id": "dropbox",
+      "icon_source": "https://cdn.simpleicons.org/dropbox"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "marketing",
+        "analytics"
+      ],
+      "description": "Dub official REST API",
+      "homepage": "https://dub.co",
+      "icon": "https://assets.dub.co/favicons/apple-touch-icon.png",
+      "name": "Dub",
+      "type": "dub",
+      "app_id": "dub",
+      "icon_source": "https://assets.dub.co/favicons/apple-touch-icon.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "shipping",
+        "commerce"
+      ],
+      "description": "EasyPost official REST API",
+      "homepage": "https://www.easypost.com",
+      "icon": "https://www.easypost.com/wp-content/uploads/2025/03/icon.svg",
+      "name": "EasyPost",
+      "type": "easypost",
+      "app_id": "easypost",
+      "icon_source": "https://www.easypost.com/wp-content/uploads/2025/03/icon.svg"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "search",
+        "ai"
+      ],
+      "description": "Exa official REST API",
+      "homepage": "https://exa.ai",
+      "icon": "https://exa.ai/images/favicon-32x32.png",
+      "name": "Exa",
+      "type": "exa",
+      "app_id": "exa",
+      "icon_source": "https://exa.ai/images/favicon-32x32.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "analytics"
+      ],
+      "description": "Fathom Analytics official REST API",
+      "homepage": "https://usefathom.com",
+      "icon": "https://cdn.simpleicons.org/fathom",
+      "name": "Fathom Analytics",
+      "type": "fathom_analytics",
+      "app_id": "fathom-analytics",
+      "icon_source": "https://cdn.simpleicons.org/fathom"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "crm",
+        "sales"
+      ],
+      "description": "folk official REST API",
+      "homepage": "https://folk.app",
+      "icon": "https://cdn.prod.website-files.com/626be00c396339c5a816353b/6a16a47cc6dbf48bc20b20d7_logo.png",
+      "name": "folk",
+      "type": "folk",
+      "app_id": "folk",
+      "icon_source": "https://cdn.prod.website-files.com/626be00c396339c5a816353b/6a16a47cc6dbf48bc20b20d7_logo.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "customer_support"
+      ],
+      "description": "Freshdesk official REST API",
+      "homepage": "https://www.freshworks.com/freshdesk",
+      "icon": "https://www.freshworks.com/favicons/apple-touch-icon.png",
+      "name": "Freshdesk",
+      "type": "freshdesk",
+      "app_id": "freshdesk",
+      "icon_source": "https://www.freshworks.com/favicons/apple-touch-icon.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "crm",
+        "sales"
+      ],
+      "description": "Freshsales official REST API",
+      "homepage": "https://www.freshworks.com/crm/sales",
+      "icon": "https://www.freshworks.com/favicons/apple-touch-icon.png",
+      "name": "Freshsales",
+      "type": "freshsales",
+      "app_id": "freshsales",
+      "icon_source": "https://www.freshworks.com/favicons/apple-touch-icon.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "ai",
+        "developer_tools"
+      ],
+      "description": "Gemini official REST API",
+      "homepage": "https://ai.google.dev/gemini-api",
+      "icon": "https://cdn.simpleicons.org/googlegemini",
+      "name": "Gemini",
+      "type": "gemini",
+      "app_id": "gemini",
+      "icon_source": "https://cdn.simpleicons.org/googlegemini"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "developer_tools"
+      ],
+      "description": "GitHub code hosting and collaboration platform",
+      "homepage": "https://github.com",
+      "icon": "https://cdn.simpleicons.org/github/_/e5e5e5",
+      "name": "GitHub",
+      "type": "github",
+      "app_id": "github",
+      "icon_source": "https://cdn.simpleicons.org/github/_/e5e5e5"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "developer_tools"
+      ],
+      "description": "GitLab code hosting and DevSecOps platform",
+      "homepage": "https://gitlab.com",
+      "icon": "https://cdn.simpleicons.org/gitlab",
+      "name": "GitLab",
+      "type": "gitlab",
+      "app_id": "gitlab",
+      "icon_source": "https://cdn.simpleicons.org/gitlab"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "communication"
+      ],
+      "description": "Google Gmail email service",
+      "homepage": "https://mail.google.com",
+      "icon": "https://cdn.simpleicons.org/gmail",
+      "name": "Gmail",
+      "type": "gmail",
+      "app_id": "gmail",
+      "icon_source": "https://cdn.simpleicons.org/gmail"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "advertising"
+      ],
+      "description": "Google Ads advertising platform",
+      "homepage": "https://ads.google.com",
+      "icon": "https://cdn.simpleicons.org/googleads",
+      "name": "Google Ads",
+      "type": "google_ads",
+      "app_id": "google-ads",
+      "icon_source": "https://cdn.simpleicons.org/googleads"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "productivity"
+      ],
+      "description": "Google Calendar scheduling and calendar management",
+      "homepage": "https://calendar.google.com",
+      "icon": "https://cdn.simpleicons.org/googlecalendar",
+      "name": "Google Calendar",
+      "type": "google_calendar",
+      "app_id": "google-calendar",
+      "icon_source": "https://cdn.simpleicons.org/googlecalendar"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "communication"
+      ],
+      "description": "Google Chat team messaging service",
+      "homepage": "https://chat.google.com",
+      "icon": "https://cdn.simpleicons.org/googlechat",
+      "name": "Google Chat",
+      "type": "google_chat",
+      "app_id": "google-chat",
+      "icon_source": "https://cdn.simpleicons.org/googlechat"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "productivity"
+      ],
+      "description": "Google Docs online documents",
+      "homepage": "https://docs.google.com/document",
+      "icon": "https://cdn.simpleicons.org/googledocs",
+      "name": "Google Docs",
+      "type": "google_docs",
+      "app_id": "google-docs",
+      "icon_source": "https://cdn.simpleicons.org/googledocs"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "storage",
+        "productivity"
+      ],
+      "description": "Google Drive cloud storage and file collaboration",
+      "homepage": "https://drive.google.com",
+      "icon": "https://cdn.simpleicons.org/googledrive",
+      "name": "Google Drive",
+      "type": "google_drive",
+      "app_id": "google-drive",
+      "icon_source": "https://cdn.simpleicons.org/googledrive"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "productivity"
+      ],
+      "description": "Google profile, contacts and organization directory",
+      "homepage": "https://contacts.google.com",
+      "icon": "https://cdn.simpleicons.org/google",
+      "name": "Google People",
+      "type": "google_people",
+      "app_id": "google-people",
+      "icon_source": "https://cdn.simpleicons.org/google"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "productivity"
+      ],
+      "description": "Google Sheets online spreadsheets",
+      "homepage": "https://docs.google.com/spreadsheets",
+      "icon": "https://cdn.simpleicons.org/googlesheets",
+      "name": "Google Sheets",
+      "type": "google_sheets",
+      "app_id": "google-sheets",
+      "icon_source": "https://cdn.simpleicons.org/googlesheets"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "productivity"
+      ],
+      "description": "Google Slides online presentations",
+      "homepage": "https://docs.google.com/presentation",
+      "icon": "https://cdn.simpleicons.org/googleslides",
+      "name": "Google Slides",
+      "type": "google_slides",
+      "app_id": "google-slides",
+      "icon_source": "https://cdn.simpleicons.org/googleslides"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "customer_support",
+        "commerce"
+      ],
+      "description": "Gorgias official REST API",
+      "homepage": "https://www.gorgias.com",
+      "icon": "https://cdn.prod.website-files.com/5e4ff204e7b6f80e402d407a/655f0a311c75248c5ff9756b_Social%20Avatar.png",
+      "name": "Gorgias",
+      "type": "gorgias",
+      "app_id": "gorgias",
+      "icon_source": "https://cdn.prod.website-files.com/5e4ff204e7b6f80e402d407a/655f0a311c75248c5ff9756b_Social%20Avatar.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "monitoring",
+        "developer_tools"
+      ],
+      "description": "Grafana official REST API",
+      "homepage": "https://grafana.com",
+      "icon": "https://cdn.simpleicons.org/grafana",
+      "name": "Grafana",
+      "type": "grafana",
+      "app_id": "grafana",
+      "icon_source": "https://cdn.simpleicons.org/grafana"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "customer_support"
+      ],
+      "description": "Help Scout official REST API",
+      "homepage": "https://www.helpscout.com",
+      "icon": "https://cdn.simpleicons.org/helpscout",
+      "name": "Help Scout",
+      "type": "help_scout",
+      "app_id": "help-scout",
+      "icon_source": "https://cdn.simpleicons.org/helpscout"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "crm",
+        "finance"
+      ],
+      "description": "Holded official REST API",
+      "homepage": "https://www.holded.com",
+      "icon": "https://www.holded.com/assets/favicons/apple-touch-icon.png",
+      "name": "Holded",
+      "type": "holded",
+      "app_id": "holded",
+      "icon_source": "https://www.holded.com/assets/favicons/apple-touch-icon.png"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "crm",
+        "marketing"
+      ],
+      "description": "HubSpot CRM, marketing and customer platform",
+      "homepage": "https://www.hubspot.com",
+      "icon": "https://cdn.simpleicons.org/hubspot",
+      "name": "HubSpot",
+      "type": "hubspot",
+      "app_id": "hubspot",
+      "icon_source": "https://cdn.simpleicons.org/hubspot"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "sales",
+        "marketing"
+      ],
+      "description": "Instantly official REST API",
+      "homepage": "https://instantly.ai",
+      "icon": "https://cdn.prod.website-files.com/63860c8c65e7bef4a1eeebeb/63f62e4d1df86f1bf7f133d5_cleaned_rounded.png",
+      "name": "Instantly",
+      "type": "instantly",
+      "app_id": "instantly",
+      "icon_source": "https://cdn.prod.website-files.com/63860c8c65e7bef4a1eeebeb/63f62e4d1df86f1bf7f133d5_cleaned_rounded.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "customer_support"
+      ],
+      "description": "Intercom customer messaging and support platform",
+      "homepage": "https://www.intercom.com",
+      "icon": "https://cdn.simpleicons.org/intercom",
+      "name": "Intercom",
+      "type": "intercom",
+      "app_id": "intercom",
+      "icon_source": "https://cdn.simpleicons.org/intercom"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "forms",
+        "productivity"
+      ],
+      "description": "Jotform official REST API",
+      "homepage": "https://www.jotform.com",
+      "icon": "https://cdn.jotfor.ms/assets/img/favicons/favicon-2021.svg",
+      "name": "Jotform",
+      "type": "jotform",
+      "app_id": "jotform",
+      "icon_source": "https://cdn.jotfor.ms/assets/img/favicons/favicon-2021.svg"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "marketing",
+        "commerce"
+      ],
+      "description": "Klaviyo official REST API",
+      "homepage": "https://www.klaviyo.com",
+      "icon": "https://www.klaviyo.com/icons/icon-512x512.png",
+      "name": "Klaviyo",
+      "type": "klaviyo",
+      "app_id": "klaviyo",
+      "icon_source": "https://www.klaviyo.com/icons/icon-512x512.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "customer_support",
+        "crm"
+      ],
+      "description": "Kustomer official REST API",
+      "homepage": "https://www.kustomer.com",
+      "icon": "https://api.iconify.design/logos:kustomer.svg",
+      "name": "Kustomer",
+      "type": "kustomer",
+      "app_id": "kustomer",
+      "icon_source": "https://api.iconify.design/logos:kustomer.svg"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "sales",
+        "analytics"
+      ],
+      "description": "Leadfeeder official REST API",
+      "homepage": "https://www.leadfeeder.com",
+      "icon": "https://www.leadfeeder.com/favicon.svg",
+      "name": "Leadfeeder",
+      "type": "leadfeeder",
+      "app_id": "leadfeeder",
+      "icon_source": "https://www.leadfeeder.com/favicon.svg"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "sales",
+        "data"
+      ],
+      "description": "LeadMagic official REST API",
+      "homepage": "https://leadmagic.io",
+      "icon": "https://leadmagic.io/favicon.svg?v=20260520",
+      "name": "LeadMagic",
+      "type": "leadmagic",
+      "app_id": "leadmagic",
+      "icon_source": "https://leadmagic.io/favicon.svg?v=20260520"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "sales",
+        "marketing"
+      ],
+      "description": "lemlist official REST API",
+      "homepage": "https://www.lemlist.com",
+      "icon": "https://www.lemlist.com/favicon.ico",
+      "name": "lemlist",
+      "type": "lemlist",
+      "app_id": "lemlist",
+      "icon_source": "https://www.lemlist.com/favicon.ico",
+      "icon_format_conversion": "ico-to-png"
+    },
+    {
+      "auth": [
+        "oauth2",
+        "api_key"
+      ],
+      "categories": [
+        "developer_tools",
+        "project_management"
+      ],
+      "description": "Linear product development, issue and project management platform",
+      "homepage": "https://linear.app",
+      "icon": "https://cdn.simpleicons.org/linear",
+      "name": "Linear",
+      "type": "linear",
+      "app_id": "linear",
+      "icon_source": "https://cdn.simpleicons.org/linear"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "communication"
+      ],
+      "description": "Lob official REST API",
+      "homepage": "https://www.lob.com",
+      "icon": "https://cdn.prod.website-files.com/5e1e5c62fa3d4447af417098/6348790a6940a6b92f0a188f_Lob%20Webclip.png",
+      "name": "Lob",
+      "type": "lob",
+      "app_id": "lob",
+      "icon_source": "https://cdn.prod.website-files.com/5e1e5c62fa3d4447af417098/6348790a6940a6b92f0a188f_Lob%20Webclip.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "marketing",
+        "communication"
+      ],
+      "description": "Loops official REST API",
+      "homepage": "https://loops.so",
+      "icon": "https://cdn.simpleicons.org/loops",
+      "name": "Loops",
+      "type": "loops",
+      "app_id": "loops",
+      "icon_source": "https://cdn.simpleicons.org/loops"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "marketing",
+        "communication"
+      ],
+      "description": "Mailchimp official REST API",
+      "homepage": "https://mailchimp.com",
+      "icon": "https://cdn.simpleicons.org/mailchimp",
+      "name": "Mailchimp",
+      "type": "mailchimp",
+      "app_id": "mailchimp",
+      "icon_source": "https://cdn.simpleicons.org/mailchimp"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "communication",
+        "marketing"
+      ],
+      "description": "Mailgun official REST API",
+      "homepage": "https://www.mailgun.com",
+      "icon": "https://cdn.simpleicons.org/mailgun",
+      "name": "Mailgun",
+      "type": "mailgun",
+      "app_id": "mailgun",
+      "icon_source": "https://cdn.simpleicons.org/mailgun"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "communication",
+        "marketing"
+      ],
+      "description": "Mailjet official REST API",
+      "homepage": "https://www.mailjet.com",
+      "icon": "https://www.mailjet.com/wp-content/themes/simpletexting-theme-blank/assets/favicon/apple-touch-icon-512x512.png",
+      "name": "Mailjet",
+      "type": "mailjet",
+      "app_id": "mailjet",
+      "icon_source": "https://www.mailjet.com/wp-content/themes/simpletexting-theme-blank/assets/favicon/apple-touch-icon-512x512.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "social",
+        "marketing"
+      ],
+      "description": "Meta official REST API",
+      "homepage": "https://business.meta.com",
+      "icon": "https://cdn.simpleicons.org/meta",
+      "name": "Meta",
+      "type": "meta",
+      "app_id": "meta",
+      "icon_source": "https://cdn.simpleicons.org/meta"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "productivity",
+        "project_management"
+      ],
+      "description": "monday.com project, workflow and collaboration platform",
+      "homepage": "https://monday.com",
+      "icon": "https://cdn.monday.com/images/logos/monday_logo_icon.png",
+      "name": "monday.com",
+      "type": "monday",
+      "app_id": "monday",
+      "icon_source": "https://cdn.monday.com/images/logos/monday_logo_icon.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "automation",
+        "developer_tools"
+      ],
+      "description": "n8n official REST API",
+      "homepage": "https://n8n.io",
+      "icon": "https://cdn.simpleicons.org/n8n",
+      "name": "n8n",
+      "type": "n8n",
+      "app_id": "n8n",
+      "icon_source": "https://cdn.simpleicons.org/n8n"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "productivity"
+      ],
+      "description": "Notion document, knowledge base and collaboration platform",
+      "homepage": "https://www.notion.so",
+      "icon": "https://cdn.simpleicons.org/notion/_/e5e5e5",
+      "name": "Notion",
+      "type": "notion",
+      "app_id": "notion",
+      "icon_source": "https://cdn.simpleicons.org/notion/_/e5e5e5"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "identity",
+        "security"
+      ],
+      "description": "Okta official REST API",
+      "homepage": "https://www.okta.com",
+      "icon": "https://cdn.simpleicons.org/okta",
+      "name": "Okta",
+      "type": "okta",
+      "app_id": "okta",
+      "icon_source": "https://cdn.simpleicons.org/okta"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "marketing",
+        "communication"
+      ],
+      "description": "Omnisend official REST API",
+      "homepage": "https://www.omnisend.com",
+      "icon": "https://www.omnisend.com/wp-content/uploads/2022/07/cropped-favi-180x180.png",
+      "name": "Omnisend",
+      "type": "omnisend",
+      "app_id": "omnisend",
+      "icon_source": "https://www.omnisend.com/wp-content/uploads/2022/07/cropped-favi-180x180.png"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "storage"
+      ],
+      "description": "Microsoft OneDrive cloud storage",
+      "homepage": "https://onedrive.live.com",
+      "icon": "https://api.iconify.design/logos:microsoft-onedrive.svg",
+      "name": "OneDrive",
+      "type": "one_drive",
+      "app_id": "one-drive",
+      "icon_source": "https://api.iconify.design/logos:microsoft-onedrive.svg"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "ai",
+        "developer_tools"
+      ],
+      "description": "OpenAI official REST API",
+      "homepage": "https://openai.com/api",
+      "icon": "https://api.iconify.design/selfhst:openai.svg",
+      "name": "OpenAI",
+      "type": "openai",
+      "app_id": "openai",
+      "icon_source": "https://api.iconify.design/selfhst:openai.svg"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "payments",
+        "commerce"
+      ],
+      "description": "Paddle official REST API",
+      "homepage": "https://www.paddle.com",
+      "icon": "https://cdn.simpleicons.org/paddle",
+      "name": "Paddle",
+      "type": "paddle",
+      "app_id": "paddle",
+      "icon_source": "https://cdn.simpleicons.org/paddle"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "incident_management",
+        "developer_tools"
+      ],
+      "description": "PagerDuty official REST API",
+      "homepage": "https://www.pagerduty.com",
+      "icon": "https://cdn.simpleicons.org/pagerduty",
+      "name": "PagerDuty",
+      "type": "pagerduty",
+      "app_id": "pagerduty",
+      "icon_source": "https://cdn.simpleicons.org/pagerduty"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "ai",
+        "search"
+      ],
+      "description": "Perplexity official REST API",
+      "homepage": "https://www.perplexity.ai",
+      "icon": "https://cdn.simpleicons.org/perplexity",
+      "name": "Perplexity",
+      "type": "perplexity",
+      "app_id": "perplexity",
+      "icon_source": "https://cdn.simpleicons.org/perplexity"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "database",
+        "ai"
+      ],
+      "description": "Pinecone official REST API",
+      "homepage": "https://www.pinecone.io",
+      "icon": "https://api.iconify.design/logos:pinecone-icon.svg",
+      "name": "Pinecone",
+      "type": "pinecone",
+      "app_id": "pinecone",
+      "icon_source": "https://api.iconify.design/logos:pinecone-icon.svg"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "crm",
+        "sales"
+      ],
+      "description": "Pipedrive official REST API",
+      "homepage": "https://www.pipedrive.com",
+      "icon": "https://api.iconify.design/logos:pipedrive.svg",
+      "name": "Pipedrive",
+      "type": "pipedrive",
+      "app_id": "pipedrive",
+      "icon_source": "https://api.iconify.design/logos:pipedrive.svg"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "analytics"
+      ],
+      "description": "PostHog product analytics, feature flag and experimentation platform",
+      "homepage": "https://posthog.com",
+      "icon": "https://cdn.simpleicons.org/posthog/_/e5e5e5",
+      "name": "PostHog",
+      "type": "posthog",
+      "app_id": "posthog",
+      "icon_source": "https://cdn.simpleicons.org/posthog/_/e5e5e5"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "developer_tools"
+      ],
+      "description": "Postman API development and collaboration platform",
+      "homepage": "https://www.postman.com",
+      "icon": "https://cdn.simpleicons.org/postman",
+      "name": "Postman",
+      "type": "postman",
+      "app_id": "postman",
+      "icon_source": "https://cdn.simpleicons.org/postman"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "crm",
+        "recruiting"
+      ],
+      "description": "Recruit CRM official REST API",
+      "homepage": "https://recruitcrm.io",
+      "icon": "https://recruitcrm.io/favicon.ico",
+      "name": "Recruit CRM",
+      "type": "recruitcrm",
+      "app_id": "recruitcrm",
+      "icon_source": "https://recruitcrm.io/favicon.ico"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "ai",
+        "developer_tools"
+      ],
+      "description": "Replicate official REST API",
+      "homepage": "https://replicate.com",
+      "icon": "https://cdn.simpleicons.org/replicate/_/e5e5e5",
+      "name": "Replicate",
+      "type": "replicate",
+      "app_id": "replicate",
+      "icon_source": "https://cdn.simpleicons.org/replicate/_/e5e5e5"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "sales",
+        "communication"
+      ],
+      "description": "Reply.io official REST API",
+      "homepage": "https://reply.io",
+      "icon": "https://reply.io/favicon.ico",
+      "name": "Reply.io",
+      "type": "reply_io",
+      "app_id": "reply-io",
+      "icon_source": "https://reply.io/favicon.ico",
+      "icon_format_conversion": "ico-to-png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "communication",
+        "developer_tools"
+      ],
+      "description": "Resend official REST API",
+      "homepage": "https://resend.com",
+      "icon": "https://cdn.simpleicons.org/resend/_/e5e5e5",
+      "name": "Resend",
+      "type": "resend",
+      "app_id": "resend",
+      "icon_source": "https://cdn.simpleicons.org/resend/_/e5e5e5"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "marketing",
+        "analytics"
+      ],
+      "description": "Semrush official REST API",
+      "homepage": "https://www.semrush.com",
+      "icon": "https://cdn.simpleicons.org/semrush",
+      "name": "Semrush",
+      "type": "semrush",
+      "app_id": "semrush",
+      "icon_source": "https://cdn.simpleicons.org/semrush"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "communication",
+        "marketing"
+      ],
+      "description": "SendGrid official REST API",
+      "homepage": "https://sendgrid.com",
+      "icon": "https://api.iconify.design/logos:sendgrid-icon.svg",
+      "name": "SendGrid",
+      "type": "sendgrid",
+      "app_id": "sendgrid",
+      "icon_source": "https://api.iconify.design/logos:sendgrid-icon.svg"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "monitoring",
+        "developer_tools"
+      ],
+      "description": "Sentry error tracking and application performance platform",
+      "homepage": "https://sentry.io",
+      "icon": "https://cdn.simpleicons.org/sentry/_/e5e5e5",
+      "name": "Sentry",
+      "type": "sentry",
+      "app_id": "sentry",
+      "icon_source": "https://cdn.simpleicons.org/sentry/_/e5e5e5"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "shipping",
+        "commerce"
+      ],
+      "description": "ShipBob official REST API",
+      "homepage": "https://www.shipbob.com",
+      "icon": "https://www.shipbob.com/wp-content/themes/shipbob-2022/resources/icons/touch.png",
+      "name": "ShipBob",
+      "type": "ship_bob",
+      "app_id": "ship-bob",
+      "icon_source": "https://www.shipbob.com/wp-content/themes/shipbob-2022/resources/icons/touch.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "shipping",
+        "commerce"
+      ],
+      "description": "ShipStation official REST API",
+      "homepage": "https://www.shipstation.com",
+      "icon": "https://www.shipstation.com/wp-content/uploads/2026/02/Station-Favicon-2026.svg",
+      "name": "ShipStation",
+      "type": "ship_station",
+      "app_id": "ship-station",
+      "icon_source": "https://www.shipstation.com/wp-content/uploads/2026/02/Station-Favicon-2026.svg"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "shipping",
+        "commerce"
+      ],
+      "description": "Shippo official REST API",
+      "homepage": "https://goshippo.com",
+      "icon": "https://cdn.prod.website-files.com/6462967bbf70fa5b5b227351/662680002605ee5735982802_img-shipp-favicon-256x256.png",
+      "name": "Shippo",
+      "type": "shippo",
+      "app_id": "shippo",
+      "icon_source": "https://cdn.prod.website-files.com/6462967bbf70fa5b5b227351/662680002605ee5735982802_img-shipp-favicon-256x256.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "commerce"
+      ],
+      "description": "Shopify official REST API",
+      "homepage": "https://www.shopify.com",
+      "icon": "https://cdn.simpleicons.org/shopify",
+      "name": "Shopify",
+      "type": "shopify",
+      "app_id": "shopify",
+      "icon_source": "https://cdn.simpleicons.org/shopify"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "communication",
+        "productivity"
+      ],
+      "description": "Slack messaging, file and collaboration platform",
+      "homepage": "https://slack.com",
+      "icon": "https://api.iconify.design/streamline-color:slack.svg",
+      "name": "Slack",
+      "type": "slack",
+      "app_id": "slack",
+      "icon_source": "https://api.iconify.design/streamline-color:slack.svg"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "sales",
+        "marketing"
+      ],
+      "description": "Smartlead official REST API",
+      "homepage": "https://www.smartlead.ai",
+      "icon": "https://cdn.prod.website-files.com/6204a703ff61516512c04f55/6a4b63964faaeefe3b922773_smartleat-campaign-fav.png",
+      "name": "Smartlead",
+      "type": "smartlead",
+      "app_id": "smartlead",
+      "icon_source": "https://cdn.prod.website-files.com/6204a703ff61516512c04f55/6a4b63964faaeefe3b922773_smartleat-campaign-fav.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "commerce",
+        "marketing"
+      ],
+      "description": "Stay AI official REST API",
+      "homepage": "https://stay.ai",
+      "icon": "https://stay.ai/wp-content/uploads/2025/02/cropped-favicon-180x180.png",
+      "name": "Stay AI",
+      "type": "stay_ai",
+      "app_id": "stay-ai",
+      "icon_source": "https://stay.ai/wp-content/uploads/2025/02/cropped-favicon-180x180.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "sales",
+        "data"
+      ],
+      "description": "Store Leads official REST API",
+      "homepage": "https://storeleads.app",
+      "icon": "https://storeleads.app/img/favicon.png",
+      "name": "Store Leads",
+      "type": "store_leads",
+      "app_id": "store-leads",
+      "icon_source": "https://storeleads.app/img/favicon.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "payments"
+      ],
+      "description": "Stripe payments and billing platform",
+      "homepage": "https://stripe.com",
+      "icon": "https://cdn.simpleicons.org/stripe",
+      "name": "Stripe",
+      "type": "stripe",
+      "app_id": "stripe",
+      "icon_source": "https://cdn.simpleicons.org/stripe"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "developer_tools",
+        "database"
+      ],
+      "description": "Supabase database and backend development platform",
+      "homepage": "https://supabase.com",
+      "icon": "https://cdn.simpleicons.org/supabase",
+      "name": "Supabase",
+      "type": "supabase",
+      "app_id": "supabase",
+      "icon_source": "https://cdn.simpleicons.org/supabase"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "communication",
+        "social"
+      ],
+      "description": "Telegram official REST API",
+      "homepage": "https://telegram.org",
+      "icon": "https://cdn.simpleicons.org/telegram",
+      "name": "Telegram",
+      "type": "telegram",
+      "app_id": "telegram",
+      "icon_source": "https://cdn.simpleicons.org/telegram"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "sales",
+        "data"
+      ],
+      "description": "TheirStack official REST API",
+      "homepage": "https://theirstack.com",
+      "icon": "https://theirstack.com/static/generated/apple-touch-icon.png",
+      "name": "TheirStack",
+      "type": "theirstack",
+      "app_id": "theirstack",
+      "icon_source": "https://theirstack.com/static/generated/apple-touch-icon.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "ai",
+        "developer_tools"
+      ],
+      "description": "Together AI official REST API",
+      "homepage": "https://www.together.ai",
+      "icon": "https://cdn.prod.website-files.com/69654e88dce9154b5f1206dd/69a59cff65ed0f267dd2fbe8_touchicon.png",
+      "name": "Together AI",
+      "type": "together_ai",
+      "app_id": "together-ai",
+      "icon_source": "https://cdn.prod.website-files.com/69654e88dce9154b5f1206dd/69a59cff65ed0f267dd2fbe8_touchicon.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "productivity",
+        "project_management"
+      ],
+      "description": "Trello official REST API",
+      "homepage": "https://trello.com",
+      "icon": "https://cdn.simpleicons.org/trello/_/e5e5e5",
+      "name": "Trello",
+      "type": "trello",
+      "app_id": "trello",
+      "icon_source": "https://cdn.simpleicons.org/trello/_/e5e5e5"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "crm"
+      ],
+      "description": "Twenty CRM official REST API",
+      "homepage": "https://twenty.com",
+      "icon": "https://cdn.simpleicons.org/twenty/_/e5e5e5",
+      "name": "Twenty CRM",
+      "type": "twenty_crm",
+      "app_id": "twenty-crm",
+      "icon_source": "https://cdn.simpleicons.org/twenty/_/e5e5e5"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "communication"
+      ],
+      "description": "Twilio official REST API",
+      "homepage": "https://www.twilio.com",
+      "icon": "https://api.iconify.design/logos:twilio-icon.svg",
+      "name": "Twilio",
+      "type": "twilio",
+      "app_id": "twilio",
+      "icon_source": "https://api.iconify.design/logos:twilio-icon.svg"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "forms",
+        "productivity"
+      ],
+      "description": "Typeform official REST API",
+      "homepage": "https://www.typeform.com",
+      "icon": "https://cdn.simpleicons.org/typeform/_/e5e5e5",
+      "name": "Typeform",
+      "type": "typeform",
+      "app_id": "typeform",
+      "icon_source": "https://cdn.simpleicons.org/typeform/_/e5e5e5"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "social",
+        "productivity"
+      ],
+      "description": "Typefully official REST API",
+      "homepage": "https://typefully.com",
+      "icon": "https://typefully.com/icon/apple-icon.png",
+      "name": "Typefully",
+      "type": "typefully",
+      "app_id": "typefully",
+      "icon_source": "https://typefully.com/icon/apple-icon.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "database",
+        "ai"
+      ],
+      "description": "Weaviate official REST API",
+      "homepage": "https://weaviate.io",
+      "icon": "https://api.iconify.design/selfhst:weaviate.svg",
+      "name": "Weaviate",
+      "type": "weaviate",
+      "app_id": "weaviate",
+      "icon_source": "https://api.iconify.design/selfhst:weaviate.svg"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "website",
+        "cms"
+      ],
+      "description": "Webflow official REST API",
+      "homepage": "https://webflow.com",
+      "icon": "https://cdn.simpleicons.org/webflow",
+      "name": "Webflow",
+      "type": "webflow",
+      "app_id": "webflow",
+      "icon_source": "https://cdn.simpleicons.org/webflow"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "communication",
+        "social"
+      ],
+      "description": "WhatsApp official REST API",
+      "homepage": "https://www.whatsapp.com",
+      "icon": "https://cdn.simpleicons.org/whatsapp",
+      "name": "WhatsApp",
+      "type": "whatsapp",
+      "app_id": "whatsapp",
+      "icon_source": "https://cdn.simpleicons.org/whatsapp"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "sales",
+        "data"
+      ],
+      "description": "Wiza official REST API",
+      "homepage": "https://wiza.co",
+      "icon": "https://cdn.prod.website-files.com/6883340bfc8ef2bdd680f851/688a2988a4fad24aeff16d79_webclip.png",
+      "name": "Wiza",
+      "type": "wiza",
+      "app_id": "wiza",
+      "icon_source": "https://cdn.prod.website-files.com/6883340bfc8ef2bdd680f851/688a2988a4fad24aeff16d79_webclip.png"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "social",
+        "communication"
+      ],
+      "description": "X official REST API",
+      "homepage": "https://x.com",
+      "icon": "https://cdn.simpleicons.org/x/_/e5e5e5",
+      "name": "X",
+      "type": "x",
+      "app_id": "x",
+      "icon_source": "https://cdn.simpleicons.org/x/_/e5e5e5"
+    },
+    {
+      "auth": [
+        "oauth2"
+      ],
+      "categories": [
+        "media"
+      ],
+      "description": "YouTube video and channel service",
+      "homepage": "https://www.youtube.com",
+      "icon": "https://cdn.simpleicons.org/youtube",
+      "name": "YouTube",
+      "type": "youtube",
+      "app_id": "youtube",
+      "icon_source": "https://cdn.simpleicons.org/youtube"
+    },
+    {
+      "auth": [
+        "api_key"
+      ],
+      "categories": [
+        "customer_support"
+      ],
+      "description": "Zendesk official REST API",
+      "homepage": "https://www.zendesk.com",
+      "icon": "https://cdn.simpleicons.org/zendesk/_/e5e5e5",
+      "name": "Zendesk",
+      "type": "zendesk",
+      "app_id": "zendesk",
+      "icon_source": "https://cdn.simpleicons.org/zendesk/_/e5e5e5"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+schema_version: "2"
+id: reply-io
+version: 1.0.0
+name: Reply.io
+description: Connect Reply.io for sales engagement.
+author:
+  name: Memoh
+homepage: https://reply.io
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: sales-crm
+tags:
+  - connector
+  - reply_io
+  - sales
+  - communication
+translations:
+  zh:
+    description: 连接 Reply.io，使用销售互动服务。
+  ja:
+    description: Reply.io に接続して、セールスエンゲージメントを利用します。
+connectors:
+  - type: reply_io
+    required: true

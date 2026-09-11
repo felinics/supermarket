@@ -1,0 +1,25 @@
+schema_version: "2"
+id: gorgias
+version: 1.0.0
+name: Gorgias
+description: Connect Gorgias for ecommerce customer support.
+author:
+  name: Memoh
+homepage: https://www.gorgias.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: customer-support
+tags:
+  - connector
+  - gorgias
+  - customer_support
+  - commerce
+translations:
+  zh:
+    description: 连接 Gorgias，使用电商客户支持服务。
+  ja:
+    description: Gorgias に接続して、EC 向けカスタマーサポートを利用します。
+connectors:
+  - type: gorgias
+    required: true

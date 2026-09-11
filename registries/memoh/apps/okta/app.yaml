@@ -1,0 +1,25 @@
+schema_version: "2"
+id: okta
+version: 1.0.0
+name: Okta
+description: Connect Okta for identity and access management.
+author:
+  name: Memoh
+homepage: https://www.okta.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: security
+tags:
+  - connector
+  - okta
+  - identity
+  - security
+translations:
+  zh:
+    description: 连接 Okta，使用身份与访问管理服务。
+  ja:
+    description: Okta に接続して、ID とアクセス管理を利用します。
+connectors:
+  - type: okta
+    required: true

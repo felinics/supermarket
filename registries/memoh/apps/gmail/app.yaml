@@ -1,0 +1,24 @@
+schema_version: "2"
+id: gmail
+version: 1.0.0
+name: Gmail
+description: Connect Gmail for email.
+author:
+  name: Memoh
+homepage: https://mail.google.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: communication
+tags:
+  - connector
+  - gmail
+  - communication
+translations:
+  zh:
+    description: 连接 Gmail，使用电子邮件服务。
+  ja:
+    description: Gmail に接続して、メールを利用します。
+connectors:
+  - type: gmail
+    required: true

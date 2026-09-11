@@ -1,0 +1,24 @@
+schema_version: "2"
+id: youtube
+version: 1.0.0
+name: YouTube
+description: Connect YouTube for videos and channels.
+author:
+  name: Memoh
+homepage: https://www.youtube.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: creativity
+tags:
+  - connector
+  - youtube
+  - media
+translations:
+  zh:
+    description: 连接 YouTube，使用视频与频道服务。
+  ja:
+    description: YouTube に接続して、動画とチャンネルを利用します。
+connectors:
+  - type: youtube
+    required: true

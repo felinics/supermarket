@@ -1,0 +1,24 @@
+schema_version: "2"
+id: lob
+version: 1.0.0
+name: Lob
+description: Connect Lob for direct mail.
+author:
+  name: Memoh
+homepage: https://www.lob.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: communication
+tags:
+  - connector
+  - lob
+  - communication
+translations:
+  zh:
+    description: 连接 Lob，使用直邮服务服务。
+  ja:
+    description: Lob に接続して、ダイレクトメールを利用します。
+connectors:
+  - type: lob
+    required: true

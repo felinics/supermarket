@@ -1,0 +1,25 @@
+schema_version: "2"
+id: calendly
+version: 1.0.0
+name: Calendly
+description: Connect Calendly for meeting scheduling and bookings.
+author:
+  name: Memoh
+homepage: https://calendly.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: productivity
+tags:
+  - connector
+  - calendly
+  - scheduling
+  - productivity
+translations:
+  zh:
+    description: 连接 Calendly，使用会议排期与预约服务。
+  ja:
+    description: Calendly に接続して、会議の日程調整と予約を利用します。
+connectors:
+  - type: calendly
+    required: true
