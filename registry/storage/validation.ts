@@ -14,18 +14,18 @@ import {
 import { assertRegistryComponentID } from '../definition'
 import {
   MAX_REGISTRY_SKILLS,
-  MAX_REGISTRY_PACKAGE_ARTIFACT_ARCHIVE_BYTES,
-  MAX_REGISTRY_PACKAGE_ARTIFACT_COMPRESSED_BYTES,
-  MAX_REGISTRY_PACKAGE_ARTIFACT_FILES,
-  MAX_REGISTRY_PACKAGE_ARTIFACT_UNCOMPRESSED_BYTES,
-  MAX_REGISTRY_PACKAGE_SKILLS,
+  MAX_REGISTRY_APP_ARTIFACT_ARCHIVE_BYTES,
+  MAX_REGISTRY_APP_ARTIFACT_COMPRESSED_BYTES,
+  MAX_REGISTRY_APP_ARTIFACT_FILES,
+  MAX_REGISTRY_APP_ARTIFACT_UNCOMPRESSED_BYTES,
+  MAX_REGISTRY_APP_SKILLS,
   MAX_REGISTRY_SOURCE_BYTES,
   MAX_REGISTRY_SOURCE_FILES,
 } from '../budget'
 import { assertSafeArchivePaths } from '#lib/archive'
 import { assertDigest } from '#lib/digest'
-import { skillPackageReleaseFromSnapshotPackage, skillPackageRevision } from '../snapshot'
-import { parsePackagePostinstall } from '../package-manifest'
+import { appReleaseFromSnapshotApp, appRevision } from '../snapshot'
+import { parseAppPostinstall } from '../app-manifest'
 
 export { assertDigest } from '#lib/digest'
 
@@ -61,11 +61,11 @@ export function validateStoredSnapshot(
   registryID: string,
   key: string,
 ) {
-  if (!snapshot || snapshot.schema_version !== '1' || snapshot.registry_id !== registryID
+  if (!snapshot || snapshot.schema_version !== '2' || snapshot.registry_id !== registryID
     || !Number.isSafeInteger(snapshot.registry_priority)
     || !snapshot.source || (snapshot.source.type !== 'local' && snapshot.source.type !== 'git')
     || typeof snapshot.source.revision !== 'string' || !snapshot.source.revision
-    || !Array.isArray(snapshot.packages) || !Array.isArray(snapshot.diagnostics)
+    || !Array.isArray(snapshot.apps) || !Array.isArray(snapshot.diagnostics)
     || !Array.isArray(snapshot.categories)) {
     throw new Error(`Invalid stored Snapshot: ${key}`)
   }
@@ -81,31 +81,31 @@ export function validateStoredSnapshot(
   let totalSourceBytes = 0
   let totalFiles = 0
   let skillCount = 0
-  const packageIDs = new Set<string>()
-  for (const pkg of snapshot.packages) {
+  const appIDs = new Set<string>()
+  for (const pkg of snapshot.apps) {
     try {
-      const packageID = assertRegistryComponentID(pkg?.package_id, 'package ID')
-      if (packageIDs.has(packageID) || typeof pkg.name !== 'string' || typeof pkg.description !== 'string'
+      const appID = assertRegistryComponentID(pkg?.app_id, 'app ID')
+      if (appIDs.has(appID) || typeof pkg.name !== 'string' || typeof pkg.description !== 'string'
         || !Array.isArray(pkg.tags) || !Array.isArray(pkg.skills)
-        || pkg.skills.length > MAX_REGISTRY_PACKAGE_SKILLS
+        || pkg.skills.length > MAX_REGISTRY_APP_SKILLS
         || typeof pkg.category !== 'string' || !pkg.category || typeof pkg.category_name !== 'string'
         || !Array.isArray(pkg.dependencies) || !Array.isArray(pkg.connectors)
         || pkg.dependencies.some((item) => typeof item !== 'string' || !item)
         || pkg.connectors.some((item) => !item || typeof item.type !== 'string' || !item.type
           || typeof item.required !== 'boolean')) {
-        throw new Error('Snapshot contains an invalid Package')
+        throw new Error('Snapshot contains an invalid App')
       }
       if (!pkg.skills.length && !pkg.dependencies.length && !pkg.connectors.length) {
-        throw new Error('Snapshot contains an empty Package')
+        throw new Error('Snapshot contains an empty App')
       }
-      packageIDs.add(packageID)
+      appIDs.add(appID)
       if (pkg.postinstall !== undefined) {
-        parsePackagePostinstall(pkg.postinstall, 'Snapshot Package postinstall')
+        parseAppPostinstall(pkg.postinstall, 'Snapshot App postinstall')
       }
-      let packageCompressedBytes = 0
-      let packageUncompressedBytes = 0
-      let packageArchiveBytes = 0
-      let packageFiles = 0
+      let appCompressedBytes = 0
+      let appUncompressedBytes = 0
+      let appArchiveBytes = 0
+      let appFiles = 0
       for (const image of [pkg.icon?.card, pkg.icon?.detail, pkg.icon?.dark]) {
         if (image) {
           assertDigest(image.digest)
@@ -147,16 +147,16 @@ export function validateStoredSnapshot(
           || skill.artifact.file_count !== skill.files.length) {
           throw new Error('Catalog Skill contains invalid Artifact file count')
         }
-        if (skill.artifact.size > MAX_REGISTRY_PACKAGE_ARTIFACT_COMPRESSED_BYTES - packageCompressedBytes
-          || skill.artifact.uncompressed_size > MAX_REGISTRY_PACKAGE_ARTIFACT_UNCOMPRESSED_BYTES - packageUncompressedBytes
-          || skill.artifact.archive_size > MAX_REGISTRY_PACKAGE_ARTIFACT_ARCHIVE_BYTES - packageArchiveBytes
-          || skill.artifact.file_count > MAX_REGISTRY_PACKAGE_ARTIFACT_FILES - packageFiles) {
-          throw new Error('Package Skill Artifacts exceed the install budget')
+        if (skill.artifact.size > MAX_REGISTRY_APP_ARTIFACT_COMPRESSED_BYTES - appCompressedBytes
+          || skill.artifact.uncompressed_size > MAX_REGISTRY_APP_ARTIFACT_UNCOMPRESSED_BYTES - appUncompressedBytes
+          || skill.artifact.archive_size > MAX_REGISTRY_APP_ARTIFACT_ARCHIVE_BYTES - appArchiveBytes
+          || skill.artifact.file_count > MAX_REGISTRY_APP_ARTIFACT_FILES - appFiles) {
+          throw new Error('App Skill Artifacts exceed the install budget')
         }
-        packageCompressedBytes += skill.artifact.size
-        packageUncompressedBytes += skill.artifact.uncompressed_size
-        packageArchiveBytes += skill.artifact.archive_size
-        packageFiles += skill.artifact.file_count
+        appCompressedBytes += skill.artifact.size
+        appUncompressedBytes += skill.artifact.uncompressed_size
+        appArchiveBytes += skill.artifact.archive_size
+        appFiles += skill.artifact.file_count
         if (skill.artifact.uncompressed_size > MAX_REGISTRY_SOURCE_BYTES - totalSourceBytes) {
           throw new Error('Catalog Skills exceed the Registry source byte limit')
         }
@@ -172,8 +172,8 @@ export function validateStoredSnapshot(
           }
         }
       }
-      if (assertDigest(pkg.revision) !== skillPackageRevision(skillPackageReleaseFromSnapshotPackage(snapshot, pkg))) {
-        throw new Error('Snapshot Package revision does not match its content')
+      if (assertDigest(pkg.revision) !== appRevision(appReleaseFromSnapshotApp(snapshot, pkg))) {
+        throw new Error('Snapshot App revision does not match its content')
       }
     } catch {
       throw new Error(`Invalid stored Snapshot Artifact reference: ${key}`)

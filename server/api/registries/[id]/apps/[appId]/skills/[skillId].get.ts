@@ -5,9 +5,9 @@ import { getCatalogSkill, publicCatalogSkill } from '#server/services/skill-regi
 
 export default defineHandler(async (event) => {
   const registryID = requireRegistryID(getRouterParam(event, 'id')!)
-  const packageID = requireRegistryComponentID(getRouterParam(event, 'packageId')!, 'package ID')
+  const appID = requireRegistryComponentID(getRouterParam(event, 'appId')!, 'app ID')
   const skillID = requireRegistryComponentID(getRouterParam(event, 'skillId')!, 'skill ID')
-  const skill = await getCatalogSkill(event, registryID, packageID, skillID)
-  if (!skill) throw new HTTPError(`Skill "${registryID}/${packageID}/${skillID}" not found`, { statusCode: 404 })
+  const skill = await getCatalogSkill(event, registryID, appID, skillID)
+  if (!skill) throw new HTTPError(`Skill "${registryID}/${appID}/${skillID}" not found`, { statusCode: 404 })
   return publicCatalogSkill(skill)
 })

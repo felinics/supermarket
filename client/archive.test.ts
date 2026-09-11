@@ -16,7 +16,7 @@ const roots: string[] = []
 afterEach(async () => Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true }))))
 
 describe('Skill Registry client archives', () => {
-  test('packages the extraction metadata required by Memoh', async () => {
+  test('apps the extraction metadata required by Memoh', async () => {
     const files = {
       'SKILL.md': { bytes: new TextEncoder().encode('---\nname: metadata\n---\n'), mode: 0o644 as const },
       'scripts/run.sh': { bytes: new TextEncoder().encode('#!/bin/sh\n'), mode: 0o755 as const },
@@ -128,7 +128,7 @@ describe('Skill Registry client archives', () => {
   })
 
   test('serializes concurrent installs for the same identity', async () => {
-    const installID = 'registry+package+skill'
+    const installID = 'registry+app+skill'
     const files = await parseTarArchive(await createTar({
       'SKILL.md': new TextEncoder().encode('---\nname: skill\n---\n'),
     }, ''))

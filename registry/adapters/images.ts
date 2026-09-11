@@ -53,11 +53,11 @@ export function declaredImagePath(value: unknown, field: string) {
 export class OversizedSkillImageError extends Error {}
 
 export async function readImageAsset(
-  packageRoot: string,
+  appRoot: string,
   relativePath: string,
   budget: RegistryBuildBudget,
 ) {
-  const target = await resolveRealInside(packageRoot, relativePath)
+  const target = await resolveRealInside(appRoot, relativePath)
   const metadata = await stat(target)
   if (!metadata.isFile()) throw new Error(`Skill image ${relativePath} must be a regular file`)
   if (metadata.size > MAX_SKILL_IMAGE_BYTES) throw new OversizedSkillImageError(relativePath)

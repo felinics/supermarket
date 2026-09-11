@@ -1,7 +1,7 @@
 import type {
-  PackageConnectorReference,
-  PackagePostinstallCommand,
-  PackageTranslations,
+  AppConnectorReference,
+  AppPostinstallCommand,
+  AppTranslations,
   RegistryDiagnostic,
   SkillAuthor,
   SkillIcon,
@@ -12,7 +12,7 @@ import type { SkillSourceFile } from '../filesystem'
 import type { RegistryBuildBudget } from '../budget'
 
 export interface SkillCandidate {
-  package_id: string
+  app_id: string
   skill_id: string
   install_id: string
   name: string
@@ -30,13 +30,13 @@ export interface SkillCandidate {
 }
 
 /**
- * Package-level metadata read by an adapter. Reviewed Memoh Packages carry
- * their `package.yaml`; imported registries usually leave the Package to be
+ * App-level metadata read by an adapter. Reviewed Memoh Apps carry
+ * their `app.yaml`; imported registries usually leave the App to be
  * synthesized from its Skills and only record what the source declares.
  */
-export interface PackageCandidate {
-  package_id: string
-  /** True when the metadata comes from a reviewed `package.yaml`. */
+export interface AppCandidate {
+  app_id: string
+  /** True when the metadata comes from a reviewed `app.yaml`. */
   reviewed: boolean
   version?: string
   name?: string
@@ -45,13 +45,13 @@ export interface PackageCandidate {
   homepage?: string
   repository?: string
   license?: string
-  /** Category ID for reviewed Packages, or the source's free-text category. */
+  /** Category ID for reviewed Apps, or the source's free-text category. */
   category?: string
   tags: string[]
-  translations?: PackageTranslations
+  translations?: AppTranslations
   dependencies: string[]
-  connectors: PackageConnectorReference[]
-  postinstall?: PackagePostinstallCommand[]
+  connectors: AppConnectorReference[]
+  postinstall?: AppPostinstallCommand[]
   icon?: SkillIcon
   icon_assets?: Array<{ descriptor: SkillImageAsset; bytes: Uint8Array }>
 }
@@ -59,7 +59,7 @@ export interface PackageCandidate {
 export interface SkillAdapterResult {
   skills: SkillCandidate[]
   diagnostics: RegistryDiagnostic[]
-  packages: Map<string, PackageCandidate>
+  apps: Map<string, AppCandidate>
 }
 
 export interface SkillAdapterInput {

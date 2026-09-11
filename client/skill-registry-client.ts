@@ -33,7 +33,7 @@ async function json(url: string): Promise<unknown> {
 
 interface InstallableSkillResponse {
   registry_id: string
-  package_id: string
+  app_id: string
   skill_id: string
   install_id: string
   artifact: {
@@ -49,7 +49,7 @@ interface InstallableSkillResponse {
 
 const installableSkillSchema = z.object({
   registry_id: z.string(),
-  package_id: z.string(),
+  app_id: z.string(),
   skill_id: z.string(),
   install_id: z.string(),
   artifact: z.object({
@@ -66,9 +66,9 @@ const installableSkillSchema = z.object({
 function installableSkillResponse(value: unknown): InstallableSkillResponse {
   const result = installableSkillSchema.safeParse(value)
   if (!result.success) throw new Error('Invalid Skill response')
-  const { registry_id, package_id, skill_id, install_id, artifact } = result.data
+  const { registry_id, app_id, skill_id, install_id, artifact } = result.data
   return {
-    registry_id, package_id, skill_id, install_id,
+    registry_id, app_id, skill_id, install_id,
     artifact: {
       format: artifact.format,
       digest: artifact.digest,
@@ -101,7 +101,7 @@ switch (command) {
   case 'search': {
     const query = new URLSearchParams()
     if (positional[0]) query.set('q', positional[0])
-    for (const name of ['registry', 'package', 'category', 'tag', 'page', 'limit', 'sort']) {
+    for (const name of ['registry', 'app', 'category', 'tag', 'page', 'limit', 'sort']) {
       const value = option(`--${name}`)
       if (value) query.set(name, value)
     }
@@ -110,18 +110,18 @@ switch (command) {
   }
   case 'inspect':
   case 'install': {
-    const [registryID, packageID, skillID] = positional
-    if (!registryID || !packageID || !skillID) throw new Error(`${command} requires <registry> <package> <skill>`)
-    const response = await json(`${base}/api/registries/${encodeURIComponent(registryID)}/packages/${encodeURIComponent(packageID)}/skills/${encodeURIComponent(skillID)}`)
+    const [registryID, appID, skillID] = positional
+    if (!registryID || !appID || !skillID) throw new Error(`${command} requires <registry> <app> <skill>`)
+    const response = await json(`${base}/api/registries/${encodeURIComponent(registryID)}/apps/${encodeURIComponent(appID)}/skills/${encodeURIComponent(skillID)}`)
     if (command === 'inspect') {
       console.log(JSON.stringify(response, null, 2))
       break
     }
     const skill = installableSkillResponse(response)
     const artifact = skill.artifact
-    const installID = skillInstallID(registryID, packageID, skillID)
+    const installID = skillInstallID(registryID, appID, skillID)
     if (
-      skill.registry_id !== registryID || skill.package_id !== packageID || skill.skill_id !== skillID
+      skill.registry_id !== registryID || skill.app_id !== appID || skill.skill_id !== skillID
       || skill.install_id !== installID
     ) {
       throw new Error('Artifact descriptor does not match the requested Skill')

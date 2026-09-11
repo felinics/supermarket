@@ -64,7 +64,7 @@ describe('Skill Registry definitions', () => {
       adapter: { type: 'codex_marketplace_skills' },
       source: { type: 'local', path: 'skills' },
     })).toThrow('adapter.catalog_path is required')
-    for (const field of ['defaults', 'package_overrides', 'skill_overrides', 'taxonomy']) {
+    for (const field of ['defaults', 'app_overrides', 'skill_overrides', 'taxonomy']) {
       expect(() => parseSkillRegistryDefinition({
         schema_version: '1', id: 'bad', name: 'Bad', adapter: { type: 'skill_directory' },
         source: { type: 'local', path: 'skills' },

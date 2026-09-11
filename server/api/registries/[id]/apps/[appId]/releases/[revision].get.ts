@@ -2,25 +2,25 @@ import { defineHandler, HTTPError } from 'nitro'
 import { getHeader, getRouterParam, setResponseHeader, setResponseStatus } from 'h3'
 import { assertDigest } from '#registry/storage/validation'
 import { requireRegistryComponentID, requireRegistryID } from '#server/services/skill-registry-query'
-import { getSkillPackageRelease } from '#server/services/skill-registry'
-import { serializeSkillPackageRelease } from '#registry/snapshot'
+import { getAppRelease } from '#server/services/skill-registry'
+import { serializeAppRelease } from '#registry/snapshot'
 
 export default defineHandler(async (event) => {
   const registryID = requireRegistryID(getRouterParam(event, 'id')!)
-  const packageID = requireRegistryComponentID(getRouterParam(event, 'packageId')!, 'package ID')
+  const appID = requireRegistryComponentID(getRouterParam(event, 'appId')!, 'app ID')
   let revision: string
   try {
     revision = assertDigest(getRouterParam(event, 'revision')!)
   } catch {
-    throw new HTTPError('Invalid Package release revision', { statusCode: 400 })
+    throw new HTTPError('Invalid App release revision', { statusCode: 400 })
   }
-  const release = await getSkillPackageRelease(event, registryID, packageID, revision)
+  const release = await getAppRelease(event, registryID, appID, revision)
   if (!release) {
-    throw new HTTPError(`Package release "${registryID}/${packageID}/${revision}" not found`, { statusCode: 404 })
+    throw new HTTPError(`App release "${registryID}/${appID}/${revision}" not found`, { statusCode: 404 })
   }
 
-  const bytes = serializeSkillPackageRelease(release)
-  const etag = `"${revision}:${packageID}"`
+  const bytes = serializeAppRelease(release)
+  const etag = `"${revision}:${appID}"`
   setResponseHeader(event, 'content-type', 'application/json; charset=utf-8')
   setResponseHeader(event, 'content-length', String(bytes.length))
   setResponseHeader(event, 'etag', etag)

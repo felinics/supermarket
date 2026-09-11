@@ -3,15 +3,15 @@ import { skillInstallID } from './definition'
 import type {
   CatalogSkill,
   SkillIcon,
-  SkillPackageRelease,
-  SkillPackageReleaseSkill,
-  SkillPackageMetadata,
+  AppRelease,
+  AppReleaseSkill,
+  AppMetadata,
   SnapshotCategory,
-  SnapshotPackage,
+  SnapshotApp,
   SkillRegistrySnapshot,
   SnapshotSkill,
 } from './types'
-import type { PackageCandidate } from './adapters/types'
+import type { AppCandidate } from './adapters/types'
 import { CategoryTable, defaultCategoryTable } from './categories'
 import { compareCanonicalText } from '#lib/order'
 
@@ -25,12 +25,12 @@ export function registrySnapshotRevision(bytes: Uint8Array): string {
   return createHash('sha256').update(bytes).digest('hex')
 }
 
-export function serializeSkillPackageRelease(release: SkillPackageRelease): Uint8Array {
+export function serializeAppRelease(release: AppRelease): Uint8Array {
   return encoder.encode(`${JSON.stringify(release, null, 2)}\n`)
 }
 
-export function skillPackageRevision(release: SkillPackageRelease): string {
-  return registrySnapshotRevision(serializeSkillPackageRelease(release))
+export function appRevision(release: AppRelease): string {
+  return registrySnapshotRevision(serializeAppRelease(release))
 }
 
 export function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
@@ -62,12 +62,12 @@ export function compactCatalogSkill(skill: CatalogSkill): SnapshotSkill {
   }
 }
 
-function copyPostinstall(metadata?: Pick<SkillPackageMetadata, 'postinstall'>) {
+function copyPostinstall(metadata?: Pick<AppMetadata, 'postinstall'>) {
   return metadata?.postinstall?.map(({ command, args }) => ({ command, args: [...args] }))
 }
 
-function copyTranslations(translations: NonNullable<SkillPackageMetadata['translations']>) {
-  const copy: NonNullable<SkillPackageMetadata['translations']> = {}
+function copyTranslations(translations: NonNullable<AppMetadata['translations']>) {
+  const copy: NonNullable<AppMetadata['translations']> = {}
   for (const locale of ['en', 'zh', 'ja'] as const) {
     const value = translations[locale]
     if (!value) continue
@@ -80,10 +80,10 @@ function copyTranslations(translations: NonNullable<SkillPackageMetadata['transl
 }
 
 /**
- * Copies Package metadata in a fixed key order so Snapshot entries and
+ * Copies App metadata in a fixed key order so Snapshot entries and
  * immutable releases serialize identically.
  */
-export function packageMetadataFields(source: SkillPackageMetadata): SkillPackageMetadata {
+export function appMetadataFields(source: AppMetadata): AppMetadata {
   const translations = source.translations ? copyTranslations(source.translations) : undefined
   return {
     ...(source.version ? { version: source.version } : {}),
@@ -100,28 +100,28 @@ export function packageMetadataFields(source: SkillPackageMetadata): SkillPackag
   }
 }
 
-type PackageShape = SkillPackageMetadata & {
-  package_id: string
+type AppShape = AppMetadata & {
+  app_id: string
   name: string
   description: string
   tags: string[]
   icon?: SkillIcon
 }
 
-function buildPackageRelease(
+function buildAppRelease(
   registryID: string,
-  pkg: PackageShape,
-  skills: SkillPackageReleaseSkill[],
-): SkillPackageRelease {
+  pkg: AppShape,
+  skills: AppReleaseSkill[],
+): AppRelease {
   return {
-    schema_version: '1',
+    schema_version: '2',
     registry_id: registryID,
-    package_id: pkg.package_id,
+    app_id: pkg.app_id,
     name: pkg.name,
     description: pkg.description,
     tags: [...pkg.tags],
     ...(pkg.icon ? { icon: pkg.icon } : {}),
-    ...packageMetadataFields(pkg),
+    ...appMetadataFields(pkg),
     skills,
   }
 }
@@ -143,36 +143,36 @@ function dominantCategory(skills: CatalogSkill[]) {
   return best
 }
 
-export interface CompactPackagesOptions {
-  /** Required when a Package has no Skills, otherwise inferred from them. */
+export interface CompactAppsOptions {
+  /** Required when an App has no Skills, otherwise inferred from them. */
   registry?: string
-  packages?: ReadonlyMap<string, PackageCandidate>
+  apps?: ReadonlyMap<string, AppCandidate>
   categories?: CategoryTable
 }
 
-export function compactCatalogPackages(
+export function compactCatalogApps(
   skills: CatalogSkill[],
-  options: CompactPackagesOptions = {},
-): SnapshotPackage[] {
-  const packages = options.packages ?? new Map<string, PackageCandidate>()
+  options: CompactAppsOptions = {},
+): SnapshotApp[] {
+  const apps = options.apps ?? new Map<string, AppCandidate>()
   const categories = options.categories ?? defaultCategoryTable()
   const groups = new Map<string, CatalogSkill[]>()
   for (const skill of skills) {
-    const group = groups.get(skill.package_id) ?? []
+    const group = groups.get(skill.app_id) ?? []
     group.push(skill)
-    groups.set(skill.package_id, group)
+    groups.set(skill.app_id, group)
   }
-  const packageIDs = [...new Set([...groups.keys(), ...packages.keys()])].sort(compareCanonicalText)
+  const appIDs = [...new Set([...groups.keys(), ...apps.keys()])].sort(compareCanonicalText)
   const registryID = options.registry ?? skills[0]?.registry_id
-  return packageIDs.map((packageID) => {
-    if (!registryID) throw new Error(`Package ${packageID}: registry ID is required`)
-    const candidate = packages.get(packageID)
-    const ordered = [...(groups.get(packageID) ?? [])].sort((a, b) => compareCanonicalText(a.skill_id, b.skill_id))
-    const representative = ordered.find((skill) => skill.skill_id === packageID) ?? ordered[0]
+  return appIDs.map((appID) => {
+    if (!registryID) throw new Error(`App ${appID}: registry ID is required`)
+    const candidate = apps.get(appID)
+    const ordered = [...(groups.get(appID) ?? [])].sort((a, b) => compareCanonicalText(a.skill_id, b.skill_id))
+    const representative = ordered.find((skill) => skill.skill_id === appID) ?? ordered[0]
     const category = candidate?.reviewed && candidate.category
-      ? categories.require(candidate.category, `${registryID}/${packageID}`)
+      ? categories.require(candidate.category, `${registryID}/${appID}`)
       : categories.resolve(candidate?.category ?? dominantCategory(ordered))
-    const metadata: SkillPackageMetadata = {
+    const metadata: AppMetadata = {
       version: candidate?.version,
       author: candidate?.author,
       homepage: candidate?.homepage ?? representative?.homepage,
@@ -185,66 +185,66 @@ export function compactCatalogPackages(
       connectors: candidate?.connectors ?? [],
       postinstall: candidate?.postinstall,
     }
-    const shape: PackageShape = {
-      ...packageMetadataFields(metadata),
-      package_id: packageID,
-      name: candidate?.name ?? packageID,
+    const shape: AppShape = {
+      ...appMetadataFields(metadata),
+      app_id: appID,
+      name: candidate?.name ?? appID,
       description: candidate?.description ?? representative?.description ?? '',
       tags: [...new Set([...(candidate?.tags ?? []), ...ordered.flatMap((skill) => skill.tags)])].sort(compareCanonicalText),
       icon: candidate?.icon ?? representative?.icon,
     }
-    const release = buildPackageRelease(registryID, shape, ordered.map(packageReleaseSkill))
+    const release = buildAppRelease(registryID, shape, ordered.map(appReleaseSkill))
     return {
-      revision: skillPackageRevision(release),
-      package_id: shape.package_id,
+      revision: appRevision(release),
+      app_id: shape.app_id,
       name: shape.name,
       description: shape.description,
       tags: shape.tags,
       ...(shape.icon ? { icon: shape.icon } : {}),
-      ...packageMetadataFields(shape),
+      ...appMetadataFields(shape),
       skills: ordered.map(compactCatalogSkill),
     }
   })
 }
 
-/** Category definitions referenced by a Snapshot's Packages, in display order. */
-export function snapshotCategoriesFor(packages: SnapshotPackage[], categories: CategoryTable): SnapshotCategory[] {
-  const ids = [...new Set(packages.map((pkg) => pkg.category))]
+/** Category definitions referenced by a Snapshot's Apps, in display order. */
+export function snapshotCategoriesFor(apps: SnapshotApp[], categories: CategoryTable): SnapshotCategory[] {
+  const ids = [...new Set(apps.map((pkg) => pkg.category))]
   return ids.map((id) => categories.snapshotCategory(id))
     .sort((a, b) => a.order - b.order || compareCanonicalText(a.id, b.id))
 }
 
-function packageReleaseSkill(skill: CatalogSkill): SkillPackageReleaseSkill {
+function appReleaseSkill(skill: CatalogSkill): AppReleaseSkill {
   const { registry_priority: _priority, source: _source, ...member } = skill
   return member
 }
 
-export function skillPackageReleaseFromSnapshotPackage(
+export function appReleaseFromSnapshotApp(
   snapshot: SkillRegistrySnapshot,
-  pkg: SnapshotPackage,
-): SkillPackageRelease {
-  return buildPackageRelease(
+  pkg: SnapshotApp,
+): AppRelease {
+  return buildAppRelease(
     snapshot.registry_id,
     pkg,
-    catalogSkillsFromSnapshotPackage(snapshot, pkg).map(packageReleaseSkill),
+    catalogSkillsFromSnapshotApp(snapshot, pkg).map(appReleaseSkill),
   )
 }
 
 export function catalogSkillsFromSnapshot(snapshot: SkillRegistrySnapshot): CatalogSkill[] {
-  return snapshot.packages.flatMap((pkg) => catalogSkillsFromSnapshotPackage(snapshot, pkg))
+  return snapshot.apps.flatMap((pkg) => catalogSkillsFromSnapshotApp(snapshot, pkg))
 }
 
-export function catalogSkillsFromSnapshotPackage(
+export function catalogSkillsFromSnapshotApp(
   snapshot: SkillRegistrySnapshot,
-  pkg: SnapshotPackage,
+  pkg: SnapshotApp,
 ): CatalogSkill[] {
   return pkg.skills.map((skill) => ({
-    schema_version: '1',
+    schema_version: '2',
     registry_id: snapshot.registry_id,
     registry_priority: snapshot.registry_priority,
-    package_id: pkg.package_id,
+    app_id: pkg.app_id,
     skill_id: skill.skill_id,
-    install_id: skillInstallID(snapshot.registry_id, pkg.package_id, skill.skill_id),
+    install_id: skillInstallID(snapshot.registry_id, pkg.app_id, skill.skill_id),
     name: skill.name,
     description: skill.description,
     author: { name: skill.author.name, email: skill.author.email ?? '' },

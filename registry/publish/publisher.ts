@@ -6,21 +6,21 @@ import {
   type SkillRegistryCandidate,
   type SkillRegistryBuildProgress,
 } from './candidate'
-import { skillPackageReleaseFromSnapshotPackage } from '../snapshot'
+import { appReleaseFromSnapshotApp } from '../snapshot'
 
 export interface SkillRegistryPublishResult {
   registry: string
   revision?: string
   skills?: number
-  packages?: number
+  apps?: number
   diagnostics?: number
   skipped?: 'disabled' | 'unchanged'
 }
 
 export type SkillRegistryPublishProgress =
   | SkillRegistryBuildProgress
-  | { type: 'skill'; registry: string; index: number; total: number; package_id: string; skill_id: string; uploaded: boolean }
-  | { type: 'package'; registry: string; package_id: string; uploaded: boolean }
+  | { type: 'skill'; registry: string; index: number; total: number; app_id: string; skill_id: string; uploaded: boolean }
+  | { type: 'app'; registry: string; app_id: string; uploaded: boolean }
   | { type: 'publishing'; registry: string; revision: string }
 
 function sameDefinition(left: SkillRegistryDefinition, right: SkillRegistryDefinition) {
@@ -75,18 +75,18 @@ export class SkillRegistryPublisher {
         registry: candidate.definition.id,
         index: index + 1,
         total: candidate.skills.length,
-        package_id: skill.package_id,
+        app_id: skill.app_id,
         skill_id: skill.skill_id,
         uploaded,
       })
     }
-    for (const pkg of candidate.snapshot.packages) {
+    for (const pkg of candidate.snapshot.apps) {
       let uploaded = false
       for (const descriptor of iconAssets(pkg.icon)) {
         if (!descriptor) continue
-        uploaded ||= await uploadImage(descriptor.digest, 'Package')
+        uploaded ||= await uploadImage(descriptor.digest, 'App')
       }
-      this.onProgress({ type: 'package', registry: candidate.definition.id, package_id: pkg.package_id, uploaded })
+      this.onProgress({ type: 'app', registry: candidate.definition.id, app_id: pkg.app_id, uploaded })
     }
   }
 
@@ -102,7 +102,7 @@ export class SkillRegistryPublisher {
       : undefined
     if (!definition.enabled) {
       await this.store.putState({
-        schema_version: '1',
+        schema_version: '2',
         definition,
         current_snapshot: previousState?.current_snapshot,
         current_summary: previousState?.current_summary,
@@ -124,7 +124,7 @@ export class SkillRegistryPublisher {
       if (!sameDefinition(previousState.definition, definition)) {
         await this.store.putState({
           ...previousState,
-          schema_version: '1',
+          schema_version: '2',
           definition,
         }, stateVersion)
       }
@@ -132,19 +132,19 @@ export class SkillRegistryPublisher {
         registry: definition.id,
         revision: candidate.revision,
         skills: candidate.skills.length,
-        packages: candidate.snapshot.packages.length,
+        apps: candidate.snapshot.apps.length,
         diagnostics: candidate.diagnostics.length,
         skipped: 'unchanged',
       }
     }
 
     await this.publishCandidateAssets(candidate)
-    for (const pkg of candidate.snapshot.packages) {
-      const stored = await this.store.putPackageRelease(
-        skillPackageReleaseFromSnapshotPackage(candidate.snapshot, pkg),
+    for (const pkg of candidate.snapshot.apps) {
+      const stored = await this.store.putAppRelease(
+        appReleaseFromSnapshotApp(candidate.snapshot, pkg),
       )
       if (stored.revision !== pkg.revision) {
-        throw new Error(`${definition.id}/${pkg.package_id}: Package revision does not match its Snapshot`)
+        throw new Error(`${definition.id}/${pkg.app_id}: App revision does not match its Snapshot`)
       }
     }
     this.onProgress({ type: 'publishing', registry: definition.id, revision: candidate.revision })
@@ -153,7 +153,7 @@ export class SkillRegistryPublisher {
       registry: definition.id,
       revision: candidate.revision,
       skills: candidate.skills.length,
-      packages: candidate.snapshot.packages.length,
+      apps: candidate.snapshot.apps.length,
       diagnostics: candidate.diagnostics.length,
     }
   }

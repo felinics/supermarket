@@ -6,8 +6,8 @@ import { compareCanonicalText } from '#lib/order'
 
 export const CATEGORY_TABLE_FILE = 'categories.yaml'
 export const DEFAULT_CATEGORY_ID = 'other'
-export const PACKAGE_LOCALES = ['en', 'zh', 'ja'] as const
-export type PackageLocale = (typeof PACKAGE_LOCALES)[number]
+export const APP_LOCALES = ['en', 'zh', 'ja'] as const
+export type AppLocale = (typeof APP_LOCALES)[number]
 
 const categoryID = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(64)
 const text = z.string().trim().min(1).max(256)

@@ -23,10 +23,10 @@ export async function readSkillDirectory(input: SkillAdapterInput): Promise<Skil
     }
     const id = assertRegistryComponentID(entry.name, 'skill ID')
     skills.push(await buildSkillCandidate({
-      definition, packageID: id, skillID: id, sourcePath: id,
+      definition, appID: id, skillID: id, sourcePath: id,
       root: await resolveRealInside(sourceRoot, id), allowedRoot: sourceRoot,
       budget,
     }))
   }
-  return { skills, diagnostics: [], packages: new Map() }
+  return { skills, diagnostics: [], apps: new Map() }
 }

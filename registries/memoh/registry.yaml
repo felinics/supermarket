@@ -7,4 +7,4 @@ adapter:
   type: memoh
 source:
   type: local
-  path: packages
+  path: apps

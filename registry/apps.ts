@@ -1,26 +1,26 @@
 import type {
   CatalogSkill,
-  PackageComponent,
-  SnapshotPackage,
-  SkillPackageDescriptor,
-  SkillPackageRelease,
-  SkillPackageSummary,
+  AppComponent,
+  SnapshotApp,
+  AppDescriptor,
+  AppRelease,
+  AppSummary,
   SkillRegistrySnapshot,
 } from './types'
-import { catalogSkillsFromSnapshotPackage, packageMetadataFields } from './snapshot'
+import { catalogSkillsFromSnapshotApp, appMetadataFields } from './snapshot'
 
-export interface SkillPackageSearchOptions {
+export interface AppSearchOptions {
   q?: string
   registry?: string
   category?: string
   tag?: string
-  component?: PackageComponent
+  component?: AppComponent
   page?: number
   limit?: number
   sort?: 'relevance' | 'name' | 'registry'
 }
 
-export interface CatalogSkillPackage extends SkillPackageSummary {
+export interface CatalogApp extends AppSummary {
   skills: CatalogSkill[]
 }
 
@@ -35,20 +35,20 @@ function skillCategories(skills: Array<Pick<CatalogSkill, 'category' | 'category
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
-function packageSummary(
+function appSummary(
   snapshot: SkillRegistrySnapshot,
-  pkg: SnapshotPackage,
+  pkg: SnapshotApp,
   skills: CatalogSkill[],
-): CatalogSkillPackage {
+): CatalogApp {
   return {
-    schema_version: '1',
+    schema_version: '2',
     registry_id: snapshot.registry_id,
     registry_priority: snapshot.registry_priority,
-    package_id: pkg.package_id,
+    app_id: pkg.app_id,
     name: pkg.name,
     description: pkg.description,
     tags: pkg.tags,
-    ...packageMetadataFields(pkg),
+    ...appMetadataFields(pkg),
     categories: skillCategories(skills),
     skill_count: skills.length,
     dependency_count: pkg.dependencies.length,
@@ -58,26 +58,26 @@ function packageSummary(
   }
 }
 
-export function catalogPackagesFromSnapshot(snapshot: SkillRegistrySnapshot): CatalogSkillPackage[] {
-  return snapshot.packages.map((pkg) => packageSummary(
+export function catalogAppsFromSnapshot(snapshot: SkillRegistrySnapshot): CatalogApp[] {
+  return snapshot.apps.map((pkg) => appSummary(
     snapshot,
     pkg,
-    catalogSkillsFromSnapshotPackage(snapshot, pkg),
+    catalogSkillsFromSnapshotApp(snapshot, pkg),
   ))
 }
 
-function localizedTexts(pkg: CatalogSkillPackage) {
+function localizedTexts(pkg: CatalogApp) {
   return Object.values(pkg.translations ?? {}).flatMap((value) => [value?.name ?? '', value?.description ?? ''])
     .filter(Boolean).map((value) => value.toLowerCase())
 }
 
-function searchScore(pkg: CatalogSkillPackage, rawQuery: string) {
+function searchScore(pkg: CatalogApp, rawQuery: string) {
   const query = rawQuery.toLowerCase().trim()
   if (!query) return 0
   const localized = localizedTexts(pkg)
-  if (pkg.package_id.toLowerCase() === query || pkg.name.toLowerCase() === query
+  if (pkg.app_id.toLowerCase() === query || pkg.name.toLowerCase() === query
     || localized.some((text) => text === query)) return 1000
-  if (pkg.package_id.toLowerCase().startsWith(query) || pkg.name.toLowerCase().startsWith(query)) return 800
+  if (pkg.app_id.toLowerCase().startsWith(query) || pkg.name.toLowerCase().startsWith(query)) return 800
   if (pkg.tags.some((tag) => tag.toLowerCase() === query)
     || pkg.category === query || pkg.category_name.toLowerCase() === query
     || pkg.categories.some((category) => category.id === query || category.name.toLowerCase() === query)
@@ -93,14 +93,14 @@ function searchScore(pkg: CatalogSkillPackage, rawQuery: string) {
   return -1
 }
 
-function hasComponent(pkg: CatalogSkillPackage, component: PackageComponent) {
+function hasComponent(pkg: CatalogApp, component: AppComponent) {
   if (component === 'skills') return pkg.skill_count > 0
   if (component === 'dependencies') return pkg.dependency_count > 0
   return pkg.connector_count > 0
 }
 
-export function searchSkillPackages(all: CatalogSkillPackage[], options: SkillPackageSearchOptions = {}) {
-  const packages = all.filter((pkg) => {
+export function searchApps(all: CatalogApp[], options: AppSearchOptions = {}) {
+  const apps = all.filter((pkg) => {
     if (options.registry && pkg.registry_id !== options.registry) return false
     if (options.category && pkg.category !== options.category
       && !pkg.categories.some((category) => category.id === options.category)) return false
@@ -111,7 +111,7 @@ export function searchSkillPackages(all: CatalogSkillPackage[], options: SkillPa
     .filter(({ score }) => score >= 0)
 
   const sort = options.sort ?? 'relevance'
-  packages.sort((a, b) => {
+  apps.sort((a, b) => {
     if (sort === 'relevance' && a.score !== b.score) return b.score - a.score
     if (sort === 'registry') {
       const result = a.pkg.registry_id.localeCompare(b.pkg.registry_id)
@@ -129,20 +129,20 @@ export function searchSkillPackages(all: CatalogSkillPackage[], options: SkillPa
   const limit = Number.isFinite(options.limit) ? Math.min(100, Math.max(1, Math.trunc(options.limit!))) : 20
   const start = (page - 1) * limit
   return {
-    total: packages.length,
+    total: apps.length,
     page,
     limit,
-    data: packages.slice(start, start + limit).map(({ pkg }) => {
+    data: apps.slice(start, start + limit).map(({ pkg }) => {
       const { skills: _skills, ...summary } = pkg
       return summary
     }),
   }
 }
 
-export function packageDescriptorFromRelease(
-  release: SkillPackageRelease,
+export function appDescriptorFromRelease(
+  release: AppRelease,
   revision: string,
-): SkillPackageDescriptor {
+): AppDescriptor {
   return {
     ...release,
     revision,

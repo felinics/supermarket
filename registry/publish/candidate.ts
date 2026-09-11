@@ -14,7 +14,7 @@ import { packageSkill } from '../artifacts/build'
 import { sha256 } from '#lib/digest'
 import { materializeSkillRegistrySource } from '../sources/index'
 import {
-  compactCatalogPackages,
+  compactCatalogApps,
   registrySnapshotRevision,
   serializeRegistrySnapshot,
   snapshotCategoriesFor,
@@ -38,7 +38,7 @@ export interface CandidateFile {
 }
 
 export interface CandidateSkillReview {
-  package_id: string
+  app_id: string
   skill_id: string
   files: Record<string, CandidateFile>
 }
@@ -69,7 +69,7 @@ export interface SkillRegistryCandidate {
 export type SkillRegistryBuildProgress =
   | { type: 'source'; registry: string }
   | { type: 'source_ready'; registry: string; revision: string }
-  | { type: 'scanned'; registry: string; skills: number; packages: number; diagnostics: number }
+  | { type: 'scanned'; registry: string; skills: number; apps: number; diagnostics: number }
 
 export interface SkillRegistryBuildOptions {
   includeReview?: boolean
@@ -93,10 +93,10 @@ function artifactDiagnosticMessage(error: unknown, sourceRoot: string) {
   const root = path.resolve(sourceRoot)
   const stable = [root, root.replaceAll(path.sep, '/'), root.replaceAll(path.sep, '\\')]
     .reduce((value, prefix) => value.replaceAll(prefix, '<source>'), message)
-  return `Skipped package: ${stable}`
+  return `Skipped app: ${stable}`
 }
 
-/** IDs of the workspace dependency definitions published next to the official Packages. */
+/** IDs of the workspace dependency definitions published next to the official Apps. */
 export async function listDependencyIDs(projectRoot: string): Promise<Set<string>> {
   const root = path.join(projectRoot, 'registries', DEPENDENCY_REGISTRY, 'dependencies')
   try {
@@ -112,17 +112,17 @@ export async function listDependencyIDs(projectRoot: string): Promise<Set<string
  * Cross-resource rules that adapters cannot check on their own: reviewed
  * categories must exist, dependency and connector references are limited to
  * the official registry, referenced dependencies must be published, and every
- * dependency needs a canonical Package with the same ID.
+ * dependency needs a canonical App with the same ID.
  */
-export function validatePackageCandidates(
+export function validateAppCandidates(
   definition: SkillRegistryDefinition,
-  result: Pick<SkillAdapterResult, 'packages'>,
+  result: Pick<SkillAdapterResult, 'apps'>,
   categories: CategoryTable,
   dependencyIDs: ReadonlySet<string>,
 ) {
   const official = definition.id === DEPENDENCY_REGISTRY
-  for (const candidate of result.packages.values()) {
-    const label = `${definition.id}/${candidate.package_id}`
+  for (const candidate of result.apps.values()) {
+    const label = `${definition.id}/${candidate.app_id}`
     if (candidate.reviewed && candidate.category) categories.require(candidate.category, label)
     if ((candidate.dependencies.length || candidate.connectors.length) && !official) {
       throw new Error(`${label}: dependencies and connectors are only supported in the ${DEPENDENCY_REGISTRY} registry`)
@@ -133,9 +133,9 @@ export function validatePackageCandidates(
   }
   if (!official) return
   for (const dependency of [...dependencyIDs].sort(compareCanonicalText)) {
-    const canonical = result.packages.get(dependency)
+    const canonical = result.apps.get(dependency)
     if (!canonical || !canonical.dependencies.includes(dependency)) {
-      throw new Error(`${definition.id}: dependency "${dependency}" requires a package "${dependency}" that references it`)
+      throw new Error(`${definition.id}: dependency "${dependency}" requires an app "${dependency}" that references it`)
     }
   }
 }
@@ -175,13 +175,13 @@ export async function buildSkillRegistryCandidate(
       ensurePaths: source.ensurePaths,
       budget,
     })
-    validatePackageCandidates(definition, result, categories, dependencyIDs)
+    validateAppCandidates(definition, result, categories, dependencyIDs)
     applyCategoryTable(result.skills, categories)
     onProgress({
       type: 'scanned',
       registry: definition.id,
       skills: result.skills.length,
-      packages: new Set([...result.packages.keys(), ...result.skills.map((skill) => skill.package_id)]).size,
+      apps: new Set([...result.apps.keys(), ...result.skills.map((skill) => skill.app_id)]).size,
       diagnostics: result.diagnostics.length,
     })
 
@@ -190,35 +190,35 @@ export async function buildSkillRegistryCandidate(
     const images = new Map<string, CandidateImage>()
     const review = new Map<string, CandidateSkillReview>()
     const diagnostics = [...result.diagnostics]
-    const packages = new Map<string, typeof result.skills>()
+    const apps = new Map<string, typeof result.skills>()
     for (const candidate of result.skills) {
-      const packageSkills = packages.get(candidate.package_id) ?? []
-      packageSkills.push(candidate)
-      packages.set(candidate.package_id, packageSkills)
+      const appSkills = apps.get(candidate.app_id) ?? []
+      appSkills.push(candidate)
+      apps.set(candidate.app_id, appSkills)
     }
-    const skippedPackages = new Set<string>()
-    for (const [packageID, candidates] of packages) {
-      let packagedCandidates: Array<{
+    const skippedApps = new Set<string>()
+    for (const [appID, candidates] of apps) {
+      let appdCandidates: Array<{
         candidate: (typeof candidates)[number]
         packaged: Awaited<ReturnType<typeof packageSkill>>
       }>
       try {
-        packagedCandidates = []
+        appdCandidates = []
         for (const candidate of candidates) {
-          packagedCandidates.push({ candidate, packaged: await packageSkill(candidate.files) })
+          appdCandidates.push({ candidate, packaged: await packageSkill(candidate.files) })
         }
       } catch (error) {
         rethrowRegistryBudgetError(error)
         diagnostics.push({
-          package_id: packageID,
-          code: 'package_invalid',
+          app_id: appID,
+          code: 'app_invalid',
           message: artifactDiagnosticMessage(error, source.root),
         })
-        skippedPackages.add(packageID)
+        skippedApps.add(appID)
         continue
       }
 
-      for (const { candidate, packaged } of packagedCandidates) {
+      for (const { candidate, packaged } of appdCandidates) {
         const descriptor: SkillArtifactDescriptor = {
           format: 'memoh_skill_v1',
           digest: packaged.digest,
@@ -234,10 +234,10 @@ export async function buildSkillRegistryCandidate(
         }
         const sourcePath = [definition.source.path, candidate.source_path].filter(Boolean).join('/')
         const skill: CatalogSkill = {
-          schema_version: '1',
+          schema_version: '2',
           registry_id: definition.id,
           registry_priority: definition.priority,
-          package_id: candidate.package_id,
+          app_id: candidate.app_id,
           skill_id: candidate.skill_id,
           install_id: candidate.install_id,
           name: candidate.name,
@@ -267,39 +267,39 @@ export async function buildSkillRegistryCandidate(
               digest: await sha256(file.bytes),
               size: file.bytes.length,
               mode: file.mode,
-              text: reviewText(file.bytes, `${candidate.package_id}/${candidate.skill_id}/${name}`, budget),
+              text: reviewText(file.bytes, `${candidate.app_id}/${candidate.skill_id}/${name}`, budget),
             }
           }
-          review.set(`${candidate.package_id}/${candidate.skill_id}`, {
-            package_id: candidate.package_id,
+          review.set(`${candidate.app_id}/${candidate.skill_id}`, {
+            app_id: candidate.app_id,
             skill_id: candidate.skill_id,
             files,
           })
         }
       }
     }
-    const packageCandidates = new Map(
-      [...result.packages].filter(([packageID]) => !skippedPackages.has(packageID)),
+    const appCandidates = new Map(
+      [...result.apps].filter(([appID]) => !skippedApps.has(appID)),
     )
-    for (const candidate of packageCandidates.values()) {
+    for (const candidate of appCandidates.values()) {
       for (const image of candidate.icon_assets ?? []) images.set(image.descriptor.digest, image)
     }
 
     skills.sort((a, b) => compareCanonicalText(a.name, b.name)
-      || compareCanonicalText(a.package_id, b.package_id)
+      || compareCanonicalText(a.app_id, b.app_id)
       || compareCanonicalText(a.skill_id, b.skill_id))
-    diagnostics.sort((a, b) => compareCanonicalText(a.package_id ?? '', b.package_id ?? '')
+    diagnostics.sort((a, b) => compareCanonicalText(a.app_id ?? '', b.app_id ?? '')
       || compareCanonicalText(a.code, b.code))
-    const snapshotPackages = compactCatalogPackages(skills, {
+    const snapshotApps = compactCatalogApps(skills, {
       registry: definition.id,
-      packages: packageCandidates,
+      apps: appCandidates,
       categories,
     })
-    if (!snapshotPackages.length) {
-      throw new Error(`${definition.id}: Registry build produced zero packages`)
+    if (!snapshotApps.length) {
+      throw new Error(`${definition.id}: Registry build produced zero apps`)
     }
     const snapshot: SkillRegistrySnapshot = {
-      schema_version: '1',
+      schema_version: '2',
       registry_id: definition.id,
       registry_priority: definition.priority,
       source: {
@@ -307,8 +307,8 @@ export async function buildSkillRegistryCandidate(
         revision: source.revision,
         ...(definition.source.type === 'git' ? { repository: definition.source.url } : {}),
       },
-      categories: snapshotCategoriesFor(snapshotPackages, categories),
-      packages: snapshotPackages,
+      categories: snapshotCategoriesFor(snapshotApps, categories),
+      apps: snapshotApps,
       diagnostics,
     }
     const snapshotBytes = serializeRegistrySnapshot(snapshot)

@@ -24,7 +24,7 @@ interface MarketplaceEntry {
   source: unknown
 }
 
-const unsupportedPackageComponents = [
+const unsupportedAppComponents = [
   'apps',
   'mcpServers',
   'hooks',
@@ -34,10 +34,10 @@ const unsupportedPackageComponents = [
 ] as const
 
 function declaredUnsupportedComponents(manifest: Record<string, unknown>) {
-  return unsupportedPackageComponents.filter(component => hasComponent(manifest[component]))
+  return unsupportedAppComponents.filter(component => hasComponent(manifest[component]))
 }
 
-function packageDiagnosticMessage(error: unknown, sourceRoot: string) {
+function appDiagnosticMessage(error: unknown, sourceRoot: string) {
   const message = error instanceof Error ? error.message : String(error)
   const roots = new Set([
     path.resolve(sourceRoot),
@@ -46,7 +46,7 @@ function packageDiagnosticMessage(error: unknown, sourceRoot: string) {
   ])
   let stable = message
   for (const root of roots) stable = stable.replaceAll(root, '<source>')
-  return `Skipped package: ${stable}`
+  return `Skipped app: ${stable}`
 }
 
 function parseMarketplace(raw: unknown, budget: RegistryBuildBudget): MarketplaceEntry[] {
@@ -56,36 +56,36 @@ function parseMarketplace(raw: unknown, budget: RegistryBuildBudget): Marketplac
   budget.assertSkillEntries(plugins.length, 'Codex Marketplace')
   const names = new Set<string>()
   return plugins.map((value, index) => {
-    if (!value || typeof value !== 'object') throw new Error(`Marketplace package ${index} must be an object`)
+    if (!value || typeof value !== 'object') throw new Error(`Marketplace app ${index} must be an object`)
     const item = value as Record<string, unknown>
-    const name = assertRegistryComponentID(String(item.name ?? '').trim(), `package ${index} ID`)
-    if (names.has(name)) throw new Error(`Marketplace contains duplicate package ID: ${name}`)
+    const name = assertRegistryComponentID(String(item.name ?? '').trim(), `app ${index} ID`)
+    if (names.has(name)) throw new Error(`Marketplace contains duplicate app ID: ${name}`)
     names.add(name)
     return { name, category: item.category ? String(item.category) : undefined, source: item.source }
   })
 }
 
-function localPackagePath(source: unknown) {
+function localAppPath(source: unknown) {
   let value: string | undefined
   if (typeof source === 'string') value = source
   else if (source && typeof source === 'object') {
     const data = source as Record<string, unknown>
     if (data.source === 'local' && typeof data.path === 'string') value = data.path
   }
-  return value ? safeRelativePath(value, 'Marketplace package path') : undefined
+  return value ? safeRelativePath(value, 'Marketplace app path') : undefined
 }
 
 function codexSkillPaths(value: unknown) {
   const values = typeof value === 'string' ? [value] : Array.isArray(value) ? value : []
   if (values.length === 0 || values.some((item) => typeof item !== 'string')) {
-    throw new Error('Codex package skills must be a path or an array of paths')
+    throw new Error('Codex app skills must be a path or an array of paths')
   }
   return [...new Set(values.map((item) => safeRelativePath(item as string, 'Codex skill path')))]
 }
 
 
-async function packageIcon(
-  packageRoot: string,
+async function appIcon(
+  appRoot: string,
   manifest: Record<string, unknown>,
   budget: RegistryBuildBudget,
 ) {
@@ -107,7 +107,7 @@ async function packageIcon(
     if (!imagePath) continue
     let asset
     try {
-      asset = await readImageAsset(packageRoot, imagePath, budget)
+      asset = await readImageAsset(appRoot, imagePath, budget)
     } catch (error) {
       if (error instanceof OversizedSkillImageError) continue
       throw error
@@ -118,8 +118,8 @@ async function packageIcon(
   return { icon: Object.keys(icon).length ? icon : undefined, assets }
 }
 
-async function discoverSkillRoots(packageRoot: string, declaredPath: string) {
-  const declaredRoot = await resolveRealInside(packageRoot, declaredPath)
+async function discoverSkillRoots(appRoot: string, declaredPath: string) {
+  const declaredRoot = await resolveRealInside(appRoot, declaredPath)
   try {
     if (!(await stat(path.join(declaredRoot, 'SKILL.md'))).isFile()) {
       throw new Error(`Codex skill path "${declaredPath}" SKILL.md must be a regular file`)
@@ -154,29 +154,29 @@ export async function readCodexMarketplace(input: SkillAdapterInput): Promise<Sk
   const entries = parseMarketplace(JSON.parse(new TextDecoder().decode(catalogBytes)), budget)
 
   const diagnostics: RegistryDiagnostic[] = []
-  const candidates: Array<{ entry: MarketplaceEntry; packagePath: string }> = []
+  const candidates: Array<{ entry: MarketplaceEntry; appPath: string }> = []
   for (const entry of entries) {
-    const packagePath = localPackagePath(entry.source)
-    if (!packagePath) {
-      diagnostics.push({ package_id: entry.name, code: 'package_invalid', message: 'Skipped package: uses an unsupported source' })
+    const appPath = localAppPath(entry.source)
+    if (!appPath) {
+      diagnostics.push({ app_id: entry.name, code: 'app_invalid', message: 'Skipped app: uses an unsupported source' })
       continue
     }
-    candidates.push({ entry, packagePath })
+    candidates.push({ entry, appPath })
   }
-  await ensurePaths(candidates.map(({ packagePath }) => `${packagePath}/.codex-plugin/plugin.json`))
+  await ensurePaths(candidates.map(({ appPath }) => `${appPath}/.codex-plugin/plugin.json`))
 
   const prepared: Array<{
     entry: MarketplaceEntry
-    packagePath: string
-    packageRoot: string
+    appPath: string
+    appRoot: string
     manifest: Record<string, unknown>
     skillPaths: string[]
     iconPaths: string[]
   }> = []
   for (const item of candidates) {
     try {
-      const packageRoot = await resolveRealInside(sourceRoot, item.packagePath)
-      const manifestPath = await resolveRealInside(packageRoot, '.codex-plugin/plugin.json')
+      const appRoot = await resolveRealInside(sourceRoot, item.appPath)
+      const manifestPath = await resolveRealInside(appRoot, '.codex-plugin/plugin.json')
       const manifestBytes = await readFileBounded(manifestPath, MAX_REGISTRY_METADATA_FILE_BYTES, budget)
       const parsed = JSON.parse(new TextDecoder().decode(manifestBytes))
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
@@ -202,61 +202,61 @@ export async function readCodexMarketplace(input: SkillAdapterInput): Promise<Sk
         declaredImagePath(ui.logo, 'interface.logo'),
         declaredImagePath(ui.logoDark, 'interface.logoDark'),
       ].filter((value): value is string => Boolean(value))
-      prepared.push({ ...item, packageRoot, manifest, skillPaths, iconPaths })
+      prepared.push({ ...item, appRoot, manifest, skillPaths, iconPaths })
     } catch (error) {
       rethrowRegistryBudgetError(error)
       diagnostics.push({
-        package_id: item.entry.name,
-        code: 'package_invalid',
-        message: packageDiagnosticMessage(error, sourceRoot),
+        app_id: item.entry.name,
+        code: 'app_invalid',
+        message: appDiagnosticMessage(error, sourceRoot),
       })
     }
   }
   await ensurePaths(prepared.flatMap((item) => [
-    ...item.skillPaths.map((skillPath) => `${item.packagePath}/${skillPath}`),
-    ...item.iconPaths.map((iconPath) => `${item.packagePath}/${iconPath}`),
+    ...item.skillPaths.map((skillPath) => `${item.appPath}/${skillPath}`),
+    ...item.iconPaths.map((iconPath) => `${item.appPath}/${iconPath}`),
   ]))
 
   const skills: SkillCandidate[] = []
   for (const item of prepared) {
     try {
-      const packageSkills: SkillCandidate[] = []
-      const presentation = await packageIcon(item.packageRoot, item.manifest, budget)
+      const appSkills: SkillCandidate[] = []
+      const presentation = await appIcon(item.appRoot, item.manifest, budget)
       const seen = new Set<string>()
       const roots: Awaited<ReturnType<typeof discoverSkillRoots>> = []
       for (const skillPath of item.skillPaths) {
-        for (const root of await discoverSkillRoots(item.packageRoot, skillPath)) {
+        for (const root of await discoverSkillRoots(item.appRoot, skillPath)) {
           if (seen.has(root.id)) throw new Error(`duplicate skill ID ${root.id}`)
           seen.add(root.id)
           roots.push(root)
         }
       }
       for (const root of roots) {
-        packageSkills.push(await buildSkillCandidate({
+        appSkills.push(await buildSkillCandidate({
           definition,
-          packageID: item.entry.name,
+          appID: item.entry.name,
           skillID: root.id,
-          sourcePath: `${item.packagePath}/${root.relativePath}`,
+          sourcePath: `${item.appPath}/${root.relativePath}`,
           root: root.root,
-          allowedRoot: item.packageRoot,
-          packageManifest: item.manifest,
+          allowedRoot: item.appRoot,
+          appManifest: item.manifest,
           sourceCategory: item.entry.category,
           icon: presentation.icon,
           iconAssets: presentation.assets,
           budget,
         }))
       }
-      skills.push(...packageSkills)
+      skills.push(...appSkills)
     } catch (error) {
       rethrowRegistryBudgetError(error)
       diagnostics.push({
-        package_id: item.entry.name,
-        code: 'package_invalid',
-        message: packageDiagnosticMessage(error, sourceRoot),
+        app_id: item.entry.name,
+        code: 'app_invalid',
+        message: appDiagnosticMessage(error, sourceRoot),
       })
     }
   }
-  return { skills, diagnostics, packages: new Map() }
+  return { skills, diagnostics, apps: new Map() }
 }
 
 export { detectSkillImageContentType } from './images'
