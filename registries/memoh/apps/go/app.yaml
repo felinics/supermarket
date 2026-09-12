@@ -1,0 +1,21 @@
+schema_version: "2"
+id: go
+version: 1.0.0
+author:
+  name: Memoh
+repository: https://github.com/felinics/supermarket
+license: Apache-2.0
+icon: icon.svg
+tags:
+  - go
+  - runtime
+name: Go
+category: runtime
+description: Go toolchain for module management, builds, tests and formatting.
+dependencies:
+  - go
+translations:
+  zh:
+    description: Go 工具链，支持模块管理、构建、测试与格式化。
+  ja:
+    description: モジュール管理・ビルド・テスト・整形に対応した Go ツールチェーン。

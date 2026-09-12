@@ -1,0 +1,25 @@
+schema_version: "2"
+id: ahrefs
+version: 1.0.0
+name: Ahrefs
+description: Connect Ahrefs for SEO and search analytics.
+author:
+  name: Memoh
+homepage: https://ahrefs.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: marketing
+tags:
+  - connector
+  - ahrefs
+  - marketing
+  - analytics
+translations:
+  zh:
+    description: 连接 Ahrefs，使用SEO 与搜索分析服务。
+  ja:
+    description: Ahrefs に接続して、SEO と検索分析を利用します。
+connectors:
+  - type: ahrefs
+    required: true

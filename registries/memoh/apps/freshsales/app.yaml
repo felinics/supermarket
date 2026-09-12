@@ -1,0 +1,25 @@
+schema_version: "2"
+id: freshsales
+version: 1.0.0
+name: Freshsales
+description: Connect Freshsales for sales pipelines and customer relationships.
+author:
+  name: Memoh
+homepage: https://www.freshworks.com/crm/sales
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: sales-crm
+tags:
+  - connector
+  - freshsales
+  - crm
+  - sales
+translations:
+  zh:
+    description: 连接 Freshsales，使用销售管道与客户关系服务。
+  ja:
+    description: Freshsales に接続して、営業パイプラインと顧客関係を利用します。
+connectors:
+  - type: freshsales
+    required: true

@@ -1,0 +1,25 @@
+schema_version: "2"
+id: instantly
+version: 1.0.0
+name: Instantly
+description: Connect Instantly for sales outreach.
+author:
+  name: Memoh
+homepage: https://instantly.ai
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: sales-crm
+tags:
+  - connector
+  - instantly
+  - sales
+  - marketing
+translations:
+  zh:
+    description: 连接 Instantly，使用销售触达服务。
+  ja:
+    description: Instantly に接続して、営業アプローチを利用します。
+connectors:
+  - type: instantly
+    required: true

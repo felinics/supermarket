@@ -1,0 +1,25 @@
+schema_version: "2"
+id: exa
+version: 1.0.0
+name: Exa
+description: Connect Exa for web search.
+author:
+  name: Memoh
+homepage: https://exa.ai
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: data-analytics
+tags:
+  - connector
+  - exa
+  - search
+  - ai
+translations:
+  zh:
+    description: 连接 Exa，使用网页搜索服务。
+  ja:
+    description: Exa に接続して、Web 検索を利用します。
+connectors:
+  - type: exa
+    required: true

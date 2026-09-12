@@ -1,0 +1,25 @@
+schema_version: "2"
+id: hubspot
+version: 1.0.0
+name: HubSpot
+description: Connect HubSpot for CRM, marketing and customer data.
+author:
+  name: Memoh
+homepage: https://www.hubspot.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: sales-crm
+tags:
+  - connector
+  - hubspot
+  - crm
+  - marketing
+translations:
+  zh:
+    description: 连接 HubSpot，使用CRM、营销与客户数据服务。
+  ja:
+    description: HubSpot に接続して、CRM、マーケティング、顧客データを利用します。
+connectors:
+  - type: hubspot
+    required: true

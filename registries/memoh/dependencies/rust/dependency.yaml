@@ -1,0 +1,44 @@
+schema_version: "1"
+id: rust
+name: Rust
+description: Rust installed in an isolated, versioned workspace directory.
+category: runtime
+source: managed
+requires:
+  - python
+  - native-build-tools
+provides:
+  - rustup
+  - rustc
+  - cargo
+  - rustfmt
+  - cargo-fmt
+  - clippy-driver
+  - cargo-clippy
+platforms:
+  - os: linux
+    arch:
+      - amd64
+      - arm64
+    libc: glibc
+  - os: darwin
+    arch:
+      - arm64
+timeouts:
+  install: 3600
+  update: 3600
+  remove: 300
+  check_update: 300
+  version: 60
+scripts:
+  install: install.sh
+  update: install.sh
+  remove: remove.sh
+  check_update: check-update.sh
+translations:
+  en:
+    description: Rust tools
+  zh:
+    description: Rust 编译、测试与代码检查
+  ja:
+    description: Rust のビルド・テスト・コード検査

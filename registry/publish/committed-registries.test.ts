@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import type { Dirent } from 'node:fs'
-import { access, readdir } from 'node:fs/promises'
+import { access, readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { buildSkillCandidates } from '../adapters/index'
 import { loadSkillRegistryDefinitions } from '../definitions/repository'
@@ -38,19 +38,49 @@ describe('Repository-owned Skill Registries', () => {
     expect([...result.apps.values()].every((pkg) => pkg.reviewed && pkg.version && pkg.category)).toBe(true)
   })
 
-  test('publishes a canonical App for every official dependency', async () => {
+  test('publishes every pinned Connect-It connector as an independently authorizable App', async () => {
+    const projectRoot = path.resolve(import.meta.dirname, '../..')
+    const upstream = JSON.parse(await readFile(path.join(projectRoot, 'registries/memoh/connect-it.catalog.json'), 'utf8')) as {
+      connectors: { type: string; app_id: string }[]
+    }
+    const definition = (await loadSkillRegistryDefinitions(projectRoot)).find((item) => item.id === 'memoh')!
+    const candidate = await buildSkillRegistryCandidate(definition, projectRoot)
+    const apps = candidate.snapshot.apps.filter((app) => app.connectors.length)
+    expect(apps.flatMap((app) => app.connectors.map((ref) => ref.type)).sort())
+      .toEqual(upstream.connectors.map((connector) => connector.type).sort())
+    expect(new Set(upstream.connectors.map((connector) => connector.type)).size).toBe(upstream.connectors.length)
+    expect(candidate.diagnostics).toEqual([])
+    for (const connector of upstream.connectors) {
+      const app = apps.find((item) => item.app_id === connector.app_id)!
+      expect(app).toBeDefined()
+      expect(app.connectors).toEqual([{ type: connector.type, required: true }])
+      expect(app.category).not.toBe('other')
+      expect(app.translations?.zh?.description).toBeTruthy()
+      expect(app.translations?.ja?.description).toBeTruthy()
+      expect(app.icon?.card).toBeDefined()
+      expect(candidate.images.has(app.icon!.card!.digest)).toBe(true)
+    }
+  })
+
+  test('every official dependency is reachable from an App, including shared transitive tools', async () => {
     const projectRoot = path.resolve(import.meta.dirname, '../..')
     const definition = (await loadSkillRegistryDefinitions(projectRoot)).find((item) => item.id === 'memoh')!
     const candidate = await buildSkillRegistryCandidate(definition, projectRoot)
     const dependencyIDs = [...await listDependencyIDs(projectRoot)].sort()
     expect(dependencyIDs.length).toBeGreaterThan(0)
-    for (const dependency of dependencyIDs) {
-      const pkg = candidate.snapshot.apps.find((item) => item.app_id === dependency)
-      expect(pkg).toBeDefined()
-      expect(pkg!.dependencies).toContain(dependency)
-      expect(pkg!.icon?.card).toBeDefined()
-      expect(candidate.images.has(pkg!.icon!.card!.digest)).toBe(true)
+    const reachable = new Set<string>()
+    const { buildDependencyCandidate } = await import('../dependencies/build')
+    const dependencies = await buildDependencyCandidate(projectRoot)
+    const manifests = new Map(dependencies.snapshot.dependencies.map(dep => [dep.dependency_id, dep.manifest]))
+    function visit(id: string) {
+      if (reachable.has(id)) return
+      const manifest = manifests.get(id)
+      expect(manifest, `Missing dependency ${id}`).toBeDefined()
+      reachable.add(id)
+      manifest!.requires.forEach(visit)
     }
+    candidate.snapshot.apps.forEach(app => app.dependencies.forEach(visit))
+    expect([...reachable].sort()).toEqual(dependencyIDs)
     expect(candidate.snapshot.categories.map((category) => category.id))
       .toEqual([...new Set(candidate.snapshot.apps.map((pkg) => pkg.category))]
         .sort((a, b) => candidate.snapshot.categories.findIndex((c) => c.id === a) - candidate.snapshot.categories.findIndex((c) => c.id === b)))

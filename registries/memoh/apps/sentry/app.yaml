@@ -1,0 +1,28 @@
+schema_version: "2"
+id: sentry
+version: 1.1.0
+name: Sentry
+description: Connect Sentry, investigate errors and manage release artifacts.
+author:
+  name: Memoh
+homepage: https://sentry.io
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: monitoring
+tags:
+  - connector
+  - sentry
+  - monitoring
+  - developer_tools
+translations:
+  zh:
+    description: 连接 Sentry，调查错误并管理发布产物。
+  ja:
+    description: Sentry に接続し、エラー調査とリリース成果物の管理を行います。
+connectors:
+  - type: sentry
+    required: true
+dependencies:
+  - sentry
+  - sentry-cli

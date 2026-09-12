@@ -1,0 +1,25 @@
+schema_version: "2"
+id: folk
+version: 1.0.0
+name: folk
+description: Connect folk for contacts and customer relationships.
+author:
+  name: Memoh
+homepage: https://folk.app
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: sales-crm
+tags:
+  - connector
+  - folk
+  - crm
+  - sales
+translations:
+  zh:
+    description: 连接 folk，使用联系人与客户关系服务。
+  ja:
+    description: folk に接続して、連絡先と顧客関係を利用します。
+connectors:
+  - type: folk
+    required: true

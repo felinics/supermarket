@@ -1,0 +1,25 @@
+schema_version: "2"
+id: store-leads
+version: 1.0.0
+name: Store Leads
+description: Connect Store Leads for ecommerce sales leads.
+author:
+  name: Memoh
+homepage: https://storeleads.app
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: sales-crm
+tags:
+  - connector
+  - store_leads
+  - sales
+  - data
+translations:
+  zh:
+    description: 连接 Store Leads，使用电商销售线索服务。
+  ja:
+    description: Store Leads に接続して、EC 営業リードを利用します。
+connectors:
+  - type: store_leads
+    required: true

@@ -1,0 +1,25 @@
+schema_version: "2"
+id: paddle
+version: 1.0.0
+name: Paddle
+description: Connect Paddle for payments and subscriptions.
+author:
+  name: Memoh
+homepage: https://www.paddle.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: finance-payments
+tags:
+  - connector
+  - paddle
+  - payments
+  - commerce
+translations:
+  zh:
+    description: 连接 Paddle，使用支付与订阅服务。
+  ja:
+    description: Paddle に接続して、決済とサブスクリプションを利用します。
+connectors:
+  - type: paddle
+    required: true

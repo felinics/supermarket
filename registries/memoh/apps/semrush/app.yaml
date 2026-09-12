@@ -1,0 +1,25 @@
+schema_version: "2"
+id: semrush
+version: 1.0.0
+name: Semrush
+description: Connect Semrush for SEO and marketing analytics.
+author:
+  name: Memoh
+homepage: https://www.semrush.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: marketing
+tags:
+  - connector
+  - semrush
+  - marketing
+  - analytics
+translations:
+  zh:
+    description: 连接 Semrush，使用SEO 与营销分析服务。
+  ja:
+    description: Semrush に接続して、SEO とマーケティング分析を利用します。
+connectors:
+  - type: semrush
+    required: true

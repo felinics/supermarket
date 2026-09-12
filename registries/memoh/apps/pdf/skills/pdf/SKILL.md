@@ -322,3 +322,8 @@ with open("encrypted.pdf", "wb") as output:
 - For JavaScript libraries (pdf-lib), see REFERENCE.md
 - If you need to fill out a PDF form, follow the instructions in FORMS.md
 - For troubleshooting guides, see REFERENCE.md
+
+
+## Installed Memoh tools
+
+Use `document-python` to run Python snippets and bundled scripts; it contains the document libraries. Use `document-node` for JavaScript snippets and document-generation scripts; it resolves the shared document modules. These commands preserve the caller’s working directory. Use the project interpreter only when you have explicitly installed the same libraries there. The App also installs its required native tools; do not use global pip/npm installs to repair module lookup.

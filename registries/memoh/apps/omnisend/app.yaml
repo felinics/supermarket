@@ -1,0 +1,25 @@
+schema_version: "2"
+id: omnisend
+version: 1.0.0
+name: Omnisend
+description: Connect Omnisend for ecommerce messaging campaigns.
+author:
+  name: Memoh
+homepage: https://www.omnisend.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.webp
+category: marketing
+tags:
+  - connector
+  - omnisend
+  - marketing
+  - communication
+translations:
+  zh:
+    description: 连接 Omnisend，使用电商消息营销服务。
+  ja:
+    description: Omnisend に接続して、EC 向けメッセージキャンペーンを利用します。
+connectors:
+  - type: omnisend
+    required: true

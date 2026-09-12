@@ -1,0 +1,25 @@
+schema_version: "2"
+id: openai
+version: 1.0.0
+name: OpenAI
+description: Connect OpenAI for OpenAI models.
+author:
+  name: Memoh
+homepage: https://openai.com/api
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: ai-models
+tags:
+  - connector
+  - openai
+  - ai
+  - developer_tools
+translations:
+  zh:
+    description: 连接 OpenAI，使用OpenAI 模型服务。
+  ja:
+    description: OpenAI に接続して、OpenAI モデルを利用します。
+connectors:
+  - type: openai
+    required: true

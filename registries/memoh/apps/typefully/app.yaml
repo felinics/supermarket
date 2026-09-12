@@ -1,0 +1,25 @@
+schema_version: "2"
+id: typefully
+version: 1.0.0
+name: Typefully
+description: Connect Typefully for social content and publishing.
+author:
+  name: Memoh
+homepage: https://typefully.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: communication
+tags:
+  - connector
+  - typefully
+  - social
+  - productivity
+translations:
+  zh:
+    description: 连接 Typefully，使用社交内容与发布服务。
+  ja:
+    description: Typefully に接続して、ソーシャルコンテンツと投稿を利用します。
+connectors:
+  - type: typefully
+    required: true

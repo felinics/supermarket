@@ -1,0 +1,26 @@
+schema_version: "2"
+id: stripe
+version: 1.1.0
+name: Stripe
+description: Connect Stripe and test payment integrations and webhooks.
+author:
+  name: Memoh
+homepage: https://stripe.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: finance-payments
+tags:
+  - connector
+  - stripe
+  - payments
+translations:
+  zh:
+    description: 连接 Stripe，调试支付集成与 webhook。
+  ja:
+    description: Stripe に接続し、決済連携と webhook をテストします。
+connectors:
+  - type: stripe
+    required: true
+dependencies:
+  - stripe-cli

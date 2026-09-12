@@ -1,0 +1,24 @@
+schema_version: "2"
+id: help-scout
+version: 1.0.0
+name: Help Scout
+description: Connect Help Scout for customer conversations and support.
+author:
+  name: Memoh
+homepage: https://www.helpscout.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: customer-support
+tags:
+  - connector
+  - help_scout
+  - customer_support
+translations:
+  zh:
+    description: 连接 Help Scout，使用客户对话与支持服务。
+  ja:
+    description: Help Scout に接続して、顧客との会話とサポートを利用します。
+connectors:
+  - type: help_scout
+    required: true

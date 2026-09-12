@@ -1,0 +1,25 @@
+schema_version: "2"
+id: recruitcrm
+version: 1.0.0
+name: Recruit CRM
+description: Connect Recruit CRM for recruiting and candidate relationships.
+author:
+  name: Memoh
+homepage: https://recruitcrm.io
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: sales-crm
+tags:
+  - connector
+  - recruitcrm
+  - crm
+  - recruiting
+translations:
+  zh:
+    description: 连接 Recruit CRM，使用招聘与候选人关系服务。
+  ja:
+    description: Recruit CRM に接続して、採用と候補者管理を利用します。
+connectors:
+  - type: recruitcrm
+    required: true

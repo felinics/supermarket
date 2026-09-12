@@ -1,0 +1,25 @@
+schema_version: "2"
+id: linear
+version: 1.0.0
+name: Linear
+description: Connect Linear for issues and product development projects.
+author:
+  name: Memoh
+homepage: https://linear.app
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: productivity
+tags:
+  - connector
+  - linear
+  - developer_tools
+  - project_management
+translations:
+  zh:
+    description: 连接 Linear，使用议题与产品开发项目服务。
+  ja:
+    description: Linear に接続して、課題と製品開発プロジェクトを利用します。
+connectors:
+  - type: linear
+    required: true

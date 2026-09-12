@@ -1,0 +1,24 @@
+schema_version: "2"
+id: buildium
+version: 1.0.0
+name: Buildium
+description: Connect Buildium for property management.
+author:
+  name: Memoh
+homepage: https://www.buildium.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: business-management
+tags:
+  - connector
+  - buildium
+  - property_management
+translations:
+  zh:
+    description: 连接 Buildium，使用物业管理服务。
+  ja:
+    description: Buildium に接続して、不動産管理を利用します。
+connectors:
+  - type: buildium
+    required: true

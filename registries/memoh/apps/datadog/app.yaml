@@ -1,0 +1,25 @@
+schema_version: "2"
+id: datadog
+version: 1.0.0
+name: Datadog
+description: Connect Datadog for observability and security monitoring.
+author:
+  name: Memoh
+homepage: https://www.datadoghq.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: monitoring
+tags:
+  - connector
+  - datadog
+  - monitoring
+  - developer_tools
+translations:
+  zh:
+    description: 连接 Datadog，使用可观测性与安全监控服务。
+  ja:
+    description: Datadog に接続して、可観測性とセキュリティ監視を利用します。
+connectors:
+  - type: datadog
+    required: true

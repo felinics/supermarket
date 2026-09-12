@@ -1,0 +1,25 @@
+schema_version: "2"
+id: leadmagic
+version: 1.0.0
+name: LeadMagic
+description: Connect LeadMagic for sales lead data.
+author:
+  name: Memoh
+homepage: https://leadmagic.io
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: sales-crm
+tags:
+  - connector
+  - leadmagic
+  - sales
+  - data
+translations:
+  zh:
+    description: 连接 LeadMagic，使用销售线索数据服务。
+  ja:
+    description: LeadMagic に接続して、営業リードデータを利用します。
+connectors:
+  - type: leadmagic
+    required: true

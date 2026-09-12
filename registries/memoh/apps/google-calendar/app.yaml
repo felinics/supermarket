@@ -1,0 +1,24 @@
+schema_version: "2"
+id: google-calendar
+version: 1.0.0
+name: Google Calendar
+description: Connect Google Calendar for calendars and scheduling.
+author:
+  name: Memoh
+homepage: https://calendar.google.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: productivity
+tags:
+  - connector
+  - google_calendar
+  - productivity
+translations:
+  zh:
+    description: 连接 Google Calendar，使用日历与日程安排服务。
+  ja:
+    description: Google Calendar に接続して、カレンダーと予定管理を利用します。
+connectors:
+  - type: google_calendar
+    required: true

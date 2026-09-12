@@ -1,0 +1,24 @@
+schema_version: "2"
+id: google-ads
+version: 1.0.0
+name: Google Ads
+description: Connect Google Ads for advertising campaigns and reporting.
+author:
+  name: Memoh
+homepage: https://ads.google.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: marketing
+tags:
+  - connector
+  - google_ads
+  - advertising
+translations:
+  zh:
+    description: 连接 Google Ads，使用广告投放与报表服务。
+  ja:
+    description: Google Ads に接続して、広告キャンペーンとレポートを利用します。
+connectors:
+  - type: google_ads
+    required: true

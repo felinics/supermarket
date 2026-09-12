@@ -117,9 +117,11 @@ translations: { zh: { name: Codex 工具 } }
     expect(() => validateAppCandidates(definition, { apps: unknownDependency }, categories, dependencies))
       .toThrow('unknown dependency "missing"')
 
-    const noCanonical = new Map([['tools', appCandidate({ app_id: 'tools', dependencies: ['codex'] })]])
-    expect(() => validateAppCandidates(definition, { apps: noCanonical }, categories, dependencies))
-      .toThrow('requires an app "codex"')
+    const shared = new Map([
+      ['first', appCandidate({ app_id: 'first', dependencies: ['codex'] })],
+      ['second', appCandidate({ app_id: 'second', dependencies: ['codex'] })],
+    ])
+    expect(() => validateAppCandidates(definition, { apps: shared }, categories, dependencies)).not.toThrow()
 
     const foreign = { ...definition, id: 'example' }
     const foreignReferences = new Map([['tools', appCandidate({ app_id: 'tools', connectors: [{ type: 'github', required: true }] })]])

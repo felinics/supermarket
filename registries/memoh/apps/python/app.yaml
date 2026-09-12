@@ -1,8 +1,8 @@
 schema_version: "2"
 id: python
-version: 1.0.0
+version: 1.1.0
 name: Python
-description: Python interpreter with pip.
+description: Python with uv, Ruff and pytest for development and testing.
 author:
   name: Memoh
   email: hello@memoh.ai
@@ -18,8 +18,10 @@ tags:
   - runtime
 translations:
   zh:
-    description: Python 解释器，含 pip
+    description: Python 开发环境，含 uv、Ruff 与 pytest。
   ja:
-    description: Python インタープリター（pip 付き）
+    description: uv・Ruff・pytest を含む Python 開発環境。
 dependencies:
   - python
+  - uv
+  - python-dev

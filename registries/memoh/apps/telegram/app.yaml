@@ -1,0 +1,25 @@
+schema_version: "2"
+id: telegram
+version: 1.0.0
+name: Telegram
+description: Connect Telegram for Telegram messaging.
+author:
+  name: Memoh
+homepage: https://telegram.org
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: communication
+tags:
+  - connector
+  - telegram
+  - communication
+  - social
+translations:
+  zh:
+    description: 连接 Telegram，使用Telegram 消息服务。
+  ja:
+    description: Telegram に接続して、Telegram メッセージを利用します。
+connectors:
+  - type: telegram
+    required: true

@@ -1,0 +1,23 @@
+schema_version: "2"
+id: ffmpeg
+version: 1.0.0
+author:
+  name: Memoh
+repository: https://github.com/felinics/supermarket
+license: Apache-2.0
+icon: icon.svg
+tags:
+  - ffmpeg
+  - creativity
+name: Audio & Video
+category: creativity
+description: Inspect, convert, trim and extract audio and video with FFmpeg.
+dependencies:
+  - ffmpeg
+translations:
+  zh:
+    description: 使用 FFmpeg 检查、转换、剪辑与提取音视频。
+    name: 音视频处理
+  ja:
+    description: FFmpeg で音声・動画を解析・変換・トリミング・抽出します。
+    name: 音声・動画処理

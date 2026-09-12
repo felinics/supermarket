@@ -1,0 +1,24 @@
+schema_version: "2"
+id: google-sheets
+version: 1.0.0
+name: Google Sheets
+description: Connect Google Sheets for online spreadsheets.
+author:
+  name: Memoh
+homepage: https://docs.google.com/spreadsheets
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: documents
+tags:
+  - connector
+  - google_sheets
+  - productivity
+translations:
+  zh:
+    description: 连接 Google Sheets，使用在线电子表格服务。
+  ja:
+    description: Google Sheets に接続して、オンラインスプレッドシートを利用します。
+connectors:
+  - type: google_sheets
+    required: true

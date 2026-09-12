@@ -1,0 +1,25 @@
+schema_version: "2"
+id: brevo
+version: 1.0.0
+name: Brevo
+description: Connect Brevo for customer messaging and email campaigns.
+author:
+  name: Memoh
+homepage: https://www.brevo.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: marketing
+tags:
+  - connector
+  - brevo
+  - communication
+  - marketing
+translations:
+  zh:
+    description: 连接 Brevo，使用客户消息与邮件营销服务。
+  ja:
+    description: Brevo に接続して、顧客メッセージとメールキャンペーンを利用します。
+connectors:
+  - type: brevo
+    required: true

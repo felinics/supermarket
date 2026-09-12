@@ -1,9 +1,8 @@
 schema_version: "2"
 id: xlsx
-version: 1.0.0
+version: 1.1.0
 name: Spreadsheets
-description: Open, read, edit, clean and create spreadsheets in .xlsx, .xlsm, .csv and .tsv formats
-  with formulas, formatting and charts.
+description: Create and edit spreadsheets, process data and recalculate formulas.
 author:
   name: Anthropic
   email: support@anthropic.com
@@ -18,7 +17,10 @@ tags:
 translations:
   zh:
     name: 电子表格
-    description: 打开、读取、编辑、清洗与创建 .xlsx、.xlsm、.csv、.tsv 电子表格，支持公式、格式与图表。
+    description: 生成与编辑电子表格、处理数据并重新计算公式。
   ja:
     name: スプレッドシート
-    description: .xlsx、.xlsm、.csv、.tsv のスプレッドシートを開く・読み取る・編集・整形・作成。数式、書式、グラフに対応。
+    description: スプレッドシートの作成・編集、データ処理、数式の再計算。
+dependencies:
+  - document-python
+  - libreoffice

@@ -1,0 +1,28 @@
+schema_version: "2"
+id: github
+version: 1.1.0
+name: GitHub
+description: Connect GitHub and work with repositories, pull requests and CI.
+author:
+  name: Memoh
+homepage: https://github.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: developer-tools
+tags:
+  - connector
+  - github
+  - developer_tools
+translations:
+  zh:
+    description: 连接 GitHub，处理代码仓库、PR 评审与 CI。
+  ja:
+    description: GitHub に接続し、リポジトリ・PR レビュー・CI を操作します。
+connectors:
+  - type: github
+    required: true
+dependencies:
+  - github-cli
+  - git
+  - python

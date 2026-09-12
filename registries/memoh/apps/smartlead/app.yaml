@@ -1,0 +1,25 @@
+schema_version: "2"
+id: smartlead
+version: 1.0.0
+name: Smartlead
+description: Connect Smartlead for sales email outreach.
+author:
+  name: Memoh
+homepage: https://www.smartlead.ai
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: sales-crm
+tags:
+  - connector
+  - smartlead
+  - sales
+  - marketing
+translations:
+  zh:
+    description: 连接 Smartlead，使用销售邮件触达服务。
+  ja:
+    description: Smartlead に接続して、営業メールによるアプローチを利用します。
+connectors:
+  - type: smartlead
+    required: true

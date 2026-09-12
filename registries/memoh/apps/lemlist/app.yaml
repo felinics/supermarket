@@ -1,0 +1,25 @@
+schema_version: "2"
+id: lemlist
+version: 1.0.0
+name: lemlist
+description: Connect lemlist for sales outreach campaigns.
+author:
+  name: Memoh
+homepage: https://www.lemlist.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: sales-crm
+tags:
+  - connector
+  - lemlist
+  - sales
+  - marketing
+translations:
+  zh:
+    description: 连接 lemlist，使用销售触达活动服务。
+  ja:
+    description: lemlist に接続して、営業アプローチのキャンペーンを利用します。
+connectors:
+  - type: lemlist
+    required: true

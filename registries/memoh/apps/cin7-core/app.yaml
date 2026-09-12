@@ -1,0 +1,25 @@
+schema_version: "2"
+id: cin7-core
+version: 1.0.0
+name: Cin7 Core
+description: Connect Cin7 Core for inventory and order management.
+author:
+  name: Memoh
+homepage: https://www.cin7.com/solutions/core
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.jpg
+category: ecommerce
+tags:
+  - connector
+  - cin7_core
+  - commerce
+  - inventory
+translations:
+  zh:
+    description: 连接 Cin7 Core，使用库存与订单管理服务。
+  ja:
+    description: Cin7 Core に接続して、在庫と注文管理を利用します。
+connectors:
+  - type: cin7_core
+    required: true

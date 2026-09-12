@@ -1,0 +1,24 @@
+schema_version: "2"
+id: notion
+version: 1.0.0
+name: Notion
+description: Connect Notion for documents, knowledge bases and collaboration.
+author:
+  name: Memoh
+homepage: https://www.notion.so
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: documents
+tags:
+  - connector
+  - notion
+  - productivity
+translations:
+  zh:
+    description: 连接 Notion，使用文档、知识库与协作服务。
+  ja:
+    description: Notion に接続して、ドキュメント、ナレッジベース、共同作業を利用します。
+connectors:
+  - type: notion
+    required: true

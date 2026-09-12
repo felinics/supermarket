@@ -1,0 +1,25 @@
+schema_version: "2"
+id: cyberimpact
+version: 1.0.0
+name: Cyberimpact
+description: Connect Cyberimpact for email campaigns and contacts.
+author:
+  name: Memoh
+homepage: https://www.cyberimpact.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: marketing
+tags:
+  - connector
+  - cyberimpact
+  - marketing
+  - communication
+translations:
+  zh:
+    description: 连接 Cyberimpact，使用邮件营销与联系人服务。
+  ja:
+    description: Cyberimpact に接続して、メールキャンペーンと連絡先を利用します。
+connectors:
+  - type: cyberimpact
+    required: true

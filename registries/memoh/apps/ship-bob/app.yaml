@@ -1,0 +1,25 @@
+schema_version: "2"
+id: ship-bob
+version: 1.0.0
+name: ShipBob
+description: Connect ShipBob for fulfillment and shipping.
+author:
+  name: Memoh
+homepage: https://www.shipbob.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: ecommerce
+tags:
+  - connector
+  - ship_bob
+  - shipping
+  - commerce
+translations:
+  zh:
+    description: 连接 ShipBob，使用订单履约与配送服务。
+  ja:
+    description: ShipBob に接続して、フルフィルメントと配送を利用します。
+connectors:
+  - type: ship_bob
+    required: true

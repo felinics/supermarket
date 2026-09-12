@@ -1,0 +1,25 @@
+schema_version: "2"
+id: wiza
+version: 1.0.0
+name: Wiza
+description: Connect Wiza for sales contact data.
+author:
+  name: Memoh
+homepage: https://wiza.co
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: sales-crm
+tags:
+  - connector
+  - wiza
+  - sales
+  - data
+translations:
+  zh:
+    description: 连接 Wiza，使用销售联系人数据服务。
+  ja:
+    description: Wiza に接続して、営業連絡先データを利用します。
+connectors:
+  - type: wiza
+    required: true

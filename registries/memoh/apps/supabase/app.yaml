@@ -1,0 +1,27 @@
+schema_version: "2"
+id: supabase
+version: 1.1.0
+name: Supabase
+description: Connect Supabase and manage projects, migrations and functions.
+author:
+  name: Memoh
+homepage: https://supabase.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: developer-tools
+tags:
+  - connector
+  - supabase
+  - developer_tools
+  - database
+translations:
+  zh:
+    description: 连接 Supabase，管理项目、数据库迁移与函数。
+  ja:
+    description: Supabase に接続し、プロジェクト・マイグレーション・関数を管理します。
+connectors:
+  - type: supabase
+    required: true
+dependencies:
+  - supabase-cli

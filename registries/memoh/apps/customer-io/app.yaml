@@ -1,0 +1,25 @@
+schema_version: "2"
+id: customer-io
+version: 1.0.0
+name: Customer.io
+description: Connect Customer.io for customer messaging and marketing automation.
+author:
+  name: Memoh
+homepage: https://customer.io
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: marketing
+tags:
+  - connector
+  - customer_io
+  - marketing
+  - communication
+translations:
+  zh:
+    description: 连接 Customer.io，使用客户消息与营销自动化服务。
+  ja:
+    description: Customer.io に接続して、顧客メッセージとマーケティング自動化を利用します。
+connectors:
+  - type: customer_io
+    required: true

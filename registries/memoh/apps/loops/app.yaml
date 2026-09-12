@@ -1,0 +1,25 @@
+schema_version: "2"
+id: loops
+version: 1.0.0
+name: Loops
+description: Connect Loops for email marketing.
+author:
+  name: Memoh
+homepage: https://loops.so
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: marketing
+tags:
+  - connector
+  - loops
+  - marketing
+  - communication
+translations:
+  zh:
+    description: 连接 Loops，使用邮件营销服务。
+  ja:
+    description: Loops に接続して、メールマーケティングを利用します。
+connectors:
+  - type: loops
+    required: true

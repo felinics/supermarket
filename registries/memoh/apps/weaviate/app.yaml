@@ -1,0 +1,25 @@
+schema_version: "2"
+id: weaviate
+version: 1.0.0
+name: Weaviate
+description: Connect Weaviate for vector databases.
+author:
+  name: Memoh
+homepage: https://weaviate.io
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: data-analytics
+tags:
+  - connector
+  - weaviate
+  - database
+  - ai
+translations:
+  zh:
+    description: 连接 Weaviate，使用向量数据库服务。
+  ja:
+    description: Weaviate に接続して、ベクトルデータベースを利用します。
+connectors:
+  - type: weaviate
+    required: true

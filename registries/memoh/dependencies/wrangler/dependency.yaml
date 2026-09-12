@@ -1,0 +1,38 @@
+schema_version: "1"
+id: wrangler
+name: Wrangler
+description: Wrangler installed in an isolated, versioned workspace directory.
+category: tool
+source: managed
+requires:
+  - python
+  - node
+provides:
+  - wrangler
+platforms:
+  - os: linux
+    arch:
+      - amd64
+      - arm64
+    libc: glibc
+  - os: darwin
+    arch:
+      - arm64
+timeouts:
+  install: 3600
+  update: 3600
+  remove: 300
+  check_update: 300
+  version: 60
+scripts:
+  install: install.sh
+  update: install.sh
+  remove: remove.sh
+  check_update: check-update.sh
+translations:
+  en:
+    description: Wrangler tools
+  zh:
+    description: Wrangler 开发工具
+  ja:
+    description: Wrangler 開発ツール

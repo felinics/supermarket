@@ -1,4 +1,4 @@
-# Shared Package category table. Reviewed registries must use these IDs;
+# Shared App category table. Reviewed registries must use these IDs;
 # imported registries are mapped through `aliases` and fall back to `other`.
 schema_version: "1"
 categories:
@@ -46,6 +46,50 @@ categories:
     name: { en: Lifestyle, zh: 生活, ja: ライフスタイル }
     aliases: [Lifestyle, Life]
     order: 110
+  - id: ai-models
+    name: {"en": "AI Models", "zh": "AI 模型", "ja": "AI モデル"}
+    aliases: ["AI", "AI Models"]
+    order: 25
+  - id: monitoring
+    name: {"en": "Monitoring & Operations", "zh": "监控与运维", "ja": "監視と運用"}
+    aliases: ["Monitoring", "Observability", "Incident Management"]
+    order: 45
+  - id: security
+    name: {"en": "Identity & Security", "zh": "身份与安全", "ja": "ID とセキュリティ"}
+    aliases: ["Identity", "Security"]
+    order: 46
+  - id: file-storage
+    name: {"en": "Files & Storage", "zh": "文件与存储", "ja": "ファイルとストレージ"}
+    aliases: ["Storage"]
+    order: 55
+  - id: communication
+    name: {"en": "Communication", "zh": "沟通", "ja": "コミュニケーション"}
+    aliases: ["Communication", "Social"]
+    order: 65
+  - id: sales-crm
+    name: {"en": "Sales & CRM", "zh": "销售与 CRM", "ja": "営業と CRM"}
+    aliases: ["Sales", "CRM"]
+    order: 120
+  - id: marketing
+    name: {"en": "Marketing", "zh": "营销", "ja": "マーケティング"}
+    aliases: ["Marketing", "Advertising"]
+    order: 130
+  - id: ecommerce
+    name: {"en": "Commerce & Logistics", "zh": "电商与物流", "ja": "コマースと物流"}
+    aliases: ["Commerce", "Shipping", "Inventory"]
+    order: 140
+  - id: finance-payments
+    name: {"en": "Finance & Payments", "zh": "财务与支付", "ja": "財務と決済"}
+    aliases: ["Finance", "Payments"]
+    order: 150
+  - id: customer-support
+    name: {"en": "Customer Support", "zh": "客户支持", "ja": "カスタマーサポート"}
+    aliases: ["Customer Support"]
+    order: 160
+  - id: business-management
+    name: {"en": "Business Management", "zh": "企业管理", "ja": "業務管理"}
+    aliases: ["Property Management"]
+    order: 170
   - id: other
     name: { en: Other, zh: 其他, ja: その他 }
     aliases: [Misc, Miscellaneous]

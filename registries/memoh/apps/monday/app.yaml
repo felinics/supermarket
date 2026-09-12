@@ -1,0 +1,25 @@
+schema_version: "2"
+id: monday
+version: 1.0.0
+name: monday.com
+description: Connect monday.com for projects, workflows and collaboration.
+author:
+  name: Memoh
+homepage: https://monday.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.png
+category: productivity
+tags:
+  - connector
+  - monday
+  - productivity
+  - project_management
+translations:
+  zh:
+    description: 连接 monday.com，使用项目、工作流与协作服务。
+  ja:
+    description: monday.com に接続して、プロジェクト、ワークフロー、チーム連携を利用します。
+connectors:
+  - type: monday
+    required: true

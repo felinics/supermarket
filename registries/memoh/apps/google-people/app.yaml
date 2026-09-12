@@ -1,0 +1,24 @@
+schema_version: "2"
+id: google-people
+version: 1.0.0
+name: Google People
+description: Connect Google People for contacts, profiles and directories.
+author:
+  name: Memoh
+homepage: https://contacts.google.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: productivity
+tags:
+  - connector
+  - google_people
+  - productivity
+translations:
+  zh:
+    description: 连接 Google People，使用联系人、个人资料与通讯录服务。
+  ja:
+    description: Google People に接続して、連絡先、プロフィール、ディレクトリを利用します。
+connectors:
+  - type: google_people
+    required: true

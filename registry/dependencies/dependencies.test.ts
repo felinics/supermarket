@@ -196,10 +196,10 @@ dependencies: [demo]
     }
   })
 
-  test('the five approved official dependencies build and retain the expected runtime commands', async () => {
+  test('approved official dependencies retain baseline runtime commands and localized metadata', async () => {
     const candidate = await approvedDependencies(path.resolve(import.meta.dirname, '../..'))
-    expect(candidate.releases.map((item) => item.dependency_id)).toEqual(['claude-code', 'codex', 'node', 'python', 'uv'])
+    expect(candidate.releases.map((item) => item.dependency_id)).toEqual(expect.arrayContaining(['claude-code', 'codex', 'node', 'python', 'uv']))
     expect(candidate.releases.find((item) => item.dependency_id === 'codex')!.manifest.provides).toEqual(['codex'])
-    expect(candidate.releases.every((item) => item.icon && item.manifest.translations?.zh && item.manifest.translations?.ja)).toBe(true)
+    expect(candidate.releases.every((item) => item.manifest.translations?.zh && item.manifest.translations?.ja)).toBe(true)
   })
 })

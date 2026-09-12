@@ -1,0 +1,25 @@
+schema_version: "2"
+id: box
+version: 1.0.0
+name: Box
+description: Connect Box for cloud files and content collaboration.
+author:
+  name: Memoh
+homepage: https://www.box.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: file-storage
+tags:
+  - connector
+  - box
+  - storage
+  - productivity
+translations:
+  zh:
+    description: 连接 Box，使用云端文件与内容协作服务。
+  ja:
+    description: Box に接続して、クラウドファイルとコンテンツ共有を利用します。
+connectors:
+  - type: box
+    required: true

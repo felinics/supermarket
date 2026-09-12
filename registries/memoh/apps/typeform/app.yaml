@@ -1,0 +1,25 @@
+schema_version: "2"
+id: typeform
+version: 1.0.0
+name: Typeform
+description: Connect Typeform for forms and responses.
+author:
+  name: Memoh
+homepage: https://www.typeform.com
+repository: https://github.com/felinics/connect-it
+license: MIT
+icon: icon.svg
+category: productivity
+tags:
+  - connector
+  - typeform
+  - forms
+  - productivity
+translations:
+  zh:
+    description: 连接 Typeform，使用表单与答复服务。
+  ja:
+    description: Typeform に接続して、フォームと回答を利用します。
+connectors:
+  - type: typeform
+    required: true
