@@ -1,0 +1,24 @@
+schema_version: "2"
+id: git
+version: 1.0.0
+name: Git
+description: Work with Git repositories, commits, branches and merge conflicts.
+author:
+  name: Memoh
+  email: hello@memoh.ai
+homepage: https://git-scm.com
+repository: https://github.com/felinics/supermarket
+license: Apache-2.0
+icon: icon.svg
+category: developer-tools
+tags:
+  - git
+  - version-control
+  - developer_tools
+translations:
+  zh:
+    description: 使用 Git 管理代码仓库、提交、分支与合并冲突。
+  ja:
+    description: Git でリポジトリ、コミット、ブランチ、マージ競合を扱います。
+dependencies:
+  - git
