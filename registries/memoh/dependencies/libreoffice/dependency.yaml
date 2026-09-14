@@ -1,7 +1,8 @@
 schema_version: "1"
 id: libreoffice
 name: LibreOffice
-description: LibreOffice installed in an isolated, versioned workspace directory.
+description: Convert Office documents and recalculate spreadsheet formulas with LibreOffice.
+icon: icon.svg
 category: tool
 source: managed
 requires:
@@ -31,8 +32,9 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: LibreOffice tools
+    description: Convert Office documents and recalculate spreadsheet formulas with
+      LibreOffice.
   zh:
-    description: Office 文档转换与公式重算
+    description: 使用 LibreOffice 转换 Office 文档并重新计算电子表格公式。
   ja:
-    description: Office 文書変換と数式再計算
+    description: LibreOffice で Office 文書を変換し、スプレッドシートの数式を再計算します。

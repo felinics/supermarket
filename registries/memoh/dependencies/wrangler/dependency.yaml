@@ -1,7 +1,8 @@
 schema_version: "1"
 id: wrangler
 name: Wrangler
-description: Wrangler installed in an isolated, versioned workspace directory.
+description: Develop and deploy Cloudflare Workers and manage their resources.
+icon: icon.svg
 category: tool
 source: managed
 requires:
@@ -31,8 +32,8 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: Wrangler tools
+    description: Develop and deploy Cloudflare Workers and manage their resources.
   zh:
-    description: Wrangler 开发工具
+    description: 开发和部署 Cloudflare Workers，管理相关资源。
   ja:
-    description: Wrangler 開発ツール
+    description: Cloudflare Workers の開発・デプロイと関連リソースの管理を行います。

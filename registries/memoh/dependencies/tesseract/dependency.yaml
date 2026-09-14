@@ -1,7 +1,8 @@
 schema_version: "1"
 id: tesseract
 name: Tesseract OCR
-description: Tesseract OCR installed in an isolated, versioned workspace directory.
+description: Extract text from images with the Tesseract OCR engine.
+icon: icon.svg
 category: tool
 source: managed
 requires:
@@ -31,8 +32,8 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: Tesseract OCR tools
+    description: Extract text from images with the Tesseract OCR engine.
   zh:
-    description: Tesseract OCR 工具及运行库
+    description: 使用 Tesseract OCR 引擎从图片中识别和提取文本。
   ja:
-    description: Tesseract OCR ツールとランタイム
+    description: Tesseract OCR エンジンで画像から文字を認識・抽出します。

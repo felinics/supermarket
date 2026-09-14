@@ -1,7 +1,8 @@
 schema_version: "1"
 id: rust
 name: Rust
-description: Rust installed in an isolated, versioned workspace directory.
+description: Build and test Rust projects with Cargo, format code and run Clippy checks.
+icon: icon.svg
 category: runtime
 source: managed
 requires:
@@ -37,8 +38,8 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: Rust tools
+    description: Build and test Rust projects with Cargo, format code and run Clippy checks.
   zh:
-    description: Rust 编译、测试与代码检查
+    description: 使用 Cargo 构建和测试 Rust 项目，格式化代码并运行 Clippy 检查。
   ja:
-    description: Rust のビルド・テスト・コード検査
+    description: Cargo で Rust プロジェクトをビルド・テストし、コード整形と Clippy の検査を行います。

@@ -1,7 +1,8 @@
 schema_version: "1"
 id: native-build-tools
 name: Native Build Tools
-description: Native Build Tools installed in an isolated, versioned workspace directory.
+description: Compile C and C++ code with compilers, Make, CMake and pkg-config.
+icon: icon.svg
 category: tool
 source: managed
 requires:
@@ -37,8 +38,8 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: Native Build Tools tools
+    description: Compile C and C++ code with compilers, Make, CMake and pkg-config.
   zh:
-    description: 原生编译器与构建工具
+    description: 提供 C/C++ 编译器、Make、CMake 和 pkg-config，用于原生代码构建。
   ja:
-    description: ネイティブコンパイラとビルドツール
+    description: C/C++ コンパイラ、Make、CMake、pkg-config でネイティブコードをビルドします。

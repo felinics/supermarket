@@ -1,7 +1,8 @@
 schema_version: "1"
 id: playwright
 name: Playwright
-description: Playwright installed in an isolated, versioned workspace directory.
+description: Automate Chromium and run browser tests with Playwright and its CLI.
+icon: icon.svg
 category: tool
 source: managed
 requires:
@@ -32,8 +33,8 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: Playwright tools
+    description: Automate Chromium and run browser tests with Playwright and its CLI.
   zh:
-    description: 浏览器自动化和测试环境
+    description: 使用 Playwright 及其 CLI 自动操作 Chromium 并运行浏览器测试。
   ja:
-    description: ブラウザー自動化とテスト環境
+    description: Playwright と CLI で Chromium を自動操作し、ブラウザーテストを実行します。

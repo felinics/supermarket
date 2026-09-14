@@ -1,7 +1,8 @@
 schema_version: "1"
 id: gitlab-cli
 name: GitLab CLI
-description: GitLab CLI installed in an isolated, versioned workspace directory.
+description: Manage GitLab projects, issues, merge requests and pipelines with glab.
+icon: icon.svg
 category: tool
 source: managed
 requires:
@@ -30,8 +31,8 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: GitLab CLI tools
+    description: Manage GitLab projects, issues, merge requests and pipelines with glab.
   zh:
-    description: GitLab 命令行工具
+    description: 使用 glab 管理 GitLab 项目、Issue、合并请求和流水线。
   ja:
-    description: GitLab コマンドラインツール
+    description: glab で GitLab プロジェクト、Issue、マージリクエスト、パイプラインを管理します。

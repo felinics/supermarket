@@ -1,7 +1,8 @@
 schema_version: "1"
 id: sentry
 name: Sentry
-description: Sentry installed in an isolated, versioned workspace directory.
+description: Inspect Sentry errors and project data from the command line.
+icon: icon.svg
 category: tool
 source: managed
 requires:
@@ -30,8 +31,8 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: Sentry tools
+    description: Inspect Sentry errors and project data from the command line.
   zh:
-    description: Sentry 命令行工具
+    description: 在命令行查看 Sentry 错误和项目数据。
   ja:
-    description: Sentry コマンドラインツール
+    description: コマンドラインで Sentry のエラーとプロジェクトデータを確認します。
