@@ -7,13 +7,17 @@
 # and the result file live outside it, so deleting it is safe. The copy the
 # workspace image ships under the toolkit is untouched.
 
-case "$MEMOH_DEP_HOME" in
-  "" | / | */ )
-    dep_log "refusing to remove suspicious MEMOH_DEP_HOME '$MEMOH_DEP_HOME'"
-    exit 1
-    ;;
-esac
+# A new runner validates the saved payload path and removes it only after the
+# operation commits. Leave current, receipts and persistent metadata intact.
+if [ -z "${MEMOH_DEP_INSTALL_DIR:-}" ]; then
+  case "$MEMOH_DEP_HOME" in
+    "" | / | */ )
+      dep_log "refusing to remove suspicious MEMOH_DEP_HOME '$MEMOH_DEP_HOME'"
+      exit 1
+      ;;
+  esac
 
-dep_log "Removing the $MEMOH_DEP_ID overlay from $MEMOH_DEP_HOME; the image baseline is used again"
-rm -rf "$MEMOH_DEP_HOME"
+  dep_log "Removing the $MEMOH_DEP_ID overlay from $MEMOH_DEP_HOME; the image baseline is used again"
+  rm -rf "$MEMOH_DEP_HOME"
+fi
 dep_result '{}'

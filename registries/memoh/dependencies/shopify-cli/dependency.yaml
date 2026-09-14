@@ -30,6 +30,7 @@ scripts:
   update: install.sh
   remove: remove.sh
   check_update: check-update.sh
+  version: version.sh
 translations:
   en:
     description: Develop and deploy Shopify apps and themes from the command line.

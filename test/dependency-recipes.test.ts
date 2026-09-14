@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { chmod, mkdir, mkdtemp, readFile, rename, rm, symlink, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, mkdtemp, readFile, readlink, readdir, rename, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
@@ -131,6 +131,7 @@ exec /bin/mv "$@"`)
       dep_result() { [ "\${FAIL_RESULT:-}" != 1 ] || return 5; printf '%s' "$1" > "$MEMOH_DEP_RESULT"; }
       dep_switch() {
         [ "\${FAIL_SWITCH:-}" != 1 ] || return 6
+        if [ "\${DEFER_SWITCH:-}" = 1 ]; then printf '%s' "$1" > "$FIXTURE_ROOT/candidate"; return; fi
         ln -s "$1" "$MEMOH_DEP_HOME/current.next"
         mv -f "$MEMOH_DEP_HOME/current.next" "$MEMOH_DEP_HOME/current"
       }
@@ -138,6 +139,7 @@ exec /bin/mv "$@"`)
       ${body}
       }
       memoh_dep_main < /dev/null
+      printf complete > "$FIXTURE_ROOT/completed"
     `
     const child = Bun.spawn(['/bin/sh', '-s'], { env: { ...env, ...overrides }, stdin: new TextEncoder().encode(source), stdout: 'pipe', stderr: 'pipe' })
     const [status, stdout, stderr] = await Promise.all([child.exited, new Response(child.stdout).text(), new Response(child.stderr).text()])
@@ -220,6 +222,66 @@ describe('dependency recipe failure recovery', () => {
       expect(await Bun.file(cache).exists()).toBe(true)
       expect((await f.run('remove')).status).toBe(0)
       expect(await Bun.file(cache).exists()).toBe(false)
+    })
+  }
+})
+
+
+describe('isolated payload protocol', () => {
+  for (const id of recipes) {
+    test(`${id} keeps candidate, staging and caches out of the persistent home`, async () => {
+      const f = await fixture(id)
+      const store = path.join(f.root, 'local-store', id)
+      const target = path.join(store, 'installs', 'operation-one')
+      const staging = path.join(store, '.staging-operation-one')
+      const unrelated = path.join(store, '.staging-another-operation')
+      await mkdir(unrelated, { recursive: true })
+      await writeFile(path.join(unrelated, 'active'), 'still running')
+      const result = await f.run('install', { MEMOH_DEP_STORE: store, MEMOH_DEP_INSTALL_DIR: target,
+        MEMOH_DEP_STAGING: staging, DEFER_SWITCH: '1' })
+      expect(result, result.stderr).toMatchObject({ status: 0 })
+      expect(await readlink(path.join(f.home, 'current'))).toBe(f.old)
+      expect(await readFile(path.join(f.root, 'candidate'), 'utf8')).toBe(target)
+      expect(await readFile(path.join(unrelated, 'active'), 'utf8')).toBe('still running')
+      expect(await readdir(path.join(store, 'installs'))).toEqual(['operation-one'])
+      expect((await readdir(f.home)).sort()).toEqual(['current', 'versions'])
+      expect(await readdir(store)).not.toContain(path.basename(staging))
+      const output = JSON.parse(await readFile(f.result, 'utf8'))
+      for (const entrypoint of Object.values(output.entrypoints) as string[]) {
+        expect(entrypoint.startsWith(path.join(f.home, 'current', 'bin'))).toBe(true)
+        const candidate = entrypoint.replace(path.join(f.home, 'current'), target)
+        expect(spawnSync(candidate, ['--version']).status).toBe(0)
+      }
+      const collision = await f.run('update', { MEMOH_DEP_STORE: store, MEMOH_DEP_INSTALL_DIR: target,
+        MEMOH_DEP_STAGING: staging, DEFER_SWITCH: '1' })
+      expect(collision.status).not.toBe(0)
+      expect(collision.stderr).toContain('candidate already exists')
+      expect(await readlink(path.join(f.home, 'current'))).toBe(f.old)
+      await rm(path.join(f.root, 'completed'))
+      const removed = await f.run('remove', { MEMOH_DEP_STORE: store, MEMOH_DEP_INSTALL_DIR: target })
+      expect(removed.status).toBe(0)
+      expect(await readFile(path.join(f.root, 'completed'), 'utf8')).toBe('complete')
+      expect(await readdir(path.join(store, 'installs'))).toEqual(['operation-one'])
+      expect(await readlink(path.join(f.home, 'current'))).toBe(f.old)
+    })
+    test(`${id} rejects an executable that reports a different version`, async () => {
+      const f = await fixture(id)
+      // Node/uv archive payloads use FIXTURE_VERSION at fixture construction.
+      // npm/uv install fakes use it during installation.
+      const result = await f.run('install', id === 'node' || id === 'uv'
+        ? { MEMOH_DEP_VERSION: '3.14.9', FIXTURE_VERSION: '3.14.9' }
+        : { FIXTURE_VERSION: '3.14.9' })
+      expect(result.status, result.stderr).not.toBe(0)
+      expect(await readlink(path.join(f.home, 'current'))).toBe(f.old)
+    })
+  }
+  for (const id of ['codex', 'claude-code'] as const) {
+    test(`${id} rejects a registry response that changes an exact request`, async () => {
+      const f = await fixture(id)
+      const result = await f.run('install', { FIXTURE_LATEST: '3.14.9' })
+      expect(result.status).not.toBe(0)
+      expect(result.stderr).toContain('resolved exact request')
+      expect(await readlink(path.join(f.home, 'current'))).toBe(f.old)
     })
   }
 })

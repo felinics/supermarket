@@ -10,7 +10,8 @@
 
 pkg="@anthropic-ai/claude-code"
 registry="${NPM_MIRROR:-https://registry.npmjs.org}"
-export npm_config_cache="$MEMOH_DEP_HOME/cache/npm"
+store="${MEMOH_DEP_STORE:-$MEMOH_DEP_HOME}"
+export npm_config_cache="$store/cache/npm"
 
 command -v npm >/dev/null 2>&1 || {
   dep_log "npm is not available on PATH; the node dependency must be present first"

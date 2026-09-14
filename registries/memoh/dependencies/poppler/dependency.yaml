@@ -32,6 +32,7 @@ scripts:
   update: install.sh
   remove: remove.sh
   check_update: check-update.sh
+  version: version.sh
 translations:
   en:
     description: Inspect PDFs, extract text and render pages as images with Poppler

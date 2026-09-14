@@ -1,14 +1,10 @@
 # shellcheck shell=sh
-# Update the Node.js overlay: install versions/<version> on top of the image baseline, then switch `current`.
-#
-# The body runs inside the runner's prelude: `set -eu` is
-# already active and dep_log / dep_result / dep_switch are provided; do not
-# redefine them. Environment: MEMOH_DEP_HOME, MEMOH_DEP_VERSION (empty or
-# "latest" selects the newest LTS release; "22" or "22.12" selects the newest
-# matching release; "22.12.0" is taken as is), MEMOH_DEP_CURRENT_VERSION,
-# MEMOH_DEP_OS / _ARCH / _LIBC, MEMOH_DEP_RESULT, NODEJS_MIRROR.
-# The previous version stays under versions/ for rollback. Never hard-code the
-# workspace data mount path.
+# memoh-storage-layout: isolated
+# Install an exact, verified candidate. The runner owns publication and cleanup
+# when MEMOH_DEP_INSTALL_DIR is set; older runners retain their version layout.
+# dep_log, dep_result and dep_switch are supplied by the runner.
+
+store="${MEMOH_DEP_STORE:-$MEMOH_DEP_HOME}"
 
 mirror="${NODEJS_MIRROR:-https://nodejs.org/dist}"
 case "$MEMOH_DEP_OS" in
@@ -44,11 +40,22 @@ recover_previous() {
     fi
   done
 }
-recover_previous
+if [ -z "${MEMOH_DEP_INSTALL_DIR:-}" ]; then recover_previous; fi
 
 # Publish only after the result has been written successfully. Each fallible
 # rename/switch is checked explicitly: set -e alone skips the restoration.
 commit_staged() {
+  mkdir -p "$(dirname "$2")" || return 1
+  if [ -n "${MEMOH_DEP_INSTALL_DIR:-}" ]; then
+    if [ -e "$2" ] || [ -L "$2" ]; then
+      dep_log "candidate already exists; refusing to overwrite it"
+      return 1
+    fi
+    mv "$1" "$2" || return 1
+    dep_switch "$2"
+    return
+  fi
+  # Only old runners need a temporary saved tree for same-version replacement.
   backup="$2.previous-$$"
   if [ -e "$2" ]; then
     mv "$2" "$backup" || return 1
@@ -68,9 +75,12 @@ commit_staged() {
   rm -rf "$backup" || dep_log "Could not remove saved tree $backup"
 }
 
-versions="$MEMOH_DEP_HOME/versions"
-stage="$versions/.staging-$MEMOH_DEP_ID.$$"
-rm -rf "$versions/.staging-$MEMOH_DEP_ID."*
+versions="$store/versions"
+mkdir -p "$store"
+stage="${MEMOH_DEP_STAGING:-}"
+if [ -z "$stage" ]; then
+  stage=$(mktemp -d "$store/.staging-$MEMOH_DEP_ID.XXXXXX")
+fi
 mkdir -p "$stage/root"
 
 # Resolve the request to an exact release. index.json lists one release per
@@ -165,8 +175,20 @@ if ! actual=$("$stage/root/bin/node" --version); then
   exit 1
 fi
 actual="${actual#v}"
+if [ "$actual" != "$ver" ]; then
+  dep_log "installed Node.js version '$actual' does not match '$ver'"
+  rm -rf "$stage"
+  exit 1
+fi
+for cmd in npm npx; do
+  if ! PATH="$stage/root/bin:$PATH" "$stage/root/bin/$cmd" --version >/dev/null 2>&1; then
+    dep_log "Node.js $ver installed but $cmd does not run"
+    rm -rf "$stage"
+    exit 1
+  fi
+done
 
 bin="$MEMOH_DEP_HOME/current/bin"
 dep_result "{\"version\":\"$actual\",\"entrypoints\":{\"node\":\"$bin/node\",\"npm\":\"$bin/npm\",\"npx\":\"$bin/npx\"}}"
-commit_staged "$stage/root" "$versions/$actual"
+commit_staged "$stage/root" "${MEMOH_DEP_INSTALL_DIR:-$versions/$actual}"
 rm -rf "$stage" || dep_log "Could not remove staging directory $stage"
