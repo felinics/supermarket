@@ -1,17 +1,12 @@
 # shellcheck shell=sh
-# Install a CPython overlay into versions/<version> on top of the image baseline, then switch `current`.
-#
-# The body runs inside the runner's prelude: `set -eu` is
-# already active and dep_log / dep_result / dep_switch are provided; do not
-# redefine them. Environment: MEMOH_DEP_HOME, MEMOH_DEP_VERSION (empty or
-# "latest" selects the newest stable CPython; "3.13" selects its newest patch
-# release; "3.13.2" is exact), MEMOH_DEP_RESULT. The interpreter is downloaded
-# by uv (requires: [uv], the image baseline or the remote machine's own copy),
-# so UV_PYTHON_INSTALL_MIRROR and the other UV_* variables apply when the
-# Server exports them. Never hard-code the workspace data mount path
-#.
+# memoh-storage-layout: isolated
+# Install an exact, verified candidate. The runner owns publication and cleanup
+# when MEMOH_DEP_INSTALL_DIR is set; older runners retain their version layout.
+# dep_log, dep_result and dep_switch are supplied by the runner.
 
-export UV_CACHE_DIR="$MEMOH_DEP_HOME/cache/uv"
+store="${MEMOH_DEP_STORE:-$MEMOH_DEP_HOME}"
+
+export UV_CACHE_DIR="$store/cache/uv"
 
 command -v uv >/dev/null 2>&1 || {
   dep_log "uv is not available on PATH; the uv dependency must be present first"
@@ -29,11 +24,22 @@ recover_previous() {
     fi
   done
 }
-recover_previous
+if [ -z "${MEMOH_DEP_INSTALL_DIR:-}" ]; then recover_previous; fi
 
 # Publish only after the result has been written successfully. Each fallible
 # rename/switch is checked explicitly: set -e alone skips the restoration.
 commit_staged() {
+  mkdir -p "$(dirname "$2")" || return 1
+  if [ -n "${MEMOH_DEP_INSTALL_DIR:-}" ]; then
+    if [ -e "$2" ] || [ -L "$2" ]; then
+      dep_log "candidate already exists; refusing to overwrite it"
+      return 1
+    fi
+    mv "$1" "$2" || return 1
+    dep_switch "$2"
+    return
+  fi
+  # Only old runners need a temporary saved tree for same-version replacement.
   backup="$2.previous-$$"
   if [ -e "$2" ]; then
     mv "$2" "$backup" || return 1
@@ -61,7 +67,9 @@ commit_staged() {
 # pre-releases out of "latest" explicitly; they install only when requested by
 # name.
 req="${MEMOH_DEP_VERSION:-}"
-if [ -z "$req" ] || [ "$req" = latest ]; then
+if printf '%s\n' "$req" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+[0-9a-z]*$'; then
+  ver="$req"
+elif [ -z "$req" ] || [ "$req" = latest ]; then
   dep_log "Resolving the latest stable CPython release known to uv"
   ver=$(uv python list --only-downloads \
     | sed -n 's/^cpython-\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)-.*/\1/p' | head -n 1)
@@ -79,9 +87,12 @@ if [ -z "$ver" ]; then
   exit 1
 fi
 
-versions="$MEMOH_DEP_HOME/versions"
-stage="$versions/.staging-$MEMOH_DEP_ID.$$"
-rm -rf "$versions/.staging-$MEMOH_DEP_ID."*
+versions="$store/versions"
+mkdir -p "$store"
+stage="${MEMOH_DEP_STAGING:-}"
+if [ -z "$stage" ]; then
+  stage=$(mktemp -d "$store/.staging-$MEMOH_DEP_ID.XXXXXX")
+fi
 mkdir -p "$stage/root/bin"
 
 dep_log "Installing CPython $ver into $stage with uv"
@@ -132,7 +143,11 @@ if ! output=$("$stage/root/bin/python3" --version 2>&1); then
 fi
 # `python3 --version` prints "Python 3.14.7".
 actual=$(printf '%s\n' "$output" | sed -n 's/^Python \([0-9][0-9a-z.]*\).*/\1/p' | head -n 1)
-[ -n "$actual" ] || actual="$ver"
+if [ "$actual" != "$ver" ]; then
+  dep_log "installed version '$actual' does not match '$ver'"
+  rm -rf "$stage"
+  exit 1
+fi
 if ! "$stage/root/bin/pip3" --version >/dev/null 2>&1; then
   dep_log "CPython $ver installed but bin/pip3 does not run"
   rm -rf "$stage"
@@ -141,5 +156,5 @@ fi
 
 bin="$MEMOH_DEP_HOME/current/bin"
 dep_result "{\"version\":\"$actual\",\"entrypoints\":{\"python3\":\"$bin/python3\",\"pip3\":\"$bin/pip3\"}}"
-commit_staged "$stage/root" "$versions/$actual"
+commit_staged "$stage/root" "${MEMOH_DEP_INSTALL_DIR:-$versions/$actual}"
 rm -rf "$stage" || dep_log "Could not remove staging directory $stage"

@@ -1,17 +1,10 @@
 # shellcheck shell=sh
-# Update the uv overlay: install versions/<version> on top of the image baseline, then switch `current`.
-#
-# The body runs inside the runner's prelude: `set -eu` is
-# already active and dep_log / dep_result / dep_switch are provided; do not
-# redefine them. Environment: MEMOH_DEP_HOME, MEMOH_DEP_VERSION (empty or
-# "latest" selects the newest release), MEMOH_DEP_CURRENT_VERSION,
-# MEMOH_DEP_OS / _ARCH / _LIBC, MEMOH_DEP_RESULT, UV_RELEASES_URL (the
-# releases base URL, default https://github.com/astral-sh/uv/releases;
-# archives are fetched from <UV_RELEASES_URL>/download/<version>/uv-<triple>.tar.gz
-# and "latest" is where <UV_RELEASES_URL>/latest redirects). It is not
-# UV_MIRROR, which docker/toolkit/install.sh uses with a different meaning.
-# uvx ships in the same archive. The previous version stays under versions/
-# for rollback. Never hard-code the workspace data mount path.
+# memoh-storage-layout: isolated
+# Install an exact, verified candidate. The runner owns publication and cleanup
+# when MEMOH_DEP_INSTALL_DIR is set; older runners retain their version layout.
+# dep_log, dep_result and dep_switch are supplied by the runner.
+
+store="${MEMOH_DEP_STORE:-$MEMOH_DEP_HOME}"
 
 releases="${UV_RELEASES_URL:-https://github.com/astral-sh/uv/releases}"
 case "$MEMOH_DEP_OS/$MEMOH_DEP_ARCH" in
@@ -40,11 +33,22 @@ recover_previous() {
     fi
   done
 }
-recover_previous
+if [ -z "${MEMOH_DEP_INSTALL_DIR:-}" ]; then recover_previous; fi
 
 # Publish only after the result has been written successfully. Each fallible
 # rename/switch is checked explicitly: set -e alone skips the restoration.
 commit_staged() {
+  mkdir -p "$(dirname "$2")" || return 1
+  if [ -n "${MEMOH_DEP_INSTALL_DIR:-}" ]; then
+    if [ -e "$2" ] || [ -L "$2" ]; then
+      dep_log "candidate already exists; refusing to overwrite it"
+      return 1
+    fi
+    mv "$1" "$2" || return 1
+    dep_switch "$2"
+    return
+  fi
+  # Only old runners need a temporary saved tree for same-version replacement.
   backup="$2.previous-$$"
   if [ -e "$2" ]; then
     mv "$2" "$backup" || return 1
@@ -90,9 +94,12 @@ else
   ver="$req"
 fi
 
-versions="$MEMOH_DEP_HOME/versions"
-stage="$versions/.staging-$MEMOH_DEP_ID.$$"
-rm -rf "$versions/.staging-$MEMOH_DEP_ID."*
+versions="$store/versions"
+mkdir -p "$store"
+stage="${MEMOH_DEP_STAGING:-}"
+if [ -z "$stage" ]; then
+  stage=$(mktemp -d "$store/.staging-$MEMOH_DEP_ID.XXXXXX")
+fi
 mkdir -p "$stage/root/bin"
 
 # Only an exact release may become a path component or checksum URL.
@@ -157,9 +164,19 @@ if ! output=$("$stage/root/bin/uv" --version); then
 fi
 # `uv --version` prints "uv 0.12.9 (<commit> <date>)" or "uv 0.12.9 (<triple>)".
 actual=$(printf '%s\n' "$output" | sed -n 's/^uv \([^ ]*\).*/\1/p' | head -n 1)
-[ -n "$actual" ] || actual="$ver"
+if [ "$actual" != "$ver" ]; then
+  dep_log "installed version '$actual' does not match '$ver'"
+  rm -rf "$stage"
+  exit 1
+fi
+
+if ! "$stage/root/bin/uvx" --version >/dev/null 2>&1; then
+  dep_log "uv $ver installed but uvx does not run"
+  rm -rf "$stage"
+  exit 1
+fi
 
 bin="$MEMOH_DEP_HOME/current/bin"
 dep_result "{\"version\":\"$actual\",\"entrypoints\":{\"uv\":\"$bin/uv\",\"uvx\":\"$bin/uvx\"}}"
-commit_staged "$stage/root" "$versions/$actual"
+commit_staged "$stage/root" "${MEMOH_DEP_INSTALL_DIR:-$versions/$actual}"
 rm -rf "$stage" || dep_log "Could not remove staging directory $stage"

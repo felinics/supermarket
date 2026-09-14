@@ -9,7 +9,8 @@
 # failure must exit non-zero. "Latest" is bounded by the download list built
 # into the uv on PATH; a newer uv knows newer interpreters.
 
-export UV_CACHE_DIR="$MEMOH_DEP_HOME/cache/uv"
+store="${MEMOH_DEP_STORE:-$MEMOH_DEP_HOME}"
+export UV_CACHE_DIR="$store/cache/uv"
 
 command -v uv >/dev/null 2>&1 || {
   dep_log "uv is not available on PATH; the uv dependency must be present first"

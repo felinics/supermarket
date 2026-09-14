@@ -36,6 +36,7 @@ scripts:
   update: install.sh
   remove: remove.sh
   check_update: check-update.sh
+  version: version.sh
 translations:
   en:
     description: Build and test Rust projects with Cargo, format code and run Clippy checks.

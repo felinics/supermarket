@@ -6,6 +6,8 @@ import os
 from pathlib import Path
 import tempfile
 import subprocess
+import shutil
+import sys
 import unittest
 from unittest.mock import patch
 import zipfile
@@ -42,6 +44,42 @@ class RecipeTests(unittest.TestCase):
         self.assertEqual((self.old / 'bin' / 'tool').read_text(), 'old working tool')
         self.assertEqual(list((self.home / 'versions').iterdir()), [self.old])
         self.assertEqual(list(self.home.glob('current-*')), [])
+
+    def test_isolated_install_waits_for_server_publication(self):
+        store = self.root / 'local' / 'tool'
+        target = store / 'installs' / 'one'
+        operation = self.root / 'operation'
+        operation.mkdir()
+        env = {'MEMOH_DEP_STORE': str(store), 'MEMOH_DEP_INSTALL_DIR': str(target),
+               'MEMOH_DEP_OPERATION_DIR': str(operation)}
+        with patch.dict(os.environ, env), patch.object(recipe, 'install', side_effect=self.installed):
+            recipe.main(self.config, 'install')
+            self.assertEqual((operation / 'candidate').read_text(), str(target))
+            self.assertEqual((self.home / 'current').resolve(), self.old)
+            self.assertTrue((target / 'bin' / 'tool').is_file())
+            with self.assertRaises(FileExistsError):
+                recipe.main(self.config, 'install')
+            recipe.main(self.config, 'remove')
+            self.assertTrue(target.is_dir())
+            self.assertEqual((self.home / 'current').resolve(), self.old)
+
+    def test_isolated_failure_removes_only_its_candidate(self):
+        store = self.root / 'local' / 'tool'
+        target = store / 'installs' / 'one'
+        with patch.dict(os.environ, {'MEMOH_DEP_STORE': str(store), 'MEMOH_DEP_INSTALL_DIR': str(target)}), \
+                patch.object(recipe, 'install', side_effect=RuntimeError('download failed')):
+            with self.assertRaises(RuntimeError):
+                recipe.main(self.config, 'install')
+        self.assertFalse(target.exists())
+        self.assert_old_survives()
+
+    def test_frozen_version_probe_rejects_broken_command(self):
+        (self.old / 'resolution.json').write_text('{"version":"1.0.0"}')
+        with patch.dict(os.environ, {'MEMOH_DEP_CANDIDATE': str(self.old / 'bin' / 'tool')}), \
+                patch.object(recipe, 'probe', side_effect=RuntimeError('missing loader')):
+            with self.assertRaises(RuntimeError):
+                recipe.main(self.config, 'version')
+        self.assertFalse(self.result.exists())
 
     def test_failed_install_preserves_published_version(self):
         with patch.object(recipe, 'install', side_effect=RuntimeError('download or probe failed')):
@@ -84,14 +122,66 @@ class RecipeTests(unittest.TestCase):
         self.assertTrue(json.loads(self.result.read_text())['update_available'])
         self.assert_old_survives()
 
-    def test_bundle_rollback_uses_saved_exact_resolution_offline(self):
+    def test_bundle_repair_uses_validated_exact_resolution_offline(self):
         patch.stopall()
-        saved = self.home / 'resolutions' / '0.0.0+abcd.json'
+        config = {'backend': 'npm', 'packages': ['a', 'b']}
+        exact = recipe.package_resolution(config, {'a': '1.2.3', 'b': '4.5.6'})
+        saved = self.home / 'resolutions' / (exact['version'] + '.json')
         saved.parent.mkdir()
-        exact = {'version': '0.0.0+abcd', 'packages': {'a': '1.2.3', 'b': '4.5.6'}}
         saved.write_text(json.dumps(exact))
         with patch.object(recipe, 'remote_json', side_effect=AssertionError('unexpected network')):
-            self.assertEqual(recipe.resolve({'backend': 'npm', 'packages': ['a', 'b']}, '0.0.0+abcd', self.home), exact)
+            self.assertEqual(recipe.resolve(config, exact['version'], self.home), exact)
+            for changed in [
+                {**exact, 'packages': {'a': '9.0.0', 'b': '4.5.6'}},
+                {**exact, 'packages': {'a': '1.2.3', 'foreign': '4.5.6'}},
+                {**exact, 'version': '0.0.0+invalid'},
+            ]:
+                saved.write_text(json.dumps(changed))
+                with self.assertRaisesRegex(ValueError, 'approved'):
+                    recipe.resolve(config, exact['version'], self.home)
+
+    def test_debian_resolution_keeps_apt_cache_in_the_local_store(self):
+        patch.stopall()
+        store = self.root / 'local-store'
+        with patch.dict(os.environ, {'MEMOH_DEP_OS': 'linux'}), \
+                patch.object(recipe, 'run'), patch.object(recipe, 'capture', return_value='Candidate: 4:24.2.7-0ubuntu0.24.04.4'):
+            resolved = recipe.resolve({'backend': 'libreoffice'}, '', self.home, store)
+        self.assertEqual(resolved['version'], '4_24.2.7-0ubuntu0.24.04.4')
+        self.assertTrue((store / 'cache' / 'apt' / 'status').exists())
+        self.assertFalse((self.home / 'cache').exists())
+
+    def test_bundle_version_probe_detects_missing_declared_imports(self):
+        for backend in ['npm', 'python']:
+            with self.subTest(backend=backend):
+                root = self.root / backend
+                module_name = 'memoh_probe_module'
+                command = 'document-node' if backend == 'npm' else 'document-python'
+                config = {**self.config, 'backend': backend, 'packages': [module_name],
+                          'commands': [command], 'imports': [module_name]}
+                if backend == 'npm':
+                    node = shutil.which('node')
+                    if not node:
+                        self.skipTest('Node.js is required for the actual module health probe')
+                    module = root / 'modules' / module_name / 'index.js'
+                    module.parent.mkdir(parents=True)
+                    module.write_text('module.exports = true;\n')
+                    recipe.wrapper(root / 'bin' / command, node, {'NODE_PATH': str(root / 'modules')})
+                else:
+                    module = root / 'modules' / (module_name + '.py')
+                    module.parent.mkdir(parents=True)
+                    module.write_text('value = True\n')
+                    recipe.wrapper(root / 'venv' / 'bin' / 'python', sys.executable,
+                                   {'PYTHONPATH': str(root / 'modules'), 'PYTHONDONTWRITEBYTECODE': '1'})
+                    recipe.wrapper(root / 'bin' / command, root / 'venv' / 'bin' / 'python')
+                (root / 'resolution.json').write_text(json.dumps({'version': '1.0.0', 'packages': {module_name: '1.0.0'}}))
+                with patch.dict(os.environ, {'MEMOH_DEP_CANDIDATE': str(root / 'bin' / command)}):
+                    recipe.main(config, 'version')
+                    self.assertEqual(json.loads(self.result.read_text())['version'], '1.0.0')
+                    module.unlink()
+                    self.result.unlink()
+                    with self.assertRaises(subprocess.CalledProcessError):
+                        recipe.main(config, 'version')
+                    self.assertFalse(self.result.exists())
 
     def test_archive_traversal_cannot_write_outside_candidate(self):
         archive = self.root / 'bad.zip'

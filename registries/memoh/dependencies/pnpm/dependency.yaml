@@ -30,6 +30,7 @@ scripts:
   update: install.sh
   remove: remove.sh
   check_update: check-update.sh
+  version: version.sh
 translations:
   en:
     description: Install and manage JavaScript packages and monorepo workspaces with pnpm.

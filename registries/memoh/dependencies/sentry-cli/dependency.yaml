@@ -29,6 +29,7 @@ scripts:
   update: install.sh
   remove: remove.sh
   check_update: check-update.sh
+  version: version.sh
 translations:
   en:
     description: Manage Sentry releases and upload source maps and debug symbols.

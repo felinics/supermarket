@@ -14,7 +14,7 @@ description: Python package and project manager.
 
 # The image copy under /opt/memoh/toolkit is the baseline. The scripts
 # install overlay versions from the GitHub releases into
-# MEMOH_DEP_HOME/versions/<version> (newest release by default, or an
+# the runner-assigned payload directory (newest release by default, or an
 # explicit version); removing the overlay returns to the image copy.
 source: image
 provides:

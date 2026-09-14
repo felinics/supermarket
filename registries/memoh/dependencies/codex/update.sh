@@ -1,18 +1,15 @@
 # shellcheck shell=sh
-# Update @openai/codex into a fresh versions/<version> directory, then switch `current`.
-#
-# The body runs inside the runner's prelude: `set -eu` is
-# already active and dep_log / dep_result / dep_switch are provided; do not
-# redefine them. Environment: MEMOH_DEP_HOME, MEMOH_DEP_VERSION (empty or
-# "latest" selects the newest published release; anything else is handed to
-# npm as the version spec), MEMOH_DEP_CURRENT_VERSION, MEMOH_DEP_RESULT,
-# NPM_MIRROR. The previous version stays under versions/ for rollback.
-# Never hard-code the workspace data mount path.
+# memoh-storage-layout: isolated
+# Install an exact, verified candidate. The runner owns publication and cleanup
+# when MEMOH_DEP_INSTALL_DIR is set; older runners retain their version layout.
+# dep_log, dep_result and dep_switch are supplied by the runner.
+
+store="${MEMOH_DEP_STORE:-$MEMOH_DEP_HOME}"
 
 pkg="@openai/codex"
 cmd="codex"
 registry="${NPM_MIRROR:-https://registry.npmjs.org}"
-export npm_config_cache="$MEMOH_DEP_HOME/cache/npm"
+export npm_config_cache="$store/cache/npm"
 
 command -v npm >/dev/null 2>&1 || {
   dep_log "npm is not available on PATH; the node dependency must be present first"
@@ -30,11 +27,22 @@ recover_previous() {
     fi
   done
 }
-recover_previous
+if [ -z "${MEMOH_DEP_INSTALL_DIR:-}" ]; then recover_previous; fi
 
 # Publish only after the result has been written successfully. Each fallible
 # rename/switch is checked explicitly: set -e alone skips the restoration.
 commit_staged() {
+  mkdir -p "$(dirname "$2")" || return 1
+  if [ -n "${MEMOH_DEP_INSTALL_DIR:-}" ]; then
+    if [ -e "$2" ] || [ -L "$2" ]; then
+      dep_log "candidate already exists; refusing to overwrite it"
+      return 1
+    fi
+    mv "$1" "$2" || return 1
+    dep_switch "$2"
+    return
+  fi
+  # Only old runners need a temporary saved tree for same-version replacement.
   backup="$2.previous-$$"
   if [ -e "$2" ]; then
     mv "$2" "$backup" || return 1
@@ -72,10 +80,19 @@ if ! printf '%s\n' "$ver" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(
   exit 1
 fi
 
-versions="$MEMOH_DEP_HOME/versions"
-target="$versions/$ver"
-stage="$versions/.staging-$MEMOH_DEP_ID.$$"
-rm -rf "$versions/.staging-$MEMOH_DEP_ID."*
+# An exact repair request must never be silently resolved to another release.
+if printf '%s\n' "$req" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$' && [ "$req" != "$ver" ]; then
+  dep_log "registry resolved exact request '$req' to '$ver'"
+  exit 1
+fi
+
+versions="$store/versions"
+target="${MEMOH_DEP_INSTALL_DIR:-$versions/$ver}"
+mkdir -p "$store"
+stage="${MEMOH_DEP_STAGING:-}"
+if [ -z "$stage" ]; then
+  stage=$(mktemp -d "$store/.staging-$MEMOH_DEP_ID.XXXXXX")
+fi
 mkdir -p "$stage/root"
 
 dep_log "Updating $pkg from ${MEMOH_DEP_CURRENT_VERSION:-unknown} to $ver in $stage"
@@ -95,8 +112,15 @@ if [ ! -x "$stage/root/bin/$cmd" ]; then
   exit 1
 fi
 
-if ! "$stage/root/bin/$cmd" --version >/dev/null 2>&1; then
+if ! output=$("$stage/root/bin/$cmd" --version 2>&1); then
   dep_log "$pkg@$ver installed but bin/$cmd does not run"
+  rm -rf "$stage"
+  exit 1
+fi
+
+actual=$(printf '%s\n' "$output" | awk '{ for (i = 1; i <= NF; i++) if ($i ~ /^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$/) { print $i; exit } }')
+if [ "$actual" != "$ver" ]; then
+  dep_log "installed $cmd reports '$actual', expected '$ver'"
   rm -rf "$stage"
   exit 1
 fi
