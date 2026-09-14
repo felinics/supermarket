@@ -6,9 +6,9 @@ The local registry at `http://localhost:5175` served all 32 immutable dependency
 
 The confirmation below shows the exact Claude Code release, immutable recipe revision, local registry source and permission to restore that same release after payload loss. The completion screenshot shows the actual successful App operation, including npm output; it is not a mockup.
 
-![Exact installation confirmation](claude-install-confirmation.png)
+![Exact installation confirmation](claude-install-confirmation.jpg)
 
-![Completed Claude Code installation](claude-install-completed.png)
+![Completed Claude Code installation](claude-install-completed.jpg)
 
 The recipe suite passed 185 Bun tests and 16 Python tests, plus registry validation, ShellCheck, type checking and the production build. The real-download smoke ran on Darwin ARM64: Node 24.4.1, uv 0.11.8, Python 3.13.2, Codex 0.154.0, Claude Code 2.1.270 and pnpm 12.4.1 were each installed and executed twice, deleting only the disposable local payload store between generations while retaining the persistent homes. All 12 installation/probe runs succeeded. This smoke does not claim an authenticated model turn or E2B performance result.
 
