@@ -1,7 +1,9 @@
 schema_version: "1"
 id: document-node
 name: Document JavaScript
-description: Document JavaScript installed in an isolated, versioned workspace directory.
+description: JavaScript libraries for creating Word, PowerPoint and PDF files
+  and processing images.
+icon: icon.svg
 category: tool
 source: managed
 requires:
@@ -31,8 +33,9 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: Document JavaScript tools
+    description: JavaScript libraries for creating Word, PowerPoint and PDF files
+      and processing images.
   zh:
-    description: 文档生成 JavaScript 库
+    description: 用于生成 Word、PowerPoint、PDF 和处理图片的 JavaScript 库。
   ja:
-    description: 文書生成 JavaScript ライブラリ
+    description: Word・PowerPoint・PDF の生成と画像処理に使う JavaScript ライブラリです。

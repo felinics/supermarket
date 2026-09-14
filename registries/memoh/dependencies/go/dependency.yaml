@@ -1,7 +1,8 @@
 schema_version: "1"
 id: go
 name: Go
-description: Go installed in an isolated, versioned workspace directory.
+description: Build, test and format Go projects with go and gofmt.
+icon: icon.svg
 category: runtime
 source: managed
 requires:
@@ -31,8 +32,8 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: Go tools
+    description: Build, test and format Go projects with go and gofmt.
   zh:
-    description: Go 编译、测试与格式化
+    description: 使用 go 和 gofmt 编译、测试和格式化 Go 项目。
   ja:
-    description: Go のビルド・テスト・フォーマット
+    description: go と gofmt で Go プロジェクトをビルド、テスト、整形します。

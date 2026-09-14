@@ -1,7 +1,8 @@
 schema_version: "1"
 id: poppler
 name: Poppler
-description: Poppler installed in an isolated, versioned workspace directory.
+description: Inspect PDFs, extract text and render pages as images with Poppler utilities.
+icon: icon.svg
 category: tool
 source: managed
 requires:
@@ -33,8 +34,9 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: Poppler tools
+    description: Inspect PDFs, extract text and render pages as images with Poppler
+      utilities.
   zh:
-    description: Poppler 工具及运行库
+    description: 使用 Poppler 工具检查 PDF、提取文本并将页面渲染为图片。
   ja:
-    description: Poppler ツールとランタイム
+    description: Poppler ツールで PDF を解析し、テキスト抽出とページの画像化を行います。

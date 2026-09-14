@@ -1,7 +1,9 @@
 schema_version: "1"
 id: document-python
 name: Document Python
-description: Document Python installed in an isolated, versioned workspace directory.
+description: Python libraries for reading, creating and converting documents,
+  spreadsheets, PDFs and images.
+icon: icon.svg
 category: tool
 source: managed
 requires:
@@ -31,8 +33,9 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: Document Python tools
+    description: Python libraries for reading, creating and converting documents,
+      spreadsheets, PDFs and images.
   zh:
-    description: 文档处理 Python 环境
+    description: 用于读取、生成和转换文档、电子表格、PDF 及图片的 Python 库。
   ja:
-    description: 文書処理 Python 環境
+    description: 文書・スプレッドシート・PDF・画像の読み込み、生成、変換に使う Python ライブラリです。

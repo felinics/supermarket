@@ -1,7 +1,8 @@
 schema_version: "1"
 id: shopify-cli
 name: Shopify CLI
-description: Shopify CLI installed in an isolated, versioned workspace directory.
+description: Develop and deploy Shopify apps and themes from the command line.
+icon: icon.svg
 category: tool
 source: managed
 requires:
@@ -31,8 +32,8 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: Shopify CLI tools
+    description: Develop and deploy Shopify apps and themes from the command line.
   zh:
-    description: Shopify CLI 开发工具
+    description: 在命令行开发和部署 Shopify 应用与主题。
   ja:
-    description: Shopify CLI 開発ツール
+    description: コマンドラインで Shopify アプリとテーマを開発・デプロイします。

@@ -1,7 +1,8 @@
 schema_version: "1"
 id: qpdf
 name: qpdf
-description: qpdf installed in an isolated, versioned workspace directory.
+description: Check, repair, split, merge and transform PDF files with qpdf.
+icon: icon.svg
 category: tool
 source: managed
 requires:
@@ -31,8 +32,8 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: qpdf tools
+    description: Check, repair, split, merge and transform PDF files with qpdf.
   zh:
-    description: qpdf 工具及运行库
+    description: 使用 qpdf 检查、修复、拆分、合并和转换 PDF 文件。
   ja:
-    description: qpdf ツールとランタイム
+    description: qpdf で PDF ファイルの検査、修復、分割、結合、変換を行います。

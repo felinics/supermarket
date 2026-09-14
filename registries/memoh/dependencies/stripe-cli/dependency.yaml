@@ -1,7 +1,8 @@
 schema_version: "1"
 id: stripe-cli
 name: Stripe CLI
-description: Stripe CLI installed in an isolated, versioned workspace directory.
+description: Call Stripe APIs, forward webhooks and test payment integrations.
+icon: icon.svg
 category: tool
 source: managed
 requires:
@@ -30,8 +31,8 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: Stripe CLI tools
+    description: Call Stripe APIs, forward webhooks and test payment integrations.
   zh:
-    description: Stripe CLI 命令行工具
+    description: 调用 Stripe API、转发 Webhook 并测试支付集成。
   ja:
-    description: Stripe CLI コマンドラインツール
+    description: Stripe API の呼び出し、Webhook の転送、決済連携のテストを行います。

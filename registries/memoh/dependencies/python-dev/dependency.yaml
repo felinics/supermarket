@@ -1,7 +1,8 @@
 schema_version: "1"
 id: python-dev
 name: Python Development
-description: Python Development installed in an isolated, versioned workspace directory.
+description: Lint and format Python code with Ruff and run tests with pytest.
+icon: icon.svg
 category: tool
 source: managed
 requires:
@@ -32,8 +33,8 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: Python Development tools
+    description: Lint and format Python code with Ruff and run tests with pytest.
   zh:
-    description: Python 代码检查和测试
+    description: 使用 Ruff 检查和格式化 Python 代码，使用 pytest 运行测试。
   ja:
-    description: Python のコード検査とテスト
+    description: Ruff で Python コードを検査・整形し、pytest でテストを実行します。

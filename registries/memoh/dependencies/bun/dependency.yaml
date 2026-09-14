@@ -1,7 +1,8 @@
 schema_version: "1"
 id: bun
 name: Bun
-description: Bun installed in an isolated, versioned workspace directory.
+description: Run JavaScript and TypeScript, install packages, bundle code and execute tests.
+icon: icon.svg
 category: runtime
 source: managed
 requires:
@@ -31,8 +32,9 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: Bun tools
+    description: Run JavaScript and TypeScript, install packages, bundle code and
+      execute tests.
   zh:
-    description: Bun 命令行工具
+    description: 运行 JavaScript 和 TypeScript，安装依赖、打包代码和执行测试。
   ja:
-    description: Bun コマンドラインツール
+    description: JavaScript・TypeScript の実行、パッケージ管理、バンドル、テストに対応します。

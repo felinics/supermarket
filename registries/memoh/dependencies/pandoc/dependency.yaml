@@ -1,7 +1,8 @@
 schema_version: "1"
 id: pandoc
 name: Pandoc
-description: Pandoc installed in an isolated, versioned workspace directory.
+description: Convert documents between Markdown, HTML, Word, LaTeX and other formats.
+icon: icon.svg
 category: tool
 source: managed
 requires:
@@ -31,8 +32,8 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: Pandoc tools
+    description: Convert documents between Markdown, HTML, Word, LaTeX and other formats.
   zh:
-    description: Pandoc 工具及运行库
+    description: 在 Markdown、HTML、Word、LaTeX 等文档格式之间转换。
   ja:
-    description: Pandoc ツールとランタイム
+    description: Markdown・HTML・Word・LaTeX などの文書形式を相互変換します。

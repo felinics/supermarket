@@ -1,7 +1,8 @@
 schema_version: "1"
 id: apify-cli
 name: Apify CLI
-description: Apify CLI installed in an isolated, versioned workspace directory.
+description: Develop, run and deploy Apify Actors from the command line.
+icon: icon.svg
 category: tool
 source: managed
 requires:
@@ -31,8 +32,8 @@ scripts:
   check_update: check-update.sh
 translations:
   en:
-    description: Apify CLI tools
+    description: Develop, run and deploy Apify Actors from the command line.
   zh:
-    description: Apify CLI 开发工具
+    description: 在命令行开发、运行和部署 Apify Actor。
   ja:
-    description: Apify CLI 開発ツール
+    description: コマンドラインで Apify Actor を開発・実行・デプロイします。

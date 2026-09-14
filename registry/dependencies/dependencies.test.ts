@@ -201,5 +201,14 @@ dependencies: [demo]
     expect(candidate.releases.map((item) => item.dependency_id)).toEqual(expect.arrayContaining(['claude-code', 'codex', 'node', 'python', 'uv']))
     expect(candidate.releases.find((item) => item.dependency_id === 'codex')!.manifest.provides).toEqual(['codex'])
     expect(candidate.releases.every((item) => item.manifest.translations?.zh && item.manifest.translations?.ja)).toBe(true)
+    for (const release of candidate.releases) {
+      expect(release.manifest.description.trim()).not.toBe('')
+      expect(release.icon, release.dependency_id).toBeDefined()
+      const bytes = candidate.icons.get(release.icon!.digest)!
+      expect(bytes, release.dependency_id).toBeDefined()
+      expect(await sha256(bytes)).toBe(release.icon!.digest)
+      const files = await parseGzipTarArchive(candidate.artifacts.get(release.artifact.digest)!)
+      expect(files.get(release.manifest.icon!)?.bytes).toEqual(bytes)
+    }
   })
 })
