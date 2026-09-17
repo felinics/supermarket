@@ -1,0 +1,5 @@
+Git logo by Jason Long, licensed under Creative Commons Attribution 3.0 Unported.
+Source: https://git-scm.com/community/logos
+Asset: https://git-scm.com/images/logos/downloads/Git-Icon-1788C.svg
+License: https://creativecommons.org/licenses/by/3.0/
+The official SVG is reproduced without modification.
