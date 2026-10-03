@@ -13,6 +13,8 @@ import zipfile
 spec = importlib.util.spec_from_file_location('recipe', Path(__file__).with_name('runtime.py'))
 recipe = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(recipe)
+# resolve() is patched out in the fixtures; keep the real one for its own tests.
+resolve_recipe = recipe.resolve
 
 
 class RecipeTests(unittest.TestCase):
@@ -36,6 +38,26 @@ class RecipeTests(unittest.TestCase):
     def installed(self, config, resolution, target, home):
         (target / 'bin').mkdir()
         (target / 'bin' / 'tool').write_text('new working tool')
+
+    def test_version_action_reports_the_recorded_version(self):
+        (self.home / 'state.json').write_text(json.dumps({'version': '0.0.0+abcdef0123456789'}))
+        recipe.main(self.config, 'version')
+        self.assertEqual(json.loads(self.result.read_text()), {'version': '0.0.0+abcdef0123456789'})
+
+    def test_version_action_falls_back_to_the_current_version(self):
+        patch.dict(os.environ, {'MEMOH_DEP_CURRENT_VERSION': '1.2.3'}).start()
+        recipe.main(self.config, 'version')
+        self.assertEqual(json.loads(self.result.read_text()), {'version': '1.2.3'})
+
+    def test_github_build_suffix_is_normalized_when_asked(self):
+        patch.object(recipe, 'release', return_value={'tag_name': '2.9.0-0'}).start()
+        resolved = resolve_recipe({**self.config, 'backend': 'github', 'strip_build': True}, '', self.home)
+        self.assertEqual(resolved['version'], '2.9.0')
+
+    def test_github_build_suffix_is_kept_without_the_flag(self):
+        patch.object(recipe, 'release', return_value={'tag_name': '2.9.0-0'}).start()
+        resolved = resolve_recipe({**self.config, 'backend': 'github'}, '', self.home)
+        self.assertEqual(resolved['version'], '2.9.0-0')
 
     def assert_old_survives(self):
         self.assertEqual((self.home / 'current').resolve(), self.old)
