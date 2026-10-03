@@ -3,7 +3,7 @@
 python3 - <<'MEMOH_RECIPE_PY'
 import json
 CONFIG = json.loads("{\"supported\":[\"linux/amd64\",\"linux/arm64\",\"darwin/arm64\"],\"backend\":\"python\",\"packages\":[\"ruff\",\"pytest\"],\"commands\":[\"ruff\",\"pytest\"]}")
-ACTION = "check_update"
+ACTION = "version"
 """Embedded in each generated recipe; no checkout or package-manager activation required."""
 import hashlib
 import json
