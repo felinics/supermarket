@@ -1,6 +1,6 @@
 {
   "repository": "https://github.com/felinics/connect-it",
-  "revision": "0dcd18de667d4d936203a28b99a2aaf8d58c33ea",
+  "revision": "e2f9913aeaeebacd0b22548ef7a3157e2862244c",
   "entrypoint": "packages/connectors.RegisterAll",
   "connectors": [
     {

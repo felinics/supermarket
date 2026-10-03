@@ -33,7 +33,7 @@ An App is the unit Memoh users browse and install. It bundles Skills and may ref
 ## Connect-It Apps
 
 The Memoh registry includes one App for each of the 112 connector definitions
-registered by Connect-It at `0dcd18de667d4d936203a28b99a2aaf8d58c33ea`.
+registered by Connect-It at `e2f9913aeaeebacd0b22548ef7a3157e2862244c`.
 The exact source revision and exported catalog are recorded in
 [`registries/memoh/connect-it.catalog.json`](registries/memoh/connect-it.catalog.json).
 This snapshot contains public provider metadata only, never credentials.
