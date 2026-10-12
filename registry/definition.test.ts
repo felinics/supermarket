@@ -7,6 +7,7 @@ import {
   safeRelativePath,
   skillInstallID,
 } from './definition'
+import { MAX_REGISTRY_APP_SKILLS, MAX_REGISTRY_SKILLS } from './budget'
 
 describe('Skill Registry definitions', () => {
   test('enforces identifiers that Memoh preserves without rewriting', () => {
@@ -47,6 +48,87 @@ describe('Skill Registry definitions', () => {
         adapter: { type: 'skill_directory' }, source: { type: 'local', path: 'skills' },
       })).toThrow()
     }
+  })
+
+  test('parses a skill pack and rejects ambiguous skill lists', () => {
+    const source = { type: 'git', url: 'https://example.test/skills.git', revision: 'a'.repeat(40) }
+    const app = {
+      id: 'superpowers', name: 'Superpowers', description: 'Workflows.', category: 'developer-tools',
+    }
+    const definition = parseSkillRegistryDefinition({
+      schema_version: '1', id: 'superpowers', name: 'Superpowers',
+      adapter: { type: 'skill_pack', app, skills: ['./skills/brainstorming/', 'skills/productivity/grill-me'] },
+      source,
+    })
+    expect(definition.adapter).toEqual({
+      type: 'skill_pack',
+      apps: [{
+        app: { ...app, tags: [] },
+        skills: ['skills/brainstorming', 'skills/productivity/grill-me'],
+      }],
+    })
+    const split = parseSkillRegistryDefinition({
+      schema_version: '1', id: 'anthropic', name: 'Anthropic',
+      adapter: {
+        type: 'skill_pack',
+        apps: [
+          { ...app, id: 'document-skills', skills: ['skills/docx'] },
+          { ...app, id: 'claude-api', skills: ['skills/claude-api'] },
+        ],
+      },
+      source,
+    })
+    expect(split.adapter).toMatchObject({
+      type: 'skill_pack',
+      apps: [
+        { app: { id: 'document-skills' }, skills: ['skills/docx'] },
+        { app: { id: 'claude-api' }, skills: ['skills/claude-api'] },
+      ],
+    })
+    expect(() => parseSkillRegistryDefinition({
+      schema_version: '1', id: 'anthropic', name: 'Anthropic',
+      adapter: {
+        type: 'skill_pack',
+        apps: [
+          { ...app, id: 'document-skills', skills: ['skills/docx'] },
+          { ...app, id: 'document-skills', skills: ['skills/pdf'] },
+        ],
+      },
+      source,
+    })).toThrow('duplicate app ID')
+    const appCount = Math.ceil((MAX_REGISTRY_SKILLS + 1) / MAX_REGISTRY_APP_SKILLS)
+    expect(() => parseSkillRegistryDefinition({
+      schema_version: '1', id: 'oversized', name: 'Oversized',
+      adapter: {
+        type: 'skill_pack',
+        apps: Array.from({ length: appCount }, (_, appIndex) => ({
+          ...app,
+          id: `app-${appIndex}`,
+          skills: Array.from(
+            { length: MAX_REGISTRY_APP_SKILLS },
+            (_, skillIndex) => `skills/${appIndex}/skill-${skillIndex}`,
+          ),
+        })),
+      },
+      source,
+    })).toThrow(`must contain at most ${MAX_REGISTRY_SKILLS} skills`)
+    expect(() => parseSkillRegistryDefinition({
+      schema_version: '1', id: 'superpowers', name: 'Superpowers',
+      adapter: {
+        type: 'skill_pack', app, skills: ['skills/a/grill-me', 'skills/b/grill-me'],
+      },
+      source,
+    })).toThrow('duplicate skill IDs')
+    expect(() => parseSkillRegistryDefinition({
+      schema_version: '1', id: 'superpowers', name: 'Superpowers',
+      adapter: { type: 'skill_pack', app, skills: ['../private'] },
+      source,
+    })).toThrow('escapes its source')
+    expect(() => parseSkillRegistryDefinition({
+      schema_version: '1', id: 'superpowers', name: 'Superpowers',
+      adapter: { type: 'skill_pack', app, skills: [] },
+      source,
+    })).toThrow('skills must contain between 1 and')
   })
 
   test('rejects old adapter syntax, unknown adapters and unsafe paths', () => {

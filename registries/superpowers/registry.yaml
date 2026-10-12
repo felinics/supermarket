@@ -1,0 +1,54 @@
+# Explicit skill directories. Plugin manifests in the upstream repository are not read.
+schema_version: "1"
+id: superpowers
+name: Superpowers
+enabled: true
+priority: 100
+adapter:
+  type: skill_pack
+  app:
+    id: superpowers
+    version: "7.0.0"
+    name: Superpowers
+    description: Planning, TDD, debugging, and delivery workflows for coding agents.
+    author:
+      name: Jesse Vincent
+      email: jesse@fsck.com
+    homepage: https://github.com/obra/superpowers
+    repository: https://github.com/obra/superpowers
+    license: MIT
+    category: developer-tools
+    tags:
+      - planning
+      - tdd
+      - debugging
+      - code-review
+      - workflow
+    translations:
+      zh:
+        name: Superpowers
+        description: 面向编程智能体的规划、测试驱动开发、调试与交付流程。
+      ja:
+        name: Superpowers
+        description: コーディングエージェント向けの計画、テスト駆動開発、デバッグ、引き渡しの手順。
+  skills:
+    - skills/brainstorming
+    - skills/diagnosing-superpowers
+    - skills/dispatching-parallel-agents
+    - skills/executing-plans
+    - skills/finishing-a-development-branch
+    - skills/receiving-code-review
+    - skills/requesting-code-review
+    - skills/subagent-driven-development
+    - skills/systematic-debugging
+    - skills/test-driven-development
+    - skills/using-git-worktrees
+    - skills/using-superpowers
+    - skills/verification-before-completion
+    - skills/writing-plans
+    - skills/writing-skills
+source:
+  type: git
+  url: https://github.com/obra/superpowers.git
+  revision: bb92a77741419a4ab5f06e711a283343f1ada0c3
+  tracking_ref: main

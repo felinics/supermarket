@@ -1,6 +1,7 @@
 import path from 'node:path'
 import * as z from 'zod/mini'
-import type { SkillRegistryDefinition } from './types'
+import { MAX_REGISTRY_APP_SKILLS, MAX_REGISTRY_SKILLS } from './budget'
+import type { AppTranslation, AppTranslations, SkillAuthor, SkillPackApp, SkillRegistryDefinition } from './types'
 
 export const MAX_RESOURCE_ID_BYTES = 128
 const safeIDPattern = /^[a-z0-9][a-z0-9_-]*$/
@@ -96,7 +97,182 @@ function parseAdapter(raw: unknown, id: string): SkillRegistryDefinition['adapte
     if (!parsed.success) throw new Error(`${id}: adapter.catalog_path is required for ${type}`)
     return { type: 'codex_marketplace_skills', catalog_path: safeRelativePath(parsed.data.catalog_path, 'catalog path') }
   }
+  if (type === 'skill_pack') return parseSkillPackAdapter(data, id)
   throw new Error(`${id}: unsupported adapter ${type}`)
+}
+
+const skillPackTextLimit = { name: 256, description: 4096, license: 128, email: 320, tag: 64, url: 2048 }
+const skillPackSemverPattern = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
+const skillPackCategoryPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const skillPackControlCharacterPattern = /[\u0000-\u001f\u007f]/u
+const skillPackLocales = ['en', 'zh', 'ja'] as const
+
+function rejectUnknownFields(value: Record<string, unknown>, allowed: readonly string[], label: string) {
+  const unsupported = Object.keys(value).filter((key) => !allowed.includes(key))
+  if (unsupported.length) throw new Error(`${label} contains unsupported field ${unsupported.join(', ')}`)
+}
+
+function isWellFormedUnicode(value: string) {
+  for (let index = 0; index < value.length; index += 1) {
+    const codeUnit = value.charCodeAt(index)
+    if (codeUnit >= 0xd800 && codeUnit <= 0xdbff) {
+      const next = value.charCodeAt(index + 1)
+      if (!(next >= 0xdc00 && next <= 0xdfff)) return false
+      index += 1
+    }
+    else if (codeUnit >= 0xdc00 && codeUnit <= 0xdfff) return false
+  }
+  return true
+}
+
+function requiredText(value: unknown, maximum: number, label: string) {
+  if (typeof value !== 'string') throw new Error(`${label} must be a string of at most ${maximum} bytes`)
+  const text = value.trim()
+  if (!text || new TextEncoder().encode(text).length > maximum || !isWellFormedUnicode(text)) {
+    throw new Error(`${label} must be a string of at most ${maximum} bytes`)
+  }
+  if (skillPackControlCharacterPattern.test(text)) throw new Error(`${label} contains a control character`)
+  return text
+}
+
+function optionalText(value: unknown, maximum: number, label: string) {
+  if (value === undefined) return undefined
+  return requiredText(value, maximum, label)
+}
+
+function httpUrl(value: unknown, label: string) {
+  const text = requiredText(value, skillPackTextLimit.url, label)
+  try {
+    const parsed = new URL(text)
+    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') return text
+  } catch {
+    // The message below covers both malformed and non-HTTP URLs.
+  }
+  throw new Error(`${label} must be an http(s) URL`)
+}
+
+function parseSkillPackAuthor(value: unknown, label: string): SkillAuthor | undefined {
+  if (value === undefined) return undefined
+  const author = object(value, label)
+  rejectUnknownFields(author, ['name', 'email'], label)
+  const email = author.email === undefined || author.email === ''
+    ? ''
+    : requiredText(author.email, skillPackTextLimit.email, `${label}.email`)
+  return { name: requiredText(author.name, skillPackTextLimit.name, `${label}.name`), email }
+}
+
+function parseSkillPackTranslations(value: unknown, label: string): AppTranslations | undefined {
+  if (value === undefined) return undefined
+  const data = object(value, label)
+  rejectUnknownFields(data, skillPackLocales, label)
+  const translations: AppTranslations = {}
+  for (const locale of skillPackLocales) {
+    if (data[locale] === undefined) continue
+    const item = object(data[locale], `${label}.${locale}`)
+    rejectUnknownFields(item, ['name', 'description'], `${label}.${locale}`)
+    const entry: AppTranslation = {}
+    const name = optionalText(item.name, skillPackTextLimit.name, `${label}.${locale}.name`)
+    const description = optionalText(item.description, skillPackTextLimit.description, `${label}.${locale}.description`)
+    if (name) entry.name = name
+    if (description) entry.description = description
+    if (Object.keys(entry).length) translations[locale] = entry
+  }
+  return Object.keys(translations).length ? translations : undefined
+}
+
+function parseSkillPackApp(value: unknown, label: string): SkillPackApp {
+  const app = object(value, label)
+  rejectUnknownFields(app, [
+    'id', 'version', 'name', 'description', 'author', 'homepage', 'repository', 'license',
+    'category', 'tags', 'translations',
+  ], label)
+  const category = requiredText(app.category, 64, `${label}.category`)
+  if (!skillPackCategoryPattern.test(category)) throw new Error(`${label}.category must be a category ID`)
+  let version: string | undefined
+  if (app.version !== undefined) {
+    version = requiredText(app.version, 128, `${label}.version`)
+    if (!skillPackSemverPattern.test(version)) throw new Error(`${label}.version must be a semantic version`)
+  }
+  const tags = app.tags === undefined ? [] : parseSkillPackTags(app.tags, `${label}.tags`)
+  const author = parseSkillPackAuthor(app.author, `${label}.author`)
+  const homepage = app.homepage === undefined ? undefined : httpUrl(app.homepage, `${label}.homepage`)
+  const repository = app.repository === undefined ? undefined : httpUrl(app.repository, `${label}.repository`)
+  const license = optionalText(app.license, skillPackTextLimit.license, `${label}.license`)
+  const translations = parseSkillPackTranslations(app.translations, `${label}.translations`)
+  return {
+    id: assertRegistryComponentID(requiredText(app.id, MAX_RESOURCE_ID_BYTES, `${label}.id`), `${label}.id`),
+    ...(version ? { version } : {}),
+    name: requiredText(app.name, skillPackTextLimit.name, `${label}.name`),
+    description: requiredText(app.description, skillPackTextLimit.description, `${label}.description`),
+    ...(author ? { author } : {}),
+    ...(homepage ? { homepage } : {}),
+    ...(repository ? { repository } : {}),
+    ...(license ? { license } : {}),
+    category,
+    tags,
+    ...(translations ? { translations } : {}),
+  }
+}
+
+function parseSkillPackTags(value: unknown, label: string) {
+  if (!Array.isArray(value) || value.length > 32) throw new Error(`${label} must contain at most 32 tags`)
+  return [...new Set(value.map((item, index) => requiredText(item, skillPackTextLimit.tag, `${label}[${index}]`)))]
+}
+
+function parseSkillPackPaths(value: unknown, label: string) {
+  if (!Array.isArray(value) || value.length < 1 || value.length > MAX_REGISTRY_APP_SKILLS) {
+    throw new Error(`${label} must contain between 1 and ${MAX_REGISTRY_APP_SKILLS} paths`)
+  }
+  const skills = value.map((item, index) => {
+    const skillLabel = `${label}[${index}]`
+    return safeRelativePath(requiredText(item, 1024, skillLabel), skillLabel)
+  })
+  if (new Set(skills).size !== skills.length) throw new Error(`${label} contains duplicate paths`)
+  const ids = skills.map((skillPath) => assertRegistryComponentID(path.posix.basename(skillPath), `${label} skill ID`))
+  if (new Set(ids).size !== ids.length) throw new Error(`${label} contains duplicate skill IDs`)
+  return skills
+}
+
+function parseSkillPackAdapter(data: Record<string, unknown>, id: string): SkillRegistryDefinition['adapter'] {
+  const label = `${id}: skill_pack adapter`
+  rejectUnknownFields(data, ['type', 'app', 'skills', 'apps'], label)
+  const hasSingle = data.app !== undefined || data.skills !== undefined
+  const hasMany = data.apps !== undefined
+  if (hasSingle === hasMany) throw new Error(`${label} must contain either app and skills, or apps`)
+  const entries = hasMany
+    ? parseSkillPackApps(data.apps, `${label}.apps`)
+    : [{ app: parseSkillPackApp(data.app, `${label}.app`), skills: parseSkillPackPaths(data.skills, `${label}.skills`) }]
+  const skillCount = entries.reduce((total, entry) => total + entry.skills.length, 0)
+  if (skillCount > MAX_REGISTRY_SKILLS) {
+    throw new Error(`${label} must contain at most ${MAX_REGISTRY_SKILLS} skills`)
+  }
+  const appIDs = new Set<string>()
+  const paths = new Set<string>()
+  for (const entry of entries) {
+    if (appIDs.has(entry.app.id)) throw new Error(`${label} contains duplicate app ID ${entry.app.id}`)
+    appIDs.add(entry.app.id)
+    for (const skillPath of entry.skills) {
+      if (paths.has(skillPath)) throw new Error(`${label} contains duplicate path ${skillPath}`)
+      paths.add(skillPath)
+    }
+  }
+  return { type: 'skill_pack', apps: entries }
+}
+
+function parseSkillPackApps(value: unknown, label: string) {
+  if (!Array.isArray(value) || value.length < 1 || value.length > MAX_REGISTRY_APP_SKILLS) {
+    throw new Error(`${label} must contain between 1 and ${MAX_REGISTRY_APP_SKILLS} apps`)
+  }
+  return value.map((item, index) => {
+    const appLabel = `${label}[${index}]`
+    const app = object(item, appLabel)
+    rejectUnknownFields(app, [
+      'id', 'version', 'name', 'description', 'author', 'homepage', 'repository', 'license',
+      'category', 'tags', 'translations', 'skills',
+    ], appLabel)
+    const { skills, ...manifest } = app
+    return { app: parseSkillPackApp(manifest, appLabel), skills: parseSkillPackPaths(skills, `${appLabel}.skills`) }
+  })
 }
 
 function parseSource(raw: unknown, id: string): SkillRegistryDefinition['source'] {
