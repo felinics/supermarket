@@ -1,0 +1,40 @@
+schema_version: "1"
+id: dns-verify
+name: DNS Verify
+description: Report a workstation DNS posture score, hijacking and leakage
+  findings, and the next fix.
+icon: icon.svg
+category: tool
+source: managed
+requires:
+  - python
+provides:
+  - dns-verify
+platforms:
+  - os: linux
+    arch:
+      - amd64
+      - arm64
+    libc: glibc
+  - os: darwin
+    arch:
+      - arm64
+timeouts:
+  install: 3600
+  update: 3600
+  remove: 300
+  check_update: 300
+  version: 60
+scripts:
+  install: install.sh
+  update: install.sh
+  remove: remove.sh
+  check_update: check-update.sh
+translations:
+  en:
+    description: Report a workstation DNS posture score, hijacking and leakage
+      findings, and the next fix.
+  zh:
+    description: 报告工作站的 DNS 状况评分、劫持与泄漏检测结果以及下一步修复建议。
+  ja:
+    description: ワークステーションの DNS 状態スコア、ハイジャックと漏洩の検出結果、次の修正手順を報告します。

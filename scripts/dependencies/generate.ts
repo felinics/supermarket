@@ -26,6 +26,7 @@ function github(id: string, name: string, repo: string, commands: string[], asse
 github('github-cli', 'GitHub CLI', 'cli/cli', ['gh'], ['gh_{version}_linux_amd64.tar.gz', 'gh_{version}_linux_arm64.tar.gz', 'gh_{version}_macOS_arm64.zip'])
 github('stripe-cli', 'Stripe CLI', 'stripe/stripe-cli', ['stripe'], ['stripe_{version}_linux_x86_64.tar.gz', 'stripe_{version}_linux_arm64.tar.gz', 'stripe_{version}_mac-os_arm64.tar.gz'])
 github('supabase-cli', 'Supabase CLI', 'supabase/cli', ['supabase'], ['supabase_{version}_linux_amd64.tar.gz', 'supabase_{version}_linux_arm64.tar.gz', 'supabase_{version}_darwin_arm64.tar.gz'])
+github('dns-verify', 'DNS Verify', 'fdaio/dns-verify', ['dns-verify'], ['dns-verify_v{version}_linux_amd64.tar.gz', 'dns-verify_v{version}_linux_arm64.tar.gz', 'dns-verify_v{version}_darwin_arm64.tar.gz'])
 github('sentry', 'Sentry', 'getsentry/cli', ['sentry'], ['sentry-linux-x64', 'sentry-linux-arm64', 'sentry-darwin-arm64'], { raw: true, tag_prefix: '' })
 github('sentry-cli', 'Sentry Release CLI', 'getsentry/sentry-cli', ['sentry-cli'], ['sentry-cli-Linux-x86_64', 'sentry-cli-Linux-aarch64', 'sentry-cli-Darwin-universal'], { raw: true, tag_prefix: '' })
 github('bun', 'Bun', 'oven-sh/bun', ['bun', 'bunx'], ['bun-linux-x64-baseline.zip', 'bun-linux-aarch64.zip', 'bun-darwin-aarch64.zip'], { tag_prefix: 'bun-v', probes: { bunx: ['--version'] } })

@@ -2,6 +2,7 @@
 export const descriptions: Record<string, { en: string; zh: string; ja: string }> = {
   'apify-cli': { en: 'Develop, run and deploy Apify Actors from the command line.', zh: '在命令行开发、运行和部署 Apify Actor。', ja: 'コマンドラインで Apify Actor を開発・実行・デプロイします。' },
   bun: { en: 'Run JavaScript and TypeScript, install packages, bundle code and execute tests.', zh: '运行 JavaScript 和 TypeScript，安装依赖、打包代码和执行测试。', ja: 'JavaScript・TypeScript の実行、パッケージ管理、バンドル、テストに対応します。' },
+  'dns-verify': { en: 'Report a workstation DNS posture score, hijacking and leakage findings, and the next fix.', zh: '报告工作站的 DNS 状况评分、劫持与泄漏检测结果以及下一步修复建议。', ja: 'ワークステーションの DNS 状態スコア、ハイジャックと漏洩の検出結果、次の修正手順を報告します。' },
   'document-node': { en: 'JavaScript libraries for creating Word, PowerPoint and PDF files and processing images.', zh: '用于生成 Word、PowerPoint、PDF 和处理图片的 JavaScript 库。', ja: 'Word・PowerPoint・PDF の生成と画像処理に使う JavaScript ライブラリです。' },
   'document-python': { en: 'Python libraries for reading, creating and converting documents, spreadsheets, PDFs and images.', zh: '用于读取、生成和转换文档、电子表格、PDF 及图片的 Python 库。', ja: '文書・スプレッドシート・PDF・画像の読み込み、生成、変換に使う Python ライブラリです。' },
   ffmpeg: { en: 'Convert, edit and inspect audio and video with FFmpeg and ffprobe.', zh: '使用 FFmpeg 和 ffprobe 转换、编辑和检查音视频。', ja: 'FFmpeg と ffprobe で音声・動画を変換、編集、解析します。' },

@@ -1,0 +1,29 @@
+schema_version: "2"
+id: dns-verify
+version: 1.0.0
+name: DNS Verify
+description: Score a macOS or Linux workstation's DNS posture and explain what to
+  fix. Checks whether the system uses its own resolver, sends every lookup
+  through the tunnel, and is free of hijacking and leakage.
+author:
+  name: fdaio
+homepage: https://github.com/fdaio/dns-verify
+repository: https://github.com/fdaio/dns-verify
+license: MIT
+icon: icon.svg
+category: security
+tags:
+  - dns
+  - security
+  - privacy
+  - network
+  - diagnostics
+dependencies:
+  - dns-verify
+translations:
+  zh:
+    name: DNS 核验
+    description: 为 macOS 或 Linux 工作站评估 DNS 状况并说明需要修复的问题：是否使用自有解析器、是否所有查询都经过隧道，以及是否存在劫持与泄漏。
+  ja:
+    name: DNS 検証
+    description: macOS または Linux ワークステーションの DNS 状態を採点し、修正点を説明します。独自リゾルバーの使用、トンネル経由の解決、ハイジャックと漏洩の有無を確認します。
