@@ -14,10 +14,25 @@ export const MAX_SKILL_ARTIFACT_ARCHIVE_BYTES = MAX_TAR_UNCOMPRESSED_BYTES
 export const MAX_SKILL_ARTIFACT_FILES = 1_000
 export const MAX_SKILL_IMAGE_BYTES = 512 * 1024
 
+export interface SkillPackApp {
+  id: string
+  version?: string
+  name: string
+  description: string
+  author?: SkillAuthor
+  homepage?: string
+  repository?: string
+  license?: string
+  category: string
+  tags: string[]
+  translations?: AppTranslations
+}
+
 export type SkillRegistryAdapter =
   | { type: 'skill_directory' }
   | { type: 'memoh' }
   | { type: 'codex_marketplace_skills'; catalog_path: string }
+  | { type: 'skill_pack'; app: SkillPackApp; skills: string[] }
 
 export type SkillRegistrySource =
   | { type: 'local'; path: string }

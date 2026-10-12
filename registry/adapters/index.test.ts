@@ -5,7 +5,7 @@ import path from 'node:path'
 import { MAX_SKILL_IMAGE_BYTES, type SkillRegistryAdapter, type SkillRegistryDefinition } from '../types'
 import { readDirectoryFiles, readFileBounded } from '../filesystem'
 import { parseAppPostinstall } from '../app-manifest'
-import { buildSkillCandidates } from './index'
+import { buildSkillCandidates, skillAdapterBootstrapPaths } from './index'
 import { detectSkillImageContentType } from './codex-marketplace'
 
 const roots: string[] = []
@@ -34,7 +34,7 @@ category: ${options.category ?? 'other'}
 ${extra}`)
 }
 
-function definition(adapterType: SkillRegistryAdapter['type']): SkillRegistryDefinition {
+function definition(adapterType: Exclude<SkillRegistryAdapter['type'], 'skill_pack'>): SkillRegistryDefinition {
   const adapter: SkillRegistryAdapter = adapterType === 'codex_marketplace_skills'
     ? { type: adapterType, catalog_path: 'marketplace.json' }
     : { type: adapterType }
@@ -458,6 +458,60 @@ postinstall:
     const files = await readDirectoryFiles(root)
     expect(Object.keys(files)).toEqual(['__proto__'])
     expect(new TextDecoder().decode(files.__proto__?.bytes)).toBe('content')
+  })
+
+  test('imports an explicit skill pack as one reviewed App', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'skill-pack-'))
+    roots.push(root)
+    await writeSkill(root, 'skills/brainstorming', 'Brainstorming', 'notes')
+    await writeSkill(root, 'skills/productivity/grill-me', 'Grill Me')
+    const pack: SkillRegistryDefinition = {
+      schema_version: '1', id: 'example', name: 'Example', enabled: true, priority: 10,
+      adapter: {
+        type: 'skill_pack',
+        app: {
+          id: 'superpowers',
+          version: '7.0.0',
+          name: 'Superpowers',
+          description: 'Planning and debugging workflows.',
+          author: { name: 'Jesse Vincent', email: 'jesse@fsck.com' },
+          homepage: 'https://github.com/obra/superpowers',
+          repository: 'https://github.com/obra/superpowers',
+          license: 'MIT',
+          category: 'developer-tools',
+          tags: ['planning'],
+          translations: { zh: { name: 'Superpowers', description: '规划与调试流程。' } },
+        },
+        skills: ['skills/brainstorming', 'skills/productivity/grill-me'],
+      },
+      source: { type: 'local', path: 'source' },
+    }
+    expect(skillAdapterBootstrapPaths(pack)).toEqual([
+      'skills/brainstorming', 'skills/productivity/grill-me',
+    ])
+    const result = await buildSkillCandidates({ definition: pack, sourceRoot: root })
+    expect(result.diagnostics).toEqual([])
+    expect(result.apps.get('superpowers')).toMatchObject({
+      app_id: 'superpowers', reviewed: true, version: '7.0.0', name: 'Superpowers',
+      license: 'MIT', category: 'developer-tools', tags: ['planning'], dependencies: [], connectors: [],
+    })
+    expect(result.skills.map((skill) => ({
+      app_id: skill.app_id, skill_id: skill.skill_id, install_id: skill.install_id, source_path: skill.source_path,
+    }))).toEqual([
+      {
+        app_id: 'superpowers', skill_id: 'brainstorming', install_id: 'example+superpowers+brainstorming',
+        source_path: 'skills/brainstorming',
+      },
+      {
+        app_id: 'superpowers', skill_id: 'grill-me', install_id: 'example+superpowers+grill-me',
+        source_path: 'skills/productivity/grill-me',
+      },
+    ])
+    if (pack.adapter.type !== 'skill_pack') throw new Error('expected skill_pack fixture')
+    await expect(buildSkillCandidates({
+      definition: { ...pack, adapter: { ...pack.adapter, skills: ['skills/missing'] } },
+      sourceRoot: root,
+    })).rejects.toThrow('missing SKILL.md')
   })
 
   test('normalizes scalar author and tag metadata', async () => {

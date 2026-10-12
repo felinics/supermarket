@@ -49,6 +49,40 @@ describe('Skill Registry definitions', () => {
     }
   })
 
+  test('parses a skill pack and rejects ambiguous skill lists', () => {
+    const source = { type: 'git', url: 'https://example.test/skills.git', revision: 'a'.repeat(40) }
+    const app = {
+      id: 'superpowers', name: 'Superpowers', description: 'Workflows.', category: 'developer-tools',
+    }
+    const definition = parseSkillRegistryDefinition({
+      schema_version: '1', id: 'superpowers', name: 'Superpowers',
+      adapter: { type: 'skill_pack', app, skills: ['./skills/brainstorming/', 'skills/productivity/grill-me'] },
+      source,
+    })
+    expect(definition.adapter).toEqual({
+      type: 'skill_pack',
+      app: { ...app, tags: [] },
+      skills: ['skills/brainstorming', 'skills/productivity/grill-me'],
+    })
+    expect(() => parseSkillRegistryDefinition({
+      schema_version: '1', id: 'superpowers', name: 'Superpowers',
+      adapter: {
+        type: 'skill_pack', app, skills: ['skills/a/grill-me', 'skills/b/grill-me'],
+      },
+      source,
+    })).toThrow('duplicate skill IDs')
+    expect(() => parseSkillRegistryDefinition({
+      schema_version: '1', id: 'superpowers', name: 'Superpowers',
+      adapter: { type: 'skill_pack', app, skills: ['../private'] },
+      source,
+    })).toThrow('escapes its source')
+    expect(() => parseSkillRegistryDefinition({
+      schema_version: '1', id: 'superpowers', name: 'Superpowers',
+      adapter: { type: 'skill_pack', app, skills: [] },
+      source,
+    })).toThrow('skills must contain between 1 and')
+  })
+
   test('rejects old adapter syntax, unknown adapters and unsafe paths', () => {
     expect(safeRelativePath('./skills/')).toBe('skills')
     expect(() => safeRelativePath('../private')).toThrow('escapes its source')
