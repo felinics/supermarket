@@ -239,7 +239,7 @@ Built with [Nitro](https://nitro.build) and [Cloudflare Workers](https://workers
 ## Workspace dependencies
 
 The official `memoh` registry also publishes workspace dependency definitions for
-Codex, Claude Code, Node.js, Python and uv. Recipes live under
+Codex, Claude Code, Grok Build, Node.js, Python and uv. Recipes live under
 `registries/memoh/dependencies/<id>/`: `dependency.yaml`, referenced POSIX sh
 scripts, and an optional icon. The manifest includes platform support, commands,
 prerequisites, timeouts and English/Chinese/Japanese display metadata.

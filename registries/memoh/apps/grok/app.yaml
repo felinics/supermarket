@@ -1,0 +1,24 @@
+schema_version: "2"
+id: grok
+version: 1.0.0
+name: Grok Build
+description: xAI Grok Build CLI.
+author:
+  name: Memoh
+  email: hello@memoh.ai
+homepage: https://docs.x.ai/build/cli
+repository: https://github.com/felinics/supermarket
+license: Apache-2.0
+icon: icon.svg
+category: agent
+tags:
+  - agent
+  - grok
+  - xai
+translations:
+  zh:
+    description: xAI Grok Build 命令行
+  ja:
+    description: xAI Grok Build コマンドライン
+dependencies:
+  - grok

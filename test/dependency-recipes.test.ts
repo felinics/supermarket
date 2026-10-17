@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process'
 
 const roots: string[] = []
 afterEach(async () => { await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true }))) })
-const recipes = ['node', 'uv', 'python', 'codex', 'claude-code'] as const
+const recipes = ['node', 'uv', 'python', 'codex', 'claude-code', 'grok'] as const
 const version = '3.14.2'
 const scripts = path.resolve(import.meta.dirname, '../registries/memoh/dependencies')
 
@@ -54,6 +54,12 @@ case "$url" in
   */SHASUMS256.txt) printf '%s  node-v%s-darwin-arm64.tar.gz\\n' "$FIXTURE_DIGEST" "$FIXTURE_VERSION" > "$output" ;;
   *.sha256) printf '%s\\n' "$FIXTURE_DIGEST" > "$output" ;;
   *.tar.gz) cp "$FIXTURE_ROOT/archive.tar.gz" "$output" ;;
+  */stable) printf '%s\\n' "$FIXTURE_LATEST" ;;
+  */grok-*.gz) exit 22 ;;
+  */grok-*)
+    printf '#!/bin/sh\\nprintf "grok %s\\\\n"\\n' "$FIXTURE_VERSION" > "$output"
+    printf 'new working copy' > "$(dirname "$output")/../marker"
+    ;;
   *) exit 8 ;;
 esac`)
   await executable(path.join(bin, 'npm'), `
