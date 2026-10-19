@@ -239,7 +239,7 @@ Built with [Nitro](https://nitro.build) and [Cloudflare Workers](https://workers
 ## Workspace dependencies
 
 The official `memoh` registry also publishes workspace dependency definitions for
-Codex, Claude Code, Node.js, Python and uv. Recipes live under
+Codex, Claude Code, Grok Build, Node.js, Python and uv. Recipes live under
 `registries/memoh/dependencies/<id>/`: `dependency.yaml`, referenced POSIX sh
 scripts, and an optional icon. The manifest includes platform support, commands,
 prerequisites, timeouts and English/Chinese/Japanese display metadata.
@@ -291,6 +291,13 @@ uv download caches created by these recipes stay under the dependency home
 and are removed with the overlay; pre-existing shared user caches are retained.
 Stable Python requests such as `3.15` never select alpha, beta or release
 candidate builds; request an exact prerelease explicitly if it is required.
+
+Conda recipes choose the newest numeric stable release with a `main`-label
+package for the target platform (`linux-64`, `linux-aarch64`, or `osx-arm64`),
+including `noarch` packages. Installation and update checks use the same filter;
+the package's global latest version may only exist for another architecture.
+An explicitly requested version must also have a matching package before an
+installation is attempted.
 
 Install and update write their result before switching `current`. A failed
 rename or switch restores the previous tree, and retries recover a saved tree

@@ -115,6 +115,33 @@ def normalize_version(value):
     return value
 
 
+def conda_subdir():
+    platform = os.environ['MEMOH_DEP_OS'] + '/' + os.environ['MEMOH_DEP_ARCH']
+    return {'linux/amd64': 'linux-64', 'linux/arm64': 'linux-aarch64',
+            'darwin/arm64': 'osx-arm64'}[platform]
+
+
+def conda_version(package, requested):
+    subdir = conda_subdir()
+    data = remote_json('https://api.anaconda.org/package/conda-forge/' + package)
+    # latest_version spans all architectures and labels. Only consider files
+    # that the installation's conda-forge/main channel can actually provide.
+    versions = {file['version'] for file in data.get('files', [])
+                if file.get('type') == 'conda' and 'main' in file.get('labels', [])
+                and (file.get('attrs', {}).get('subdir') or file.get('basename', '').split('/')[0])
+                in (subdir, 'noarch')}
+    if requested:
+        if requested not in versions:
+            raise ValueError(f'{package} {requested} is unavailable from conda-forge/main for {subdir}')
+        return requested
+    # These toolchains use numeric stable releases; prereleases must be
+    # requested explicitly. Compare components, not upload order or strings.
+    stable = [version for version in versions if re.fullmatch(r'[0-9]+(?:\.[0-9]+)*', version)]
+    if not stable:
+        raise ValueError(f'No stable {package} release available from conda-forge/main for {subdir}')
+    return max(stable, key=lambda version: (tuple(map(int, version.split('.'))), version))
+
+
 def resolve(config, requested, home):
     backend = config['backend']
     requested = None if requested in ('', 'latest', 'stable', None) else normalize_version(requested)
@@ -143,7 +170,7 @@ def resolve(config, requested, home):
             raise ValueError('This bundle version is not available in the local resolution history')
         return {'version': normalize_version(version), 'packages': specs}
     if backend == 'conda':
-        version = requested or remote_json('https://api.anaconda.org/package/conda-forge/' + config['package'])['latest_version']
+        version = conda_version(config['package'], requested)
         return {'version': normalize_version(version)}
     if backend == 'go':
         data = remote_json('https://go.dev/dl/?mode=json' + ('&include=all' if requested else ''))
@@ -282,7 +309,7 @@ def install(config, resolution, target, home):
         prefix = target / 'environment'
         env['MAMBA_ROOT_PREFIX'] = str(home / 'cache' / 'mamba')
         specs = [config['package'] + '=' + version, *config.get('extra_packages', [])]
-        run(['micromamba', '--no-rc', 'create', '--yes', '--prefix', prefix, '--override-channels',
+        run(['micromamba', '--no-rc', 'create', '--yes', '--platform', conda_subdir(), '--prefix', prefix, '--override-channels',
              '--channel', 'conda-forge', '--strict-channel-priority', *specs], env=env, stdout=sys.stderr)
         for command in commands:
             executable = prefix / 'bin' / command

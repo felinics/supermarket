@@ -139,5 +139,91 @@ class RecipeTests(unittest.TestCase):
         self.assertFalse(destination.exists())
 
 
+class CondaResolutionTests(unittest.TestCase):
+    @staticmethod
+    def file(version, subdir='linux-64', labels=None, **extra):
+        return {'version': version, 'type': 'conda', 'basename': f'{subdir}/qpdf-{version}-0.conda',
+                'attrs': {'subdir': subdir}, 'labels': ['main'] if labels is None else labels, **extra}
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.home = Path(self.temp.name) / 'qpdf'
+        self.result = Path(self.temp.name) / 'result.json'
+        env = {'MEMOH_DEP_HOME': str(self.home), 'MEMOH_DEP_RESULT': str(self.result),
+               'MEMOH_DEP_OS': 'linux', 'MEMOH_DEP_ARCH': 'amd64', 'MEMOH_DEP_LIBC': 'glibc',
+               'MEMOH_DEP_VERSION': '', 'MEMOH_DEP_CURRENT_VERSION': '12.4.1'}
+        environment = patch.dict(os.environ, env)
+        environment.start()
+        self.addCleanup(environment.stop)
+        self.config = {'backend': 'conda', 'package': 'qpdf', 'commands': ['qpdf'],
+                       'supported': ['linux/amd64', 'linux/arm64', 'darwin/arm64']}
+        self.data = {'latest_version': '12.4.2', 'files': [
+            self.file('12.4.1'), self.file('12.4.2', 'linux-aarch64'), self.file('12.4.2', 'osx-arm64'),
+            self.file('12.5.0', labels=['dev']), self.file('99.0', 'win-64'),
+            self.file('98.0', type='source'), self.file('97.0', labels=[]),
+        ]}
+        metadata = patch.object(recipe, 'remote_json', return_value=self.data)
+        self.metadata = metadata.start()
+        self.addCleanup(metadata.stop)
+
+    def test_latest_uses_target_architecture_and_main_label(self):
+        for operating, arch, expected in [('linux', 'amd64', '12.4.1'),
+                                           ('linux', 'arm64', '12.4.2'), ('darwin', 'arm64', '12.4.2')]:
+            with self.subTest(platform=(operating, arch)), patch.dict(os.environ, {'MEMOH_DEP_OS': operating, 'MEMOH_DEP_ARCH': arch}):
+                self.assertEqual(recipe.resolve(self.config, '', self.home), {'version': expected})
+        self.metadata.assert_called_with('https://api.anaconda.org/package/conda-forge/qpdf')
+
+    def test_noarch_and_legacy_basename_metadata_are_available(self):
+        self.data['files'].append(self.file('12.4.3', 'noarch', attrs={}))
+        self.assertEqual(recipe.resolve(self.config, 'latest', self.home)['version'], '12.4.3')
+
+    def test_numeric_version_order_is_independent_of_upload_order(self):
+        self.data['files'] = [self.file('12.10.0'), self.file('12.9.0'), self.file('12.2.0')]
+        self.assertEqual(recipe.resolve(self.config, 'stable', self.home)['version'], '12.10.0')
+
+    def test_prerelease_requires_an_explicit_request(self):
+        self.data['files'].append(self.file('13.0.0rc1'))
+        self.assertEqual(recipe.resolve(self.config, '', self.home)['version'], '12.4.1')
+        self.assertEqual(recipe.resolve(self.config, '13.0.0rc1', self.home)['version'], '13.0.0rc1')
+
+    def test_explicit_available_version_is_preserved(self):
+        self.data['files'].append(self.file('12.3.2'))
+        self.assertEqual(recipe.resolve(self.config, '12.3.2', self.home)['version'], '12.3.2')
+
+    def test_explicit_unavailable_version_fails_before_install_or_publication(self):
+        with patch.dict(os.environ, {'MEMOH_DEP_VERSION': '12.4.2'}), patch.object(recipe, 'install') as installer:
+            with self.assertRaisesRegex(ValueError, 'qpdf 12.4.2.*linux-64'):
+                recipe.main(self.config, 'install')
+        installer.assert_not_called()
+        self.assertFalse(self.home.exists())
+        self.assertFalse(self.result.exists())
+
+    def test_missing_target_builds_do_not_fall_back_to_global_latest(self):
+        self.data['files'] = [self.file('12.4.2', 'linux-aarch64')]
+        with self.assertRaisesRegex(ValueError, 'No stable qpdf.*linux-64'):
+            recipe.resolve(self.config, '', self.home)
+
+    def test_check_update_does_not_advertise_other_architectures(self):
+        with patch.object(recipe, 'install') as installer:
+            recipe.main(self.config, 'check_update')
+        installer.assert_not_called()
+        self.assertEqual(json.loads(self.result.read_text()),
+                         {'installed': '12.4.1', 'latest': '12.4.1', 'update_available': False})
+        self.assertFalse((self.home / 'current').exists())
+        self.assertFalse((self.home / 'versions').exists())
+
+    def test_install_uses_resolved_version_and_platform_despite_ambient_override(self):
+        target = self.home / 'versions' / 'candidate'
+        target.mkdir(parents=True)
+        resolution = recipe.resolve(self.config, '', self.home)
+        with patch.dict(os.environ, {'CONDA_SUBDIR': 'osx-arm64'}), patch.object(recipe, 'run') as runner:
+            recipe.install(self.config, resolution, target, self.home)
+        args = runner.call_args_list[0].args[0]
+        self.assertEqual(args[args.index('--platform') + 1], 'linux-64')
+        self.assertEqual(args[args.index('--channel') + 1], 'conda-forge')
+        self.assertIn('qpdf=12.4.1', args)
+
+
 if __name__ == '__main__':
     unittest.main()
