@@ -1,0 +1,24 @@
+schema_version: '2'
+id: videogen
+version: 1.0.0
+name: VideoGen
+description: Create, edit, caption, and export videos and media using the hosted VideoGen
+  MCP server. Requires a separately configured MCP connection and VideoGen account;
+  generation uses account credits.
+author:
+  name: VideoGen
+  email: info@videogen.io
+homepage: https://videogen.io/videogen-mcp
+repository: https://github.com/video-gen/videogen-plugins
+license: MIT
+category: productivity
+tags:
+- video
+- media
+- marketing
+- mcp
+translations:
+  zh:
+    description: 使用 VideoGen MCP 创建、编辑、添加字幕并导出视频和媒体。需单独配置 MCP 连接和 VideoGen 账户；生成内容会使用账户额度。
+  ja:
+    description: VideoGen MCP で動画やメディアを作成、編集し、字幕を付けて書き出します。MCP 接続と VideoGen アカウントの設定が別途必要です。生成にはアカウントのクレジットを使用します。
