@@ -469,20 +469,22 @@ postinstall:
       schema_version: '1', id: 'example', name: 'Example', enabled: true, priority: 10,
       adapter: {
         type: 'skill_pack',
-        app: {
-          id: 'superpowers',
-          version: '7.0.0',
-          name: 'Superpowers',
-          description: 'Planning and debugging workflows.',
-          author: { name: 'Jesse Vincent', email: 'jesse@fsck.com' },
-          homepage: 'https://github.com/obra/superpowers',
-          repository: 'https://github.com/obra/superpowers',
-          license: 'MIT',
-          category: 'developer-tools',
-          tags: ['planning'],
-          translations: { zh: { name: 'Superpowers', description: '规划与调试流程。' } },
-        },
-        skills: ['skills/brainstorming', 'skills/productivity/grill-me'],
+        apps: [{
+          app: {
+            id: 'superpowers',
+            version: '7.0.0',
+            name: 'Superpowers',
+            description: 'Planning and debugging workflows.',
+            author: { name: 'Jesse Vincent', email: 'jesse@fsck.com' },
+            homepage: 'https://github.com/obra/superpowers',
+            repository: 'https://github.com/obra/superpowers',
+            license: 'MIT',
+            category: 'developer-tools',
+            tags: ['planning'],
+            translations: { zh: { name: 'Superpowers', description: '规划与调试流程。' } },
+          },
+          skills: ['skills/brainstorming', 'skills/productivity/grill-me'],
+        }],
       },
       source: { type: 'local', path: 'source' },
     }
@@ -509,7 +511,10 @@ postinstall:
     ])
     if (pack.adapter.type !== 'skill_pack') throw new Error('expected skill_pack fixture')
     await expect(buildSkillCandidates({
-      definition: { ...pack, adapter: { ...pack.adapter, skills: ['skills/missing'] } },
+      definition: {
+        ...pack,
+        adapter: { ...pack.adapter, apps: [{ ...pack.adapter.apps[0]!, skills: ['skills/missing'] }] },
+      },
       sourceRoot: root,
     })).rejects.toThrow('missing SKILL.md')
   })

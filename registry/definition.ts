@@ -1,6 +1,6 @@
 import path from 'node:path'
 import * as z from 'zod/mini'
-import { MAX_REGISTRY_APP_SKILLS } from './budget'
+import { MAX_REGISTRY_APP_SKILLS, MAX_REGISTRY_SKILLS } from './budget'
 import type { AppTranslation, AppTranslations, SkillAuthor, SkillPackApp, SkillRegistryDefinition } from './types'
 
 export const MAX_RESOURCE_ID_BYTES = 128
@@ -219,20 +219,60 @@ function parseSkillPackTags(value: unknown, label: string) {
   return [...new Set(value.map((item, index) => requiredText(item, skillPackTextLimit.tag, `${label}[${index}]`)))]
 }
 
+function parseSkillPackPaths(value: unknown, label: string) {
+  if (!Array.isArray(value) || value.length < 1 || value.length > MAX_REGISTRY_APP_SKILLS) {
+    throw new Error(`${label} must contain between 1 and ${MAX_REGISTRY_APP_SKILLS} paths`)
+  }
+  const skills = value.map((item, index) => {
+    const skillLabel = `${label}[${index}]`
+    return safeRelativePath(requiredText(item, 1024, skillLabel), skillLabel)
+  })
+  if (new Set(skills).size !== skills.length) throw new Error(`${label} contains duplicate paths`)
+  const ids = skills.map((skillPath) => assertRegistryComponentID(path.posix.basename(skillPath), `${label} skill ID`))
+  if (new Set(ids).size !== ids.length) throw new Error(`${label} contains duplicate skill IDs`)
+  return skills
+}
+
 function parseSkillPackAdapter(data: Record<string, unknown>, id: string): SkillRegistryDefinition['adapter'] {
   const label = `${id}: skill_pack adapter`
-  rejectUnknownFields(data, ['type', 'app', 'skills'], label)
-  if (!Array.isArray(data.skills) || data.skills.length < 1 || data.skills.length > MAX_REGISTRY_APP_SKILLS) {
-    throw new Error(`${label}.skills must contain between 1 and ${MAX_REGISTRY_APP_SKILLS} paths`)
+  rejectUnknownFields(data, ['type', 'app', 'skills', 'apps'], label)
+  const hasSingle = data.app !== undefined || data.skills !== undefined
+  const hasMany = data.apps !== undefined
+  if (hasSingle === hasMany) throw new Error(`${label} must contain either app and skills, or apps`)
+  const entries = hasMany
+    ? parseSkillPackApps(data.apps, `${label}.apps`)
+    : [{ app: parseSkillPackApp(data.app, `${label}.app`), skills: parseSkillPackPaths(data.skills, `${label}.skills`) }]
+  const skillCount = entries.reduce((total, entry) => total + entry.skills.length, 0)
+  if (skillCount > MAX_REGISTRY_SKILLS) {
+    throw new Error(`${label} must contain at most ${MAX_REGISTRY_SKILLS} skills`)
   }
-  const skills = data.skills.map((value, index) => {
-    const skillLabel = `${label}.skills[${index}]`
-    return safeRelativePath(requiredText(value, 1024, skillLabel), skillLabel)
+  const appIDs = new Set<string>()
+  const paths = new Set<string>()
+  for (const entry of entries) {
+    if (appIDs.has(entry.app.id)) throw new Error(`${label} contains duplicate app ID ${entry.app.id}`)
+    appIDs.add(entry.app.id)
+    for (const skillPath of entry.skills) {
+      if (paths.has(skillPath)) throw new Error(`${label} contains duplicate path ${skillPath}`)
+      paths.add(skillPath)
+    }
+  }
+  return { type: 'skill_pack', apps: entries }
+}
+
+function parseSkillPackApps(value: unknown, label: string) {
+  if (!Array.isArray(value) || value.length < 1 || value.length > MAX_REGISTRY_APP_SKILLS) {
+    throw new Error(`${label} must contain between 1 and ${MAX_REGISTRY_APP_SKILLS} apps`)
+  }
+  return value.map((item, index) => {
+    const appLabel = `${label}[${index}]`
+    const app = object(item, appLabel)
+    rejectUnknownFields(app, [
+      'id', 'version', 'name', 'description', 'author', 'homepage', 'repository', 'license',
+      'category', 'tags', 'translations', 'skills',
+    ], appLabel)
+    const { skills, ...manifest } = app
+    return { app: parseSkillPackApp(manifest, appLabel), skills: parseSkillPackPaths(skills, `${appLabel}.skills`) }
   })
-  if (new Set(skills).size !== skills.length) throw new Error(`${label}.skills contains duplicate paths`)
-  const ids = skills.map((skillPath) => assertRegistryComponentID(path.posix.basename(skillPath), `${label} skill ID`))
-  if (new Set(ids).size !== ids.length) throw new Error(`${label}.skills contains duplicate skill IDs`)
-  return { type: 'skill_pack', app: parseSkillPackApp(data.app, `${label}.app`), skills }
 }
 
 function parseSource(raw: unknown, id: string): SkillRegistryDefinition['source'] {

@@ -208,7 +208,7 @@ bun run registry:validate
 
 Supported sources are `local` and HTTPS `git`. Supported adapters are `memoh`, `skill_directory`, `codex_marketplace_skills`, and `skill_pack`. Git sources pin an exact commit in `revision`; `tracking_ref` enables update checks.
 
-`skill_pack` publishes one upstream repository as one App. `adapter.skills` lists skill directories relative to the source root. Skill ID is the directory's basename. The adapter does not read Codex or Claude plugin manifests.
+`skill_pack` publishes explicit skill directories from one upstream repository. One App uses `adapter.app` and `adapter.skills`. Several Apps use `adapter.apps`, and each entry lists its own `skills`. Skill ID is the directory's basename and only has to be unique inside its App. The adapter does not read Codex or Claude plugin manifests.
 
 ```yaml
 adapter:

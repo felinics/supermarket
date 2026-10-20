@@ -32,7 +32,7 @@ export type SkillRegistryAdapter =
   | { type: 'skill_directory' }
   | { type: 'memoh' }
   | { type: 'codex_marketplace_skills'; catalog_path: string }
-  | { type: 'skill_pack'; app: SkillPackApp; skills: string[] }
+  | { type: 'skill_pack'; apps: Array<{ app: SkillPackApp; skills: string[] }> }
 
 export type SkillRegistrySource =
   | { type: 'local'; path: string }
