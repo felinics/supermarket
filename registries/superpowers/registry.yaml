@@ -50,5 +50,5 @@ adapter:
 source:
   type: git
   url: https://github.com/obra/superpowers.git
-  revision: bb92a77741419a4ab5f06e711a283343f1ada0c3
+  revision: 2ce8aa15d05bd57213e6f746f953aafb7ded7a8b
   tracking_ref: main
