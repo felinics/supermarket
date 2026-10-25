@@ -29,7 +29,7 @@ github('supabase-cli', 'Supabase CLI', 'supabase/cli', ['supabase'], ['supabase_
 github('sentry', 'Sentry', 'getsentry/cli', ['sentry'], ['sentry-linux-x64', 'sentry-linux-arm64', 'sentry-darwin-arm64'], { raw: true, tag_prefix: '' })
 github('sentry-cli', 'Sentry Release CLI', 'getsentry/sentry-cli', ['sentry-cli'], ['sentry-cli-Linux-x86_64', 'sentry-cli-Linux-aarch64', 'sentry-cli-Darwin-universal'], { raw: true, tag_prefix: '' })
 github('bun', 'Bun', 'oven-sh/bun', ['bun', 'bunx'], ['bun-linux-x64-baseline.zip', 'bun-linux-aarch64.zip', 'bun-darwin-aarch64.zip'], { tag_prefix: 'bun-v', probes: { bunx: ['--version'] } })
-github('micromamba', 'Micromamba', 'mamba-org/micromamba-releases', ['micromamba'], ['micromamba-linux-64', 'micromamba-linux-aarch64', 'micromamba-osx-arm64'], { raw: true, tag_prefix: '' })
+github('micromamba', 'Micromamba', 'mamba-org/micromamba-releases', ['micromamba'], ['micromamba-linux-64', 'micromamba-linux-aarch64', 'micromamba-osx-arm64'], { raw: true, tag_prefix: '', tag_build_suffix: true })
 add('gitlab-cli', 'GitLab CLI', { backend: 'gitlab', commands: ['glab'] })
 add('postman-cli', 'Postman CLI', { backend: 'postman', commands: ['postman'], platforms: { 'linux/amd64': 'linux64', 'linux/arm64': 'linux_arm64', 'darwin/arm64': 'osx_arm64' } })
 for (const [id, name, pkg, cmd] of [

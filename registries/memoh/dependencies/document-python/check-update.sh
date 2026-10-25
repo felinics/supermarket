@@ -104,6 +104,24 @@ def wrapper(path, command, environment=None, prefix_args=(), restart_once=False)
 
 def release(config, version=None):
     repo = config['repo']
+    if config.get('tag_build_suffix') and version and re.fullmatch(r'\d+\.\d+\.\d+', version):
+        # Micromamba tags include a Conda build number that --version omits.
+        # Resolve a software-version pin to its real release; retain the tag
+        # and assets so downloads never use a fabricated canonical tag.
+        matches = []
+        page = 1
+        while True:
+            releases = remote_json(f'https://api.github.com/repos/{repo}/releases?per_page=100&page={page}')
+            for item in releases:
+                tag = item.get('tag_name', '')
+                if not item.get('draft') and not item.get('prerelease') and re.fullmatch(re.escape(version) + r'-\d+', tag):
+                    matches.append(item)
+            if len(releases) < 100:
+                break
+            page += 1
+        if not matches:
+            raise ValueError(f'No release available for {version}')
+        return max(matches, key=lambda item: int(item['tag_name'].rsplit('-', 1)[1]))
     endpoint = 'latest' if not version else 'tags/' + urllib.parse.quote(config.get('tag_prefix', 'v') + version, safe='')
     return remote_json(f'https://api.github.com/repos/{repo}/releases/{endpoint}')
 
@@ -112,6 +130,13 @@ def normalize_version(value):
     value = value.removeprefix('bun-v').removeprefix('v').removeprefix('go')
     if not re.fullmatch(r'[0-9][0-9A-Za-z.+_-]{0,99}', value):
         raise ValueError('Invalid release version')
+    return value
+
+
+def software_version(config, value):
+    value = normalize_version(value)
+    if config.get('tag_build_suffix'):
+        value = re.sub(r'^(\d+\.\d+\.\d+)-\d+$', r'\1', value)
     return value
 
 
@@ -147,7 +172,7 @@ def resolve(config, requested, home):
     requested = None if requested in ('', 'latest', 'stable', None) else normalize_version(requested)
     if backend == 'github':
         data = release(config, requested)
-        return {'version': normalize_version(data['tag_name']), 'release': data}
+        return {'version': software_version(config, data['tag_name']), 'release': data}
     if backend in ('npm', 'python'):
         if requested and len(config['packages']) > 1:
             saved = home / 'resolutions' / (requested + '.json')
@@ -412,12 +437,29 @@ def install(config, resolution, target, home):
         run([bin_dir / command, *args], stdout=sys.stderr)
 
 
-def newer(latest, installed):
+def newer(latest, installed, config=None):
+    config = config or {}
     if not installed:
         return True
-    if '+' in latest or '+' in installed:
+    if len(config.get('packages', [])) > 1:
+        # Bundle hashes are opaque resolution identities, not SemVer metadata.
         return latest != installed
-    return tuple(map(int, re.findall(r'\d+', latest))) > tuple(map(int, re.findall(r'\d+', installed)))
+    if config.get('backend') == 'libreoffice' and os.environ['MEMOH_DEP_OS'] == 'linux':
+        result = subprocess.run(['dpkg', '--compare-versions', latest.replace('_', ':'), 'gt', installed.replace('_', ':')], check=False)
+        if result.returncode not in (0, 1):
+            raise ValueError('Invalid Debian version comparison')
+        return result.returncode == 0
+    def key(value):
+        value = software_version(config, value)
+        match = re.fullmatch(r'(\d+(?:\.\d+)*)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?', value)
+        if not match:
+            raise ValueError('Unsupported release version: ' + value)
+        numbers = list(map(int, match[1].split('.')))
+        while numbers and numbers[-1] == 0:
+            numbers.pop()
+        prerelease = tuple((0, int(part)) if part.isdigit() else (1, part) for part in (match[2] or '').split('.'))
+        return tuple(numbers), match[2] is None, prerelease
+    return key(latest) > key(installed)
 
 
 def main(config, action):
@@ -440,7 +482,7 @@ def main(config, action):
     (history / (version + '.json')).write_text(json.dumps(resolution))
     if action == 'check_update':
         installed = os.environ.get('MEMOH_DEP_CURRENT_VERSION', '')
-        result_path.write_text(json.dumps({'installed': installed, 'latest': version, 'update_available': newer(version, installed)}))
+        result_path.write_text(json.dumps({'installed': installed, 'latest': version, 'update_available': newer(version, installed, config)}))
         return
     versions = home / 'versions'
     versions.mkdir(parents=True, exist_ok=True)
