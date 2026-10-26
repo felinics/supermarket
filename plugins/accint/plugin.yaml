@@ -1,0 +1,38 @@
+schema_version: "1"
+id: accint
+name: AccInt
+version: 0.1.0
+description: Local-first MCP memory server that retrieves prior work, tracks commitments, and learns from outcome feedback.
+author:
+  name: Max Baluev
+  email: maxbaluev@outlook.com
+homepage: https://github.com/maxbaluev/accreted-intelligence
+tags:
+  - agent-memory
+  - mcp
+  - retrieval
+  - coding-agents
+capabilities:
+  - retrieve-memory
+  - track-commitments
+  - outcome-feedback
+  - local-first-memory
+variables:
+  - key: ACC_DB
+    description: Absolute path to the local AccInt database file.
+auth_requirements: []
+mcps:
+  - key: accint
+    display_name: AccInt MCP
+    description: Local stdio MCP resource for AccInt's retrieved experience, commitments, and outcome feedback loop.
+    transport: stdio
+    command: acc
+    args:
+      - --db
+      - ${ACC_DB}
+      - mcp
+    visibility: hidden
+    capabilities:
+      - retrieve-memory
+      - track-commitments
+      - outcome-feedback
