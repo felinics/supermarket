@@ -9,5 +9,5 @@ adapter:
 source:
   type: git
   url: https://github.com/openai/plugins.git
-  revision: 1e285826e604f66f7208f7ac4dba0fe8341d1f57
+  revision: d420d13051bffe4543ed39e30fa46b87148e47dd
   tracking_ref: main
