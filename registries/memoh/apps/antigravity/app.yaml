@@ -1,0 +1,26 @@
+schema_version: "2"
+id: antigravity
+version: 1.0.0
+name: Google Antigravity
+description: Google Antigravity CLI (agy).
+author:
+  name: Memoh
+  email: hello@memoh.ai
+homepage: https://antigravity.google/docs/getting-started?tab=cli
+repository: https://github.com/felinics/supermarket
+# This license covers the registry definition, not Google's CLI binary.
+license: Apache-2.0
+icon: icon.svg
+category: agent
+tags:
+  - agent
+  - antigravity
+  - google
+  - agy
+translations:
+  zh:
+    description: Google Antigravity 命令行（agy）
+  ja:
+    description: Google Antigravity コマンドライン（agy）
+dependencies:
+  - antigravity

@@ -255,7 +255,7 @@ Built with [Nitro](https://nitro.build) and [Cloudflare Workers](https://workers
 ## Workspace dependencies
 
 The official `memoh` registry also publishes workspace dependency definitions for
-Codex, Claude Code, Grok Build, Node.js, Python and uv. Recipes live under
+Codex, Claude Code, Grok Build, Google Antigravity, Node.js, Python and uv. Recipes live under
 `registries/memoh/dependencies/<id>/`: `dependency.yaml`, referenced POSIX sh
 scripts, and an optional icon. The manifest includes platform support, commands,
 prerequisites, timeouts and English/Chinese/Japanese display metadata.
@@ -291,8 +291,8 @@ locks, progress streams and software rollback. Supermarket does not execute the
 scripts or host the CLI binaries. New management operations resolve the current
 definition; a prepared operation keeps one revision through preview and execution.
 
-The current recipes support Linux with glibc (amd64/arm64) and macOS arm64.
-They deliberately do not advertise musl support. Node.js and uv archives are
+Most recipes support Linux with glibc (amd64/arm64) and macOS arm64.
+Platform support is declared per dependency. Node.js and uv archives are
 verified against upstream SHA256 files obtained over HTTPS before extraction.
 `NODEJS_MIRROR` and `UV_RELEASES_URL` change the archive location, but never the
 checksum authority; these installs still require access to `nodejs.org` or
@@ -307,6 +307,22 @@ uv download caches created by these recipes stay under the dependency home
 and are removed with the overlay; pre-existing shared user caches are retained.
 Stable Python requests such as `3.15` never select alpha, beta or release
 candidate builds; request an exact prerelease explicitly if it is required.
+
+Google Antigravity installs the standalone `agy` CLI from the
+[official release repository](https://github.com/google-antigravity/antigravity-cli/releases),
+linked by [Google's releases page](https://antigravity.google/releases). It supports
+Linux amd64/arm64 with glibc or musl, and macOS amd64/arm64. The recipe selects the
+latest stable release by default or an exact requested version, verifies the
+matching asset's official SHA256 digest before extraction, and checks the native
+binary's version before switching `current`. It needs no Node.js or Python runtime.
+The bundled icon comes from [Google's press assets](https://antigravity.google/press);
+the registry definition's Apache-2.0 license does not license Google's binary or logo.
+
+The managed `agy` launcher sets `AGY_CLI_DISABLE_AUTO_UPDATE=true` and rejects
+native `agy install` / `agy update`; use Memoh's dependency operations so updates
+and rollback remain consistent. Installation does not change shell profiles or
+complete Google sign-in. Authentication and any Memoh agent-runtime integration
+remain separate from this App's CLI installation.
 
 Conda recipes choose the newest numeric stable release with a `main`-label
 package for the target platform (`linux-64`, `linux-aarch64`, or `osx-arm64`),
