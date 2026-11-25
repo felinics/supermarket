@@ -1,6 +1,8 @@
 schema_version: "2"
 id: google-drive
 version: 1.0.0
+# 受限 scope（drive.readonly），待上游改为 drive.file 且 Google OAuth 审核完成后恢复上架。
+enabled: false
 name: Google Drive
 description: Connect Google Drive for cloud files and shared documents.
 author:

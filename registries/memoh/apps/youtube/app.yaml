@@ -1,6 +1,8 @@
 schema_version: "2"
 id: youtube
 version: 1.0.0
+# 受限 scope（youtube.readonly），待 Google OAuth 审核与 CASA 评估完成后恢复上架。
+enabled: false
 name: YouTube
 description: Connect YouTube for videos and channels.
 author:

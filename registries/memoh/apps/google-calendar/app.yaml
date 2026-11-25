@@ -1,6 +1,8 @@
 schema_version: "2"
 id: google-calendar
 version: 1.0.0
+# 待 Google OAuth 审核完成后恢复上架。
+enabled: false
 name: Google Calendar
 description: Connect Google Calendar for calendars and scheduling.
 author:

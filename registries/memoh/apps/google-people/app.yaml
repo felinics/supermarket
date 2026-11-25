@@ -1,6 +1,8 @@
 schema_version: "2"
 id: google-people
 version: 1.0.0
+# 受限 scope（contacts.readonly），待 Google OAuth 审核与 CASA 评估完成后恢复上架。
+enabled: false
 name: Google People
 description: Connect Google People for contacts, profiles and directories.
 author:
