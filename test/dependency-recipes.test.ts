@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { chmod, mkdir, mkdtemp, readFile, rename, rm, symlink, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, mkdtemp, readFile, realpath, rename, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process'
 
 const roots: string[] = []
 afterEach(async () => { await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true }))) })
-const recipes = ['node', 'uv', 'python', 'codex', 'claude-code', 'grok'] as const
+const recipes = ['node', 'uv', 'python', 'codex', 'claude-code', 'grok', 'omp'] as const
 const version = '3.14.2'
 const scripts = path.resolve(import.meta.dirname, '../registries/memoh/dependencies')
 
@@ -37,6 +37,19 @@ async function fixture(id: typeof recipes[number]) {
   const packed = spawnSync('tar', ['-czf', archive, '-C', root, 'payload'])
   expect(packed.status).toBe(0)
   const digest = createHash('sha256').update(await readFile(archive)).digest('hex')
+  const ompBinary = path.join(root, 'omp-binary')
+  await executable(ompBinary, `[ "\${FAIL_START:-}" != 1 ] || exit 126
+if [ "\${1:-}" = update ]; then
+  # OMP's updater resolves its installation through PATH, which initially
+  # contains Memoh's outer shell shim rather than the actual binary.
+  native=$(command -v omp)
+  manager="$(dirname "$(dirname "$native")")/manager.json"
+  [ -f "$manager" ] || { printf 'managed installation not found\\n' >&2; exit 1; }
+  printf 'managed by Memoh\\n%s\\n' "$native"
+  exit 0
+fi
+printf '%s\\n' "\${FIXTURE_OMP_ACTUAL:-omp/${version}}"`)
+  const ompDigest = createHash('sha256').update(await readFile(ompBinary)).digest('hex')
   await executable(path.join(bin, 'curl'), `
 [ "\${FAIL_DOWNLOAD:-}" != 1 ] || exit 9
 printf '%s\\n' "$*" >> "$FIXTURE_ROOT/downloads"
@@ -49,6 +62,17 @@ while [ "$#" -gt 0 ]; do
   shift
 done
 case "$url" in
+  https://build.stencil.so/api/products/omp/latest/*|https://build.stencil.so/api/products/omp/versions/*)
+    if [ -n "$output" ]; then
+      printf '%s\\n' "$FIXTURE_OMP_METADATA" > "$output"
+    else
+      printf '%s\\n' "$FIXTURE_OMP_METADATA"
+    fi
+    ;;
+  'https://downloads.fixture.invalid/omp?x=1&y=2')
+    cp "$FIXTURE_ROOT/omp-binary" "$output"
+    printf 'new working copy' > "$(dirname "$output")/../marker"
+    ;;
   */latest) printf '%s/releases/tag/%s' 'https://github.com/astral-sh/uv' "$FIXTURE_VERSION" ;;
   */index.json) printf '[{"version":"v%s","lts":"Example"}]\\n' "$FIXTURE_LATEST" > "$output" ;;
   */SHASUMS256.txt) printf '%s  node-v%s-darwin-arm64.tar.gz\\n' "$FIXTURE_DIGEST" "$FIXTURE_VERSION" > "$output" ;;
@@ -131,6 +155,11 @@ exec /bin/mv "$@"`)
     NODEJS_MIRROR: 'https://mirror.invalid/node', UV_RELEASES_URL: 'https://mirror.invalid/uv',
     NPM_MIRROR: 'https://mirror.invalid/npm', npm_config_strict_allow_scripts: 'true' }
   async function run(action: string, overrides: Record<string, string> = {}) {
+    const ompMetadata = JSON.stringify({
+      build: { version: overrides.FIXTURE_LATEST ?? version, files: [{ sha256: '0'.repeat(64) }] },
+      file: { name: 'omp-darwin-arm64', sha256: overrides.FIXTURE_OMP_DIGEST ?? ompDigest },
+      download: 'https://downloads.fixture.invalid/omp?x=1&y=2',
+    }).replaceAll('&', '\\u0026')
     const body = await readFile(path.join(scripts, id, `${action}.sh`), 'utf8')
     const source = `set -eu
       dep_log() { printf '%s\\n' "$*" >&2; }
@@ -145,7 +174,7 @@ exec /bin/mv "$@"`)
       }
       memoh_dep_main < /dev/null
     `
-    const child = Bun.spawn(['/bin/sh', '-s'], { env: { ...env, ...overrides }, stdin: new TextEncoder().encode(source), stdout: 'pipe', stderr: 'pipe' })
+    const child = Bun.spawn(['/bin/sh', '-s'], { env: { ...env, FIXTURE_OMP_METADATA: ompMetadata, ...overrides }, stdin: new TextEncoder().encode(source), stdout: 'pipe', stderr: 'pipe' })
     const [status, stdout, stderr] = await Promise.all([child.exited, new Response(child.stdout).text(), new Response(child.stderr).text()])
     return { status, stdout, stderr }
   }
@@ -165,6 +194,10 @@ describe('dependency recipe failure recovery', () => {
       }
       expect(await readFile(path.join(f.home, id === 'uv' ? 'current/bin/marker' : 'current/marker'), 'utf8')).toBe('new working copy')
       expect(await Bun.file(path.join(f.root, 'postinstall-ran')).exists()).toBe(false)
+      if (id === 'omp') {
+        expect(JSON.parse(await readFile(path.join(f.home, 'current/manager.json'), 'utf8')))
+          .toEqual({ manager: 'memoh', name: 'Memoh' })
+      }
     })
     for (const failure of ['FAIL_RESULT', 'FAIL_RENAME', 'FAIL_SWITCH']) {
       test(`${id} ${action} retains the current installation after ${failure}`, async () => {
@@ -228,4 +261,116 @@ describe('dependency recipe failure recovery', () => {
       expect(await Bun.file(cache).exists()).toBe(false)
     })
   }
+})
+
+describe('OMP release verification', () => {
+  test('omp stays managed when launched through an outer Memoh shell shim', async () => {
+    const f = await fixture('omp')
+    const installed = await f.run('install')
+    expect(installed, installed.stderr).toMatchObject({ status: 0 })
+    const entrypoint = JSON.parse(await readFile(f.result, 'utf8')).entrypoints.omp
+    const shims = path.join(f.root, 'workspace', 'bin')
+    await executable(path.join(shims, 'omp'), 'exec "$OMP_TEST_ENTRYPOINT" "$@"')
+    const updated = spawnSync('omp', ['update'], {
+      env: { PATH: `${shims}:/usr/bin:/bin`, OMP_TEST_ENTRYPOINT: entrypoint },
+      encoding: 'utf8',
+    })
+    expect(updated.status, updated.stderr).toBe(0)
+    const [message, native] = updated.stdout.trim().split('\n')
+    expect(message).toBe('managed by Memoh')
+    expect(path.basename(path.dirname(native!))).toBe('libexec')
+    expect(await realpath(native!)).toBe(await realpath(path.join(f.home, 'current/libexec/omp')))
+    expect(JSON.parse(await readFile(path.join(path.dirname(path.dirname(native!)), 'manager.json'), 'utf8')))
+      .toEqual({ manager: 'memoh', name: 'Memoh' })
+  })
+
+  for (const requested of ['', 'latest']) {
+    test(`omp resolves ${requested || 'an empty request'} through the stable platform channel`, async () => {
+      const f = await fixture('omp')
+      const result = await f.run('install', { MEMOH_DEP_VERSION: requested })
+      expect(result, result.stderr).toMatchObject({ status: 0 })
+      expect(JSON.parse(await readFile(f.result, 'utf8')).version).toBe(version)
+      const downloads = await readFile(path.join(f.root, 'downloads'), 'utf8')
+      expect(downloads).toContain('https://build.stencil.so/api/products/omp/latest/macos-arm64?channel=stable')
+      // The requested file's checksum wins over build.files[], and Go's escaped
+      // ampersand must be decoded before fetching the signed download URL.
+      expect(downloads).toContain('https://downloads.fixture.invalid/omp?x=1&y=2')
+    })
+  }
+
+  test('omp rejects a binary that disagrees with its authoritative SHA256', async () => {
+    const f = await fixture('omp')
+    const result = await f.run('install', { FIXTURE_OMP_DIGEST: '0'.repeat(64) })
+    expect(result.status).not.toBe(0)
+    expect(result.stderr).toContain('SHA256 mismatch')
+    expect(await readFile(path.join(f.home, 'current/marker'), 'utf8')).toBe('old working copy')
+    expect(await Bun.file(f.result).exists()).toBe(false)
+  })
+
+  for (const [kind, metadata] of [
+    ['missing', '{}'],
+    ['malformed', '{"build":{"version":"3.14.2"},"file":{"sha256":"invalid"},"download":"https://downloads.fixture.invalid/omp"}'],
+  ] as const) {
+    test(`omp rejects ${kind} build metadata`, async () => {
+      const f = await fixture('omp')
+      const result = await f.run('install', { FIXTURE_OMP_METADATA: metadata })
+      expect(result.status).not.toBe(0)
+      expect(result.stderr).toContain('invalid build metadata')
+      expect(await readFile(path.join(f.home, 'current/marker'), 'utf8')).toBe('old working copy')
+      expect(await readFile(path.join(f.root, 'downloads'), 'utf8')).not.toContain('https://downloads.fixture.invalid/')
+    })
+  }
+
+  test('omp refuses a different version returned for an exact release request', async () => {
+    const f = await fixture('omp')
+    const result = await f.run('install', { FIXTURE_LATEST: '3.14.3' })
+    expect(result.status).not.toBe(0)
+    expect(result.stderr).toContain('version mismatch')
+    expect(await readFile(path.join(f.home, 'current/marker'), 'utf8')).toBe('old working copy')
+    expect(await readFile(path.join(f.root, 'downloads'), 'utf8')).not.toContain('https://downloads.fixture.invalid/')
+  })
+
+  for (const [failure, overrides] of [
+    ['startup failure', { FAIL_START: '1' }],
+    ['binary version mismatch', { FIXTURE_OMP_ACTUAL: 'omp/0.0.1' }],
+  ] as const) {
+    test(`omp keeps the current installation after ${failure}`, async () => {
+      const f = await fixture('omp')
+      const result = await f.run('install', overrides)
+      expect(result.status).not.toBe(0)
+      expect(await readFile(path.join(f.home, 'current/marker'), 'utf8')).toBe('old working copy')
+      expect(await Bun.file(f.result).exists()).toBe(false)
+    })
+  }
+
+  for (const [platform, overrides] of [
+    ['Linux musl', { MEMOH_DEP_OS: 'linux', MEMOH_DEP_LIBC: 'musl' }],
+    ['unsupported architecture', { MEMOH_DEP_ARCH: 'riscv64' }],
+  ] as const) {
+    test(`omp rejects ${platform} before downloading`, async () => {
+      const f = await fixture('omp')
+      const result = await f.run('install', overrides)
+      expect(result.status).not.toBe(0)
+      expect(await Bun.file(path.join(f.root, 'downloads')).exists()).toBe(false)
+      expect(await readFile(path.join(f.home, 'current/marker'), 'utf8')).toBe('old working copy')
+    })
+  }
+
+  test('omp reports an update-check lookup failure instead of claiming no update', async () => {
+    const f = await fixture('omp')
+    const result = await f.run('check-update', { FAIL_DOWNLOAD: '1' })
+    expect(result.status).not.toBe(0)
+    expect(await Bun.file(f.result).exists()).toBe(false)
+  })
+
+  test('omp removal preserves the separate user profile', async () => {
+    const f = await fixture('omp')
+    const profile = path.join(f.root, 'omp-profile', 'agent.db')
+    await mkdir(path.dirname(profile), { recursive: true })
+    await writeFile(profile, 'saved authentication and sessions')
+    expect((await f.run('install')).status).toBe(0)
+    expect((await f.run('remove')).status).toBe(0)
+    expect(await Bun.file(path.join(f.home, 'current/bin/omp')).exists()).toBe(false)
+    expect(await readFile(profile, 'utf8')).toBe('saved authentication and sessions')
+  })
 })
