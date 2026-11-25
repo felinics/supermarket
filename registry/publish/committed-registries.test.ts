@@ -2,20 +2,33 @@ import { describe, expect, test } from 'bun:test'
 import type { Dirent } from 'node:fs'
 import { access, readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
+import { parse } from 'yaml'
 import { buildSkillCandidates } from '../adapters/index'
 import { loadSkillRegistryDefinitions } from '../definitions/repository'
 import { materializeSkillRegistrySource } from '../sources/index'
+import { parseAppManifest } from '../app-manifest'
 import { buildSkillRegistryCandidate, listDependencyIDs } from './candidate'
 
 describe('Repository-owned Skill Registries', () => {
-  test('discovers every Memoh Skill with its complete file set', async () => {
+  test('discovers every enabled Memoh Skill with its complete file set', async () => {
     const projectRoot = path.resolve(import.meta.dirname, '../..')
     const definition = (await loadSkillRegistryDefinitions(projectRoot)).find((item) => item.id === 'memoh')!
     const sourceRoot = path.join(projectRoot, 'registries/memoh/apps')
-    const apps = (await readdir(sourceRoot, { withFileTypes: true }))
+    const appEntries = (await readdir(sourceRoot, { withFileTypes: true }))
       .filter((entry) => entry.isDirectory())
-    const expected = (await Promise.all(apps.flatMap(async (appEntry) => {
-      const skillsRoot = path.join(sourceRoot, appEntry.name, 'skills')
+    const enabledAppIDs: string[] = []
+    const disabledAppIDs: string[] = []
+    for (const entry of appEntries) {
+      const label = `memoh/${entry.name}: app.yaml`
+      const manifest = parseAppManifest(
+        parse(await readFile(path.join(sourceRoot, entry.name, 'app.yaml'), 'utf8')),
+        label,
+      )
+      expect(manifest.id).toBe(entry.name)
+      ;(manifest.enabled ? enabledAppIDs : disabledAppIDs).push(entry.name)
+    }
+    const expected = (await Promise.all(enabledAppIDs.flatMap(async (appID) => {
+      const skillsRoot = path.join(sourceRoot, appID, 'skills')
       let skills: Dirent[]
       try {
         skills = await readdir(skillsRoot, { withFileTypes: true })
@@ -26,7 +39,7 @@ describe('Repository-owned Skill Registries', () => {
       skills = skills.filter((entry) => entry.isDirectory())
       return Promise.all(skills.map(async (skillEntry) => {
         await access(path.join(skillsRoot, skillEntry.name, 'SKILL.md'))
-        return `${appEntry.name}/${skillEntry.name}`
+        return `${appID}/${skillEntry.name}`
       }))
     }))).flat().sort()
     const source = await materializeSkillRegistrySource(definition, projectRoot)
@@ -34,7 +47,8 @@ describe('Repository-owned Skill Registries', () => {
     expect(result.skills.map((skill) => `${skill.app_id}/${skill.skill_id}`).sort()).toEqual(expected)
     expect(result.skills.every((skill) => Boolean(skill.files['SKILL.md']))).toBe(true)
     expect(result.skills.find((skill) => skill.skill_id === 'docx')?.files['scripts/accept_changes.py']?.mode).toBe(0o755)
-    expect([...result.apps.keys()].sort()).toEqual(apps.map((entry) => entry.name).sort())
+    expect([...result.apps.keys()].sort()).toEqual(enabledAppIDs.sort())
+    expect(result.skills.every((skill) => !disabledAppIDs.includes(skill.app_id))).toBe(true)
     expect([...result.apps.values()].every((pkg) => pkg.reviewed && pkg.version && pkg.category)).toBe(true)
   })
 

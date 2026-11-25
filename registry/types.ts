@@ -112,6 +112,8 @@ export interface AppManifest {
   version: string
   name: string
   description: string
+  /** False excludes the App from the published snapshot until re-enabled. */
+  enabled: boolean
   author?: SkillAuthor
   homepage?: string
   repository?: string

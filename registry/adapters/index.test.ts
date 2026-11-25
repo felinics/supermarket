@@ -135,6 +135,36 @@ connectors:
     expect(result.apps.get('codex')!.icon_assets).toHaveLength(1)
   })
 
+  test('skips Apps disabled in their manifest', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'disabled-app-'))
+    roots.push(root)
+    await mkdir(path.join(root, 'hidden/skills/hidden-skill'), { recursive: true })
+    await writeFile(path.join(root, 'hidden/skills/hidden-skill/SKILL.md'), `---
+name: hidden-skill
+description: Hidden skill.
+---
+# Hidden
+`)
+    await writeAppManifest(root, 'hidden', `connectors:
+  - gmail
+enabled: false
+`)
+    await mkdir(path.join(root, 'visible/skills/visible-skill'), { recursive: true })
+    await writeFile(path.join(root, 'visible/skills/visible-skill/SKILL.md'), `---
+name: visible-skill
+description: Visible skill.
+---
+# Visible
+`)
+    await writeAppManifest(root, 'visible', `connectors:
+  - slack
+`)
+    const result = await buildSkillCandidates({ definition: definition('memoh'), sourceRoot: root })
+    expect(result.diagnostics).toEqual([])
+    expect(result.skills.map((skill) => `${skill.app_id}/${skill.skill_id}`)).toEqual(['visible/visible-skill'])
+    expect([...result.apps.keys()]).toEqual(['visible'])
+  })
+
   test('rejects malformed app directories', async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), 'invalid-app-skills-'))
     roots.push(root)

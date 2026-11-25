@@ -1,6 +1,8 @@
 schema_version: "2"
 id: gmail
 version: 1.0.0
+# 受限 scope（gmail.readonly、gmail.compose），待 Google OAuth 审核与 CASA 评估完成后恢复上架。
+enabled: false
 name: Gmail
 description: Connect Gmail for email.
 author:

@@ -73,6 +73,7 @@ export async function readMemohRegistry(input: SkillAdapterInput): Promise<Skill
     const label = `${definition.id}/${appID}`
     const appRoot = await resolveRealInside(sourceRoot, appID)
     const manifest = await readAppManifest(appRoot, definition.id, appID, budget)
+    if (!manifest.enabled) continue
     const presentation = await readAppIcon(appRoot, manifest, `${label}: ${APP_MANIFEST_FILE}`, budget)
     const { skillsRoot, entries } = await listSkillDirectories(appRoot)
     const appSkills: SkillCandidate[] = []

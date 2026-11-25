@@ -1,6 +1,8 @@
 schema_version: "2"
 id: google-chat
 version: 1.0.0
+# 待 Google OAuth 审核完成后恢复上架。
+enabled: false
 name: Google Chat
 description: Connect Google Chat for team messaging.
 author:

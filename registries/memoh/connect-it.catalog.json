@@ -594,66 +594,6 @@
         "oauth2"
       ],
       "categories": [
-        "communication"
-      ],
-      "description": "Google Gmail email service",
-      "homepage": "https://mail.google.com",
-      "icon": "https://cdn.simpleicons.org/gmail",
-      "name": "Gmail",
-      "type": "gmail",
-      "app_id": "gmail",
-      "icon_source": "https://cdn.simpleicons.org/gmail"
-    },
-    {
-      "auth": [
-        "oauth2"
-      ],
-      "categories": [
-        "advertising"
-      ],
-      "description": "Google Ads advertising platform",
-      "homepage": "https://ads.google.com",
-      "icon": "https://cdn.simpleicons.org/googleads",
-      "name": "Google Ads",
-      "type": "google_ads",
-      "app_id": "google-ads",
-      "icon_source": "https://cdn.simpleicons.org/googleads"
-    },
-    {
-      "auth": [
-        "oauth2"
-      ],
-      "categories": [
-        "productivity"
-      ],
-      "description": "Google Calendar scheduling and calendar management",
-      "homepage": "https://calendar.google.com",
-      "icon": "https://cdn.simpleicons.org/googlecalendar",
-      "name": "Google Calendar",
-      "type": "google_calendar",
-      "app_id": "google-calendar",
-      "icon_source": "https://cdn.simpleicons.org/googlecalendar"
-    },
-    {
-      "auth": [
-        "oauth2"
-      ],
-      "categories": [
-        "communication"
-      ],
-      "description": "Google Chat team messaging service",
-      "homepage": "https://chat.google.com",
-      "icon": "https://cdn.simpleicons.org/googlechat",
-      "name": "Google Chat",
-      "type": "google_chat",
-      "app_id": "google-chat",
-      "icon_source": "https://cdn.simpleicons.org/googlechat"
-    },
-    {
-      "auth": [
-        "oauth2"
-      ],
-      "categories": [
         "productivity"
       ],
       "description": "Google Docs online documents",
@@ -663,37 +603,6 @@
       "type": "google_docs",
       "app_id": "google-docs",
       "icon_source": "https://cdn.simpleicons.org/googledocs"
-    },
-    {
-      "auth": [
-        "oauth2"
-      ],
-      "categories": [
-        "storage",
-        "productivity"
-      ],
-      "description": "Google Drive cloud storage and file collaboration",
-      "homepage": "https://drive.google.com",
-      "icon": "https://cdn.simpleicons.org/googledrive",
-      "name": "Google Drive",
-      "type": "google_drive",
-      "app_id": "google-drive",
-      "icon_source": "https://cdn.simpleicons.org/googledrive"
-    },
-    {
-      "auth": [
-        "oauth2"
-      ],
-      "categories": [
-        "productivity"
-      ],
-      "description": "Google profile, contacts and organization directory",
-      "homepage": "https://contacts.google.com",
-      "icon": "https://cdn.simpleicons.org/google",
-      "name": "Google People",
-      "type": "google_people",
-      "app_id": "google-people",
-      "icon_source": "https://cdn.simpleicons.org/google"
     },
     {
       "auth": [
@@ -1740,21 +1649,6 @@
       "type": "x",
       "app_id": "x",
       "icon_source": "https://cdn.simpleicons.org/x/_/e5e5e5"
-    },
-    {
-      "auth": [
-        "oauth2"
-      ],
-      "categories": [
-        "media"
-      ],
-      "description": "YouTube video and channel service",
-      "homepage": "https://www.youtube.com",
-      "icon": "https://cdn.simpleicons.org/youtube",
-      "name": "YouTube",
-      "type": "youtube",
-      "app_id": "youtube",
-      "icon_source": "https://cdn.simpleicons.org/youtube"
     },
     {
       "auth": [
