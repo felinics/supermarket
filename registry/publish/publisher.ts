@@ -1,5 +1,5 @@
-import type { SkillIcon, SkillRegistryDefinition, SkillRegistrySnapshot } from '../types'
-import type { SkillRegistryStore } from '../storage/contracts'
+import type { SkillIcon, SkillRegistryDefinition } from '../types'
+import type { SkillRegistryStore, StoredRegistryRefs } from '../storage/contracts'
 import { assertReleaseCandidate, type RegistryReleaseLock } from './release-lock'
 import {
   buildSkillRegistryCandidate,
@@ -39,32 +39,6 @@ function iconAssets(icon?: SkillIcon) {
   return [icon?.card, icon?.detail, icon?.dark]
 }
 
-/**
- * Digest-addressed objects referenced by a previously published Snapshot.
- * Objects are immutable and never deleted, so a digest listed there is
- * already stored and can skip its existence-check upload.
- */
-function collectSnapshotDigests(snapshot: SkillRegistrySnapshot) {
-  const digests = new Set<string>()
-  for (const pkg of snapshot.apps) {
-    for (const descriptor of iconAssets(pkg.icon)) {
-      if (descriptor) digests.add(descriptor.digest)
-    }
-    for (const skill of pkg.skills) {
-      digests.add(skill.artifact.digest)
-      for (const descriptor of iconAssets(skill.icon)) {
-        if (descriptor) digests.add(descriptor.digest)
-      }
-    }
-  }
-  return digests
-}
-
-/** Previously published App revisions, keyed by App ID. */
-function collectSnapshotAppRevisions(snapshot: SkillRegistrySnapshot) {
-  return new Map(snapshot.apps.map((pkg) => [pkg.app_id, pkg.revision]))
-}
-
 export class SkillRegistryPublisher {
   constructor(
     private readonly store: SkillRegistryStore,
@@ -74,14 +48,15 @@ export class SkillRegistryPublisher {
 
   private async publishCandidateAssets(
     candidate: SkillRegistryCandidate,
-    knownDigests: ReadonlySet<string>,
+    knownArtifactDigests: ReadonlySet<string>,
+    knownImageDigests: ReadonlySet<string>,
   ) {
     const uploadedArtifacts = new Map<string, boolean>()
     const uploadedImages = new Map<string, boolean>()
     const uploadImage = async (digest: string, label: string) => {
       const known = uploadedImages.get(digest)
       if (known != null) return known
-      if (knownDigests.has(digest)) {
+      if (knownImageDigests.has(digest)) {
         uploadedImages.set(digest, false)
         return false
       }
@@ -94,7 +69,7 @@ export class SkillRegistryPublisher {
     for (const [index, skill] of candidate.skills.entries()) {
       let uploaded = uploadedArtifacts.get(skill.artifact.digest)
       if (uploaded == null) {
-        if (knownDigests.has(skill.artifact.digest)) {
+        if (knownArtifactDigests.has(skill.artifact.digest)) {
           uploaded = false
         } else {
           const artifact = candidate.artifacts.get(skill.artifact.digest)
@@ -128,25 +103,27 @@ export class SkillRegistryPublisher {
   }
 
   /**
-   * Loads the previously published Snapshot so publication can skip objects
-   * that are already stored. Objects are immutable and the Snapshot pointer
-   * switches only after a complete publication, so every object referenced by
-   * the current state is still present. Any read failure falls back to a
-   * full upload instead of blocking publication.
+   * Lists the digest-addressed objects the store currently holds, so
+   * publication uploads only what is missing. The listing — not a previously
+   * published Snapshot — is the source of truth: objects lost after a partial
+   * backup restore or accidental deletion are re-uploaded on the next
+   * publication, even when the Snapshot content is unchanged. A listing
+   * failure falls back to empty sets, i.e. a full upload, instead of blocking
+   * publication; the failure is logged so a persistently misconfigured bucket
+   * does not silently degrade every publish to a full re-upload.
    *
-   * The skip assumes the store never deletes objects. Restoring the bucket
-   * from a partial backup (snapshots present but app releases or artifacts
-   * missing) would leave the skipped objects unwritten and publish a Snapshot
-   * that references missing objects. Object retention is a hard operational
-   * invariant of the store; a full re-upload is the recovery for a broken
-   * bucket.
+   * Skipping a listed object also skips the content verification that
+   * putArtifact/putImage/putAppRelease run when they do write: stored bytes
+   * are no longer re-hashed at publication time. Corruption at an existing
+   * key is still detected, but at read time (getArtifact and getImage verify
+   * content hashes), not before the Snapshot references the object.
    */
-  private async loadPreviousSnapshot(registryID: string, revision?: string | null) {
-    if (!revision) return null
+  private async loadStoredRefs(registryID: string): Promise<StoredRegistryRefs> {
     try {
-      return await this.store.getSnapshot(registryID, revision)
-    } catch {
-      return null
+      return await this.store.listStoredRefs(registryID)
+    } catch (error) {
+      console.warn(`${registryID}: listing stored objects failed; falling back to a full upload`, error)
+      return { artifacts: new Set(), images: new Set(), appReleases: new Map() }
     }
   }
 
@@ -180,39 +157,26 @@ export class SkillRegistryPublisher {
       { onProgress: this.onProgress },
     )
     assertReleaseCandidate(definition, lock, candidate.revision)
-    if (previousState?.current_snapshot === candidate.revision) {
-      if (!sameDefinition(previousState.definition, definition)) {
-        await this.store.putState({
-          ...previousState,
-          schema_version: '2',
-          definition,
-        }, stateVersion)
-      }
-      return {
-        registry: definition.id,
-        revision: candidate.revision,
-        skills: candidate.skills.length,
-        apps: candidate.snapshot.apps.length,
-        diagnostics: candidate.diagnostics.length,
-        skipped: 'unchanged',
-      }
-    }
 
-    const previousSnapshot = await this.loadPreviousSnapshot(definition.id, previousState?.current_snapshot)
-    const knownDigests = previousSnapshot ? collectSnapshotDigests(previousSnapshot) : new Set<string>()
-    const knownAppRevisions = previousSnapshot ? collectSnapshotAppRevisions(previousSnapshot) : new Map<string, string>()
-
-    await this.publishCandidateAssets(candidate, knownDigests)
+    const stored = await this.loadStoredRefs(definition.id)
+    await this.publishCandidateAssets(candidate, stored.artifacts, stored.images)
     for (const pkg of candidate.snapshot.apps) {
-      if (knownAppRevisions.get(pkg.app_id) === pkg.revision) continue
-      const stored = await this.store.putAppRelease(
+      if (stored.appReleases.get(pkg.app_id)?.has(pkg.revision)) continue
+      const storedRelease = await this.store.putAppRelease(
         appReleaseFromSnapshotApp(candidate.snapshot, pkg),
       )
-      if (stored.revision !== pkg.revision) {
+      if (storedRelease.revision !== pkg.revision) {
         throw new Error(`${definition.id}/${pkg.app_id}: App revision does not match its Snapshot`)
       }
     }
-    this.onProgress({ type: 'publishing', registry: definition.id, revision: candidate.revision })
+
+    const unchanged = previousState?.current_snapshot === candidate.revision
+    if (!unchanged) {
+      this.onProgress({ type: 'publishing', registry: definition.id, revision: candidate.revision })
+    }
+    // Write the Snapshot and state pointer even when the content is
+    // unchanged, so a no-op publication still repairs a lost Snapshot object,
+    // state, or definition update instead of returning before any healing.
     await this.store.publishSnapshot(candidate.snapshotBytes, definition, { expectedVersion: stateVersion })
     return {
       registry: definition.id,
@@ -220,6 +184,7 @@ export class SkillRegistryPublisher {
       skills: candidate.skills.length,
       apps: candidate.snapshot.apps.length,
       diagnostics: candidate.diagnostics.length,
+      ...(unchanged ? { skipped: 'unchanged' as const } : {}),
     }
   }
 }

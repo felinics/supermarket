@@ -26,6 +26,26 @@ class CountingStore extends LocalSkillRegistryStore {
   appReleases: string[] = []
   artifacts = 0
   images = 0
+  /** Apps whose stored release is hidden from listStoredRefs, as if lost. */
+  hiddenAppReleases: string[] = []
+  /** Stored Artifacts hidden from listStoredRefs, as if lost. */
+  hideArtifacts = false
+  /** Stored images hidden from listStoredRefs, as if lost. */
+  hideImages = false
+  /** Forces listStoredRefs to fail, exercising the full-upload fallback. */
+  failListStoredRefs = false
+
+  override async listStoredRefs(registryID: string) {
+    if (this.failListStoredRefs) throw new Error('simulated list failure')
+    const refs = await super.listStoredRefs(registryID)
+    const appReleases = new Map(refs.appReleases)
+    for (const appID of this.hiddenAppReleases) appReleases.delete(appID)
+    return {
+      artifacts: this.hideArtifacts ? new Set<string>() : refs.artifacts,
+      images: this.hideImages ? new Set<string>() : refs.images,
+      appReleases,
+    }
+  }
 
   override async putAppRelease(release: AppRelease) {
     this.appReleases.push(release.app_id)
@@ -144,14 +164,54 @@ describe('SkillRegistryPublisher', () => {
     expect(store.images).toBe(0)
     expect((await store.getState('memoh'))?.current_snapshot).toBe(second.revision)
 
-    // A missing previous Snapshot falls back to a full upload.
+    // An unchanged publication still repairs objects missing from the store.
     store.appReleases = []
     store.artifacts = 0
     store.images = 0
-    await rm(path.join(dataRoot, 'app-registries/memoh/snapshots', `${second.revision}.json`))
-    await writeApp(projectRoot, 'alpha', 'Alpha version two', '<svg xmlns="http://www.w3.org/2000/svg"><title>alpha</title></svg>')
+    store.hiddenAppReleases = ['beta']
+    const unchanged = await publisher.publish(memohDefinition, secondLock)
+    expect(unchanged.skipped).toBe('unchanged')
+    expect(store.appReleases).toEqual(['beta'])
+    expect(store.artifacts).toBe(0)
+    expect(store.images).toBe(0)
+    store.hiddenAppReleases = []
+
+    // A stored App release missing from the listing is re-uploaded (self-heal).
+    store.appReleases = []
+    store.artifacts = 0
+    store.images = 0
+    store.hiddenAppReleases = ['beta']
+    await writeApp(projectRoot, 'alpha', 'Alpha version three', '<svg xmlns="http://www.w3.org/2000/svg"><title>alpha</title></svg>')
     const thirdLock = await releaseLock(projectRoot, memohDefinition)
     await publisher.publish(memohDefinition, thirdLock)
+    expect(store.appReleases.sort()).toEqual(['alpha', 'beta'])
+    expect(store.artifacts).toBe(1)
+    expect(store.images).toBe(0)
+    store.hiddenAppReleases = []
+
+    // Stored Artifacts and images missing from the listing are re-uploaded too.
+    store.appReleases = []
+    store.artifacts = 0
+    store.images = 0
+    store.hideArtifacts = true
+    store.hideImages = true
+    await writeApp(projectRoot, 'alpha', 'Alpha version four', '<svg xmlns="http://www.w3.org/2000/svg"><title>alpha</title></svg>')
+    const fourthLock = await releaseLock(projectRoot, memohDefinition)
+    await publisher.publish(memohDefinition, fourthLock)
+    expect(store.appReleases).toEqual(['alpha'])
+    expect(store.artifacts).toBe(2)
+    expect(store.images).toBe(2)
+    store.hideArtifacts = false
+    store.hideImages = false
+
+    // A listing failure falls back to a full upload.
+    store.appReleases = []
+    store.artifacts = 0
+    store.images = 0
+    store.failListStoredRefs = true
+    await writeApp(projectRoot, 'alpha', 'Alpha version five', '<svg xmlns="http://www.w3.org/2000/svg"><title>alpha</title></svg>')
+    const fifthLock = await releaseLock(projectRoot, memohDefinition)
+    await publisher.publish(memohDefinition, fifthLock)
     expect(store.appReleases.sort()).toEqual(['alpha', 'beta'])
     expect(store.artifacts).toBe(2)
     expect(store.images).toBe(2)
