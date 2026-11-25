@@ -52,13 +52,29 @@ async function writeSkill(projectRoot: string, description: string) {
   )
 }
 
-async function writeSecondSkill(projectRoot: string, description: string) {
-  const directory = path.join(projectRoot, 'registries/memoh/skills/beta')
-  await mkdir(directory, { recursive: true })
+const memohDefinition: SkillRegistryDefinition = {
+  ...definition,
+  adapter: { type: 'memoh' },
+  source: { type: 'local', path: 'apps' },
+}
+
+async function writeApp(projectRoot: string, appID: string, description: string, icon: string) {
+  const appRoot = path.join(projectRoot, 'registries/memoh/apps', appID)
+  const skillRoot = path.join(appRoot, 'skills', appID)
+  await mkdir(skillRoot, { recursive: true })
   await writeFile(
-    path.join(directory, 'SKILL.md'),
-    `---\nname: Beta\ndescription: ${description}\n---\n\n# Beta\n`,
+    path.join(skillRoot, 'SKILL.md'),
+    `---\nname: ${appID}\ndescription: ${description}\n---\n\n# ${appID}\n`,
   )
+  await writeFile(path.join(appRoot, 'icon.svg'), icon)
+  await writeFile(path.join(appRoot, 'app.yaml'), `schema_version: "2"
+id: ${appID}
+version: 1.0.0
+name: ${appID}
+description: ${appID} app
+icon: icon.svg
+category: other
+`)
 }
 
 async function releaseLock(
@@ -101,40 +117,44 @@ describe('SkillRegistryPublisher', () => {
     expect((await store.getState('memoh'))?.current_snapshot).toBe(firstState?.current_snapshot)
   })
 
-  test('publishes only Apps and Artifacts that changed since the previous Snapshot', async () => {
+  test('publishes only Apps, Artifacts and images that changed since the previous Snapshot', async () => {
     const projectRoot = await mkdtemp(path.join(os.tmpdir(), 'registry-incremental-project-'))
     const dataRoot = await mkdtemp(path.join(os.tmpdir(), 'registry-incremental-data-'))
     roots.push(projectRoot, dataRoot)
-    await writeSkill(projectRoot, 'Alpha version one')
-    await writeSecondSkill(projectRoot, 'Beta version one')
+    await writeApp(projectRoot, 'alpha', 'Alpha version one', '<svg xmlns="http://www.w3.org/2000/svg"><title>alpha</title></svg>')
+    await writeApp(projectRoot, 'beta', 'Beta version one', '<svg xmlns="http://www.w3.org/2000/svg"><title>beta</title></svg>')
     const store = new CountingStore(dataRoot)
     const publisher = new SkillRegistryPublisher(store, projectRoot)
 
-    const firstLock = await releaseLock(projectRoot)
-    await publisher.publish(definition, firstLock)
+    const firstLock = await releaseLock(projectRoot, memohDefinition)
+    await publisher.publish(memohDefinition, firstLock)
     expect(store.appReleases.sort()).toEqual(['alpha', 'beta'])
     expect(store.artifacts).toBe(2)
-    expect(store.images).toBe(0)
+    expect(store.images).toBe(2)
 
-    await writeSecondSkill(projectRoot, 'Beta version two')
-    const secondLock = await releaseLock(projectRoot)
+    await writeApp(projectRoot, 'beta', 'Beta version two', '<svg xmlns="http://www.w3.org/2000/svg"><title>beta</title></svg>')
+    const secondLock = await releaseLock(projectRoot, memohDefinition)
     store.appReleases = []
     store.artifacts = 0
-    const second = await publisher.publish(definition, secondLock)
+    store.images = 0
+    const second = await publisher.publish(memohDefinition, secondLock)
     expect(second.skipped).toBeUndefined()
     expect(store.appReleases).toEqual(['beta'])
     expect(store.artifacts).toBe(1)
+    expect(store.images).toBe(0)
     expect((await store.getState('memoh'))?.current_snapshot).toBe(second.revision)
 
     // A missing previous Snapshot falls back to a full upload.
     store.appReleases = []
     store.artifacts = 0
+    store.images = 0
     await rm(path.join(dataRoot, 'app-registries/memoh/snapshots', `${second.revision}.json`))
-    await writeSkill(projectRoot, 'Alpha version two')
-    const thirdLock = await releaseLock(projectRoot)
-    await publisher.publish(definition, thirdLock)
+    await writeApp(projectRoot, 'alpha', 'Alpha version two', '<svg xmlns="http://www.w3.org/2000/svg"><title>alpha</title></svg>')
+    const thirdLock = await releaseLock(projectRoot, memohDefinition)
+    await publisher.publish(memohDefinition, thirdLock)
     expect(store.appReleases.sort()).toEqual(['alpha', 'beta'])
     expect(store.artifacts).toBe(2)
+    expect(store.images).toBe(2)
   })
 
   test('disabling a Registry hides it without deleting its approved Snapshot', async () => {
