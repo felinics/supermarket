@@ -255,7 +255,7 @@ Built with [Nitro](https://nitro.build) and [Cloudflare Workers](https://workers
 ## Workspace dependencies
 
 The official `memoh` registry also publishes workspace dependency definitions for
-Codex, Claude Code, Grok Build, Node.js, Python and uv. Recipes live under
+Codex, Claude Code, Grok Build, Oh My Pi (OMP), Node.js, Python and uv. Recipes live under
 `registries/memoh/dependencies/<id>/`: `dependency.yaml`, referenced POSIX sh
 scripts, and an optional icon. The manifest includes platform support, commands,
 prerequisites, timeouts and English/Chinese/Japanese display metadata.
@@ -291,7 +291,8 @@ locks, progress streams and software rollback. Supermarket does not execute the
 scripts or host the CLI binaries. New management operations resolve the current
 definition; a prepared operation keeps one revision through preview and execution.
 
-The current recipes support Linux with glibc (amd64/arm64) and macOS arm64.
+The current recipes support Linux with glibc (amd64/arm64) and macOS arm64;
+OMP also supports macOS amd64.
 They deliberately do not advertise musl support. Node.js and uv archives are
 verified against upstream SHA256 files obtained over HTTPS before extraction.
 `NODEJS_MIRROR` and `UV_RELEASES_URL` change the archive location, but never the
@@ -300,6 +301,14 @@ GitHub for verification. Memoh must explicitly pass the configured mirror
 variables into the runner; exporting them only inside a client shell is not
 sufficient. npm uses `NPM_MIRROR`, and Python uses uv's
 `UV_PYTHON_INSTALL_MIRROR`.
+
+OMP installs the standalone binary from its official `build.stencil.so` service,
+using the same target-specific stable/version API and SHA256 verification as
+the [upstream installer](https://github.com/can1357/oh-my-pi/blob/main/scripts/install.sh).
+It needs no separate Bun installation. A `manager.json` marker delegates OMP's
+self-updates to Memoh, preserving managed versions for rollback. Uninstall
+removes the executable overlay and retains OMP configuration, credentials and
+sessions outside it.
 
 npm lifecycle scripts are disabled, including when npm's strict script policy
 is enabled. The Claude Code recipe links its platform binary itself. npm and
