@@ -1,4 +1,4 @@
-import type { SkillIcon, SkillRegistryDefinition } from '../types'
+import type { SkillIcon, SkillRegistryDefinition, SkillRegistrySnapshot } from '../types'
 import type { SkillRegistryStore } from '../storage/contracts'
 import { assertReleaseCandidate, type RegistryReleaseLock } from './release-lock'
 import {
@@ -39,6 +39,32 @@ function iconAssets(icon?: SkillIcon) {
   return [icon?.card, icon?.detail, icon?.dark]
 }
 
+/**
+ * Digest-addressed objects referenced by a previously published Snapshot.
+ * Objects are immutable and never deleted, so a digest listed there is
+ * already stored and can skip its existence-check upload.
+ */
+function collectSnapshotDigests(snapshot: SkillRegistrySnapshot) {
+  const digests = new Set<string>()
+  for (const pkg of snapshot.apps) {
+    for (const descriptor of iconAssets(pkg.icon)) {
+      if (descriptor) digests.add(descriptor.digest)
+    }
+    for (const skill of pkg.skills) {
+      digests.add(skill.artifact.digest)
+      for (const descriptor of iconAssets(skill.icon)) {
+        if (descriptor) digests.add(descriptor.digest)
+      }
+    }
+  }
+  return digests
+}
+
+/** Previously published App revisions, keyed by App ID. */
+function collectSnapshotAppRevisions(snapshot: SkillRegistrySnapshot) {
+  return new Map(snapshot.apps.map((pkg) => [pkg.app_id, pkg.revision]))
+}
+
 export class SkillRegistryPublisher {
   constructor(
     private readonly store: SkillRegistryStore,
@@ -46,12 +72,19 @@ export class SkillRegistryPublisher {
     private readonly onProgress: (progress: SkillRegistryPublishProgress) => void = () => {},
   ) {}
 
-  private async publishCandidateAssets(candidate: SkillRegistryCandidate) {
+  private async publishCandidateAssets(
+    candidate: SkillRegistryCandidate,
+    knownDigests: ReadonlySet<string>,
+  ) {
     const uploadedArtifacts = new Map<string, boolean>()
     const uploadedImages = new Map<string, boolean>()
     const uploadImage = async (digest: string, label: string) => {
       const known = uploadedImages.get(digest)
       if (known != null) return known
+      if (knownDigests.has(digest)) {
+        uploadedImages.set(digest, false)
+        return false
+      }
       const image = candidate.images.get(digest)
       if (!image) throw new Error(`Candidate ${label} icon is missing: ${digest}`)
       const stored = (await this.store.putImage(image.descriptor, image.bytes)).stored
@@ -61,9 +94,13 @@ export class SkillRegistryPublisher {
     for (const [index, skill] of candidate.skills.entries()) {
       let uploaded = uploadedArtifacts.get(skill.artifact.digest)
       if (uploaded == null) {
-        const artifact = candidate.artifacts.get(skill.artifact.digest)
-        if (!artifact) throw new Error(`Candidate Artifact is missing: ${skill.artifact.digest}`)
-        uploaded = (await this.store.putArtifact(artifact.descriptor, artifact.bytes)).stored
+        if (knownDigests.has(skill.artifact.digest)) {
+          uploaded = false
+        } else {
+          const artifact = candidate.artifacts.get(skill.artifact.digest)
+          if (!artifact) throw new Error(`Candidate Artifact is missing: ${skill.artifact.digest}`)
+          uploaded = (await this.store.putArtifact(artifact.descriptor, artifact.bytes)).stored
+        }
         uploadedArtifacts.set(skill.artifact.digest, uploaded)
       }
       for (const descriptor of iconAssets(skill.icon)) {
@@ -87,6 +124,29 @@ export class SkillRegistryPublisher {
         uploaded ||= await uploadImage(descriptor.digest, 'App')
       }
       this.onProgress({ type: 'app', registry: candidate.definition.id, app_id: pkg.app_id, uploaded })
+    }
+  }
+
+  /**
+   * Loads the previously published Snapshot so publication can skip objects
+   * that are already stored. Objects are immutable and the Snapshot pointer
+   * switches only after a complete publication, so every object referenced by
+   * the current state is still present. Any read failure falls back to a
+   * full upload instead of blocking publication.
+   *
+   * The skip assumes the store never deletes objects. Restoring the bucket
+   * from a partial backup (snapshots present but app releases or artifacts
+   * missing) would leave the skipped objects unwritten and publish a Snapshot
+   * that references missing objects. Object retention is a hard operational
+   * invariant of the store; a full re-upload is the recovery for a broken
+   * bucket.
+   */
+  private async loadPreviousSnapshot(registryID: string, revision?: string | null) {
+    if (!revision) return null
+    try {
+      return await this.store.getSnapshot(registryID, revision)
+    } catch {
+      return null
     }
   }
 
@@ -138,8 +198,13 @@ export class SkillRegistryPublisher {
       }
     }
 
-    await this.publishCandidateAssets(candidate)
+    const previousSnapshot = await this.loadPreviousSnapshot(definition.id, previousState?.current_snapshot)
+    const knownDigests = previousSnapshot ? collectSnapshotDigests(previousSnapshot) : new Set<string>()
+    const knownAppRevisions = previousSnapshot ? collectSnapshotAppRevisions(previousSnapshot) : new Map<string, string>()
+
+    await this.publishCandidateAssets(candidate, knownDigests)
     for (const pkg of candidate.snapshot.apps) {
+      if (knownAppRevisions.get(pkg.app_id) === pkg.revision) continue
       const stored = await this.store.putAppRelease(
         appReleaseFromSnapshotApp(candidate.snapshot, pkg),
       )

@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { parseGzipTarArchive } from '../../client/archive'
-import type { SkillRegistryDefinition } from '../types'
+import type { AppRelease, SkillArtifactDescriptor, SkillImageAsset, SkillRegistryDefinition } from '../types'
 import { LocalSkillRegistryStore } from '../storage/local'
 import { buildSkillRegistryCandidate } from './candidate'
 import type { RegistryReleaseLock } from './release-lock'
@@ -22,12 +22,42 @@ const definition: SkillRegistryDefinition = {
   source: { type: 'local', path: 'skills' },
 }
 
+class CountingStore extends LocalSkillRegistryStore {
+  appReleases: string[] = []
+  artifacts = 0
+  images = 0
+
+  override async putAppRelease(release: AppRelease) {
+    this.appReleases.push(release.app_id)
+    return super.putAppRelease(release)
+  }
+
+  override async putArtifact(descriptor: SkillArtifactDescriptor, bytes: Uint8Array) {
+    this.artifacts += 1
+    return super.putArtifact(descriptor, bytes)
+  }
+
+  override async putImage(descriptor: SkillImageAsset, bytes: Uint8Array) {
+    this.images += 1
+    return super.putImage(descriptor, bytes)
+  }
+}
+
 async function writeSkill(projectRoot: string, description: string) {
   const directory = path.join(projectRoot, 'registries/memoh/skills/alpha')
   await mkdir(directory, { recursive: true })
   await writeFile(
     path.join(directory, 'SKILL.md'),
     `---\nname: Alpha\ndescription: ${description}\n---\n\n# Alpha\n`,
+  )
+}
+
+async function writeSecondSkill(projectRoot: string, description: string) {
+  const directory = path.join(projectRoot, 'registries/memoh/skills/beta')
+  await mkdir(directory, { recursive: true })
+  await writeFile(
+    path.join(directory, 'SKILL.md'),
+    `---\nname: Beta\ndescription: ${description}\n---\n\n# Beta\n`,
   )
 }
 
@@ -69,6 +99,42 @@ describe('SkillRegistryPublisher', () => {
     await writeFile(path.join(projectRoot, 'registries/memoh/skills/alpha/SKILL.md'), '# invalid')
     await expect(publisher.publish(definition, lock)).rejects.toThrow('frontmatter')
     expect((await store.getState('memoh'))?.current_snapshot).toBe(firstState?.current_snapshot)
+  })
+
+  test('publishes only Apps and Artifacts that changed since the previous Snapshot', async () => {
+    const projectRoot = await mkdtemp(path.join(os.tmpdir(), 'registry-incremental-project-'))
+    const dataRoot = await mkdtemp(path.join(os.tmpdir(), 'registry-incremental-data-'))
+    roots.push(projectRoot, dataRoot)
+    await writeSkill(projectRoot, 'Alpha version one')
+    await writeSecondSkill(projectRoot, 'Beta version one')
+    const store = new CountingStore(dataRoot)
+    const publisher = new SkillRegistryPublisher(store, projectRoot)
+
+    const firstLock = await releaseLock(projectRoot)
+    await publisher.publish(definition, firstLock)
+    expect(store.appReleases.sort()).toEqual(['alpha', 'beta'])
+    expect(store.artifacts).toBe(2)
+    expect(store.images).toBe(0)
+
+    await writeSecondSkill(projectRoot, 'Beta version two')
+    const secondLock = await releaseLock(projectRoot)
+    store.appReleases = []
+    store.artifacts = 0
+    const second = await publisher.publish(definition, secondLock)
+    expect(second.skipped).toBeUndefined()
+    expect(store.appReleases).toEqual(['beta'])
+    expect(store.artifacts).toBe(1)
+    expect((await store.getState('memoh'))?.current_snapshot).toBe(second.revision)
+
+    // A missing previous Snapshot falls back to a full upload.
+    store.appReleases = []
+    store.artifacts = 0
+    await rm(path.join(dataRoot, 'app-registries/memoh/snapshots', `${second.revision}.json`))
+    await writeSkill(projectRoot, 'Alpha version two')
+    const thirdLock = await releaseLock(projectRoot)
+    await publisher.publish(definition, thirdLock)
+    expect(store.appReleases.sort()).toEqual(['alpha', 'beta'])
+    expect(store.artifacts).toBe(2)
   })
 
   test('disabling a Registry hides it without deleting its approved Snapshot', async () => {
