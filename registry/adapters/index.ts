@@ -7,7 +7,7 @@ import { RegistryBuildBudget } from '../budget'
 
 export function skillAdapterBootstrapPaths(definition: SkillRegistryDefinition): string[] {
   if (definition.adapter.type === 'codex_marketplace_skills') return [definition.adapter.catalog_path]
-  if (definition.adapter.type === 'skill_pack') return definition.adapter.skills
+  if (definition.adapter.type === 'skill_pack') return definition.adapter.apps.flatMap((entry) => entry.skills)
   return []
 }
 

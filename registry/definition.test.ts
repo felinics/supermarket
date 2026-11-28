@@ -7,6 +7,7 @@ import {
   safeRelativePath,
   skillInstallID,
 } from './definition'
+import { MAX_REGISTRY_APP_SKILLS, MAX_REGISTRY_SKILLS } from './budget'
 
 describe('Skill Registry definitions', () => {
   test('enforces identifiers that Memoh preserves without rewriting', () => {
@@ -61,9 +62,56 @@ describe('Skill Registry definitions', () => {
     })
     expect(definition.adapter).toEqual({
       type: 'skill_pack',
-      app: { ...app, tags: [] },
-      skills: ['skills/brainstorming', 'skills/productivity/grill-me'],
+      apps: [{
+        app: { ...app, tags: [] },
+        skills: ['skills/brainstorming', 'skills/productivity/grill-me'],
+      }],
     })
+    const split = parseSkillRegistryDefinition({
+      schema_version: '1', id: 'anthropic', name: 'Anthropic',
+      adapter: {
+        type: 'skill_pack',
+        apps: [
+          { ...app, id: 'document-skills', skills: ['skills/docx'] },
+          { ...app, id: 'claude-api', skills: ['skills/claude-api'] },
+        ],
+      },
+      source,
+    })
+    expect(split.adapter).toMatchObject({
+      type: 'skill_pack',
+      apps: [
+        { app: { id: 'document-skills' }, skills: ['skills/docx'] },
+        { app: { id: 'claude-api' }, skills: ['skills/claude-api'] },
+      ],
+    })
+    expect(() => parseSkillRegistryDefinition({
+      schema_version: '1', id: 'anthropic', name: 'Anthropic',
+      adapter: {
+        type: 'skill_pack',
+        apps: [
+          { ...app, id: 'document-skills', skills: ['skills/docx'] },
+          { ...app, id: 'document-skills', skills: ['skills/pdf'] },
+        ],
+      },
+      source,
+    })).toThrow('duplicate app ID')
+    const appCount = Math.ceil((MAX_REGISTRY_SKILLS + 1) / MAX_REGISTRY_APP_SKILLS)
+    expect(() => parseSkillRegistryDefinition({
+      schema_version: '1', id: 'oversized', name: 'Oversized',
+      adapter: {
+        type: 'skill_pack',
+        apps: Array.from({ length: appCount }, (_, appIndex) => ({
+          ...app,
+          id: `app-${appIndex}`,
+          skills: Array.from(
+            { length: MAX_REGISTRY_APP_SKILLS },
+            (_, skillIndex) => `skills/${appIndex}/skill-${skillIndex}`,
+          ),
+        })),
+      },
+      source,
+    })).toThrow(`must contain at most ${MAX_REGISTRY_SKILLS} skills`)
     expect(() => parseSkillRegistryDefinition({
       schema_version: '1', id: 'superpowers', name: 'Superpowers',
       adapter: {
