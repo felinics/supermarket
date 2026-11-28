@@ -63,5 +63,5 @@ adapter:
 source:
   type: git
   url: https://github.com/mattpocock/skills.git
-  revision: 49dd158d1076134a641b33efb035946536778336
+  revision: bbadaa631c37af594e5a05c9cefacd9956136b18
   tracking_ref: main
