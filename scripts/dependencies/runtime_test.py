@@ -139,6 +139,58 @@ class RecipeTests(unittest.TestCase):
         self.assertFalse(destination.exists())
 
 
+class VersionTests(unittest.TestCase):
+    config = {'backend': 'github', 'repo': 'mamba-org/micromamba-releases',
+              'tag_prefix': '', 'tag_build_suffix': True}
+
+    def test_micromamba_release_and_legacy_install_versions(self):
+        for tag in ('2.9.0-0', '2.9.0-12'):
+            with self.subTest(tag=tag), patch.object(recipe, 'remote_json', return_value={'tag_name': tag, 'assets': ['original']}):
+                resolution = recipe.resolve(self.config, '', Path('/unused'))
+                self.assertEqual(resolution['version'], '2.9.0')
+                self.assertEqual(resolution['release']['tag_name'], tag)
+                self.assertEqual(resolution['release']['assets'], ['original'])
+                self.assertFalse(recipe.newer(resolution['version'], '2.9.0', self.config))
+                self.assertFalse(recipe.newer(resolution['version'], tag, self.config))
+        self.assertTrue(recipe.newer('2.10.0', '2.9.0-0', self.config))
+        self.assertFalse(recipe.newer('2.9.0', '2.10.0', self.config))
+
+    def test_software_pin_selects_highest_build_across_pages(self):
+        pages = [[{'tag_name': '2.9.0-2'}] + [{'tag_name': '1.0.0-0'}] * 99,
+                 [{'tag_name': '2.9.0-10'}, {'tag_name': '2.9.0-99', 'draft': True}]]
+        with patch.object(recipe, 'remote_json', side_effect=pages) as remote:
+            result = recipe.resolve(self.config, '2.9.0', Path('/unused'))
+        self.assertEqual(result['version'], '2.9.0')
+        self.assertEqual(result['release']['tag_name'], '2.9.0-10')
+        self.assertIn('page=2', remote.call_args.args[0])
+
+    def test_explicit_build_pin_retains_exact_release(self):
+        with patch.object(recipe, 'remote_json', return_value={'tag_name': '2.9.0-0'}) as remote:
+            self.assertEqual(recipe.resolve(self.config, '2.9.0-0', Path('/unused'))['version'], '2.9.0')
+        self.assertTrue(remote.call_args.args[0].endswith('/tags/2.9.0-0'))
+        with patch.object(recipe, 'remote_json', return_value=[]):
+            with self.assertRaisesRegex(ValueError, 'No release'):
+                recipe.resolve(self.config, '2.8.0', Path('/unused'))
+
+    def test_release_order_and_metadata(self):
+        for newer, older in [('2.9.0', '2.9.0-rc.1'), ('2.9.0-rc.10', '2.9.0-rc.2'),
+                             ('2.9.0-beta', '2.9.0-1'), ('25.2.3.2', '25.2.3.1'), ('2.10.0', '2.9.9')]:
+            with self.subTest(newer=newer, older=older):
+                self.assertTrue(recipe.newer(newer, older))
+                self.assertFalse(recipe.newer(older, newer))
+        for left, right in [('2.9.0', '2.9'), ('2.9.0+build1', '2.9.0+build2')]:
+            self.assertFalse(recipe.newer(left, right))
+            self.assertFalse(recipe.newer(right, left))
+        self.assertEqual(recipe.software_version({}, '2.9.0-1'), '2.9.0-1')
+        self.assertTrue(recipe.newer('0.0.0+abc', '0.0.0+def', {'packages': ['a', 'b']}))
+        self.assertFalse(recipe.newer('0.0.0+abc', '0.0.0+abc', {'packages': ['a', 'b']}))
+
+    def test_debian_comparison_uses_package_version_rules(self):
+        with patch.dict(os.environ, {'MEMOH_DEP_OS': 'linux'}), patch.object(recipe.subprocess, 'run', return_value=subprocess.CompletedProcess([], 1)) as run:
+            self.assertFalse(recipe.newer('4_25.2.3-2', '4_25.2.3-10', {'backend': 'libreoffice'}))
+        self.assertEqual(run.call_args.args[0], ['dpkg', '--compare-versions', '4:25.2.3-2', 'gt', '4:25.2.3-10'])
+
+
 class CondaResolutionTests(unittest.TestCase):
     @staticmethod
     def file(version, subdir='linux-64', labels=None, **extra):
