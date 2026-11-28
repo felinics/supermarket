@@ -46,12 +46,28 @@ export type VersionedStateRead<State> =
 
 export type SkillRegistryStateRead = VersionedStateRead<SkillRegistryState>
 
+/**
+ * Digest-addressed objects the store can observe: Skill Artifacts and Skill
+ * images under their bucket-global prefixes (shared across Registries because
+ * the objects are content-addressed), plus every stored App release revision
+ * under the given Registry's own prefix. This is the source of truth for
+ * incremental publication, replacing any assumption that previously published
+ * objects are still present.
+ */
+export interface StoredRegistryRefs {
+  artifacts: ReadonlySet<string>
+  images: ReadonlySet<string>
+  /** Old revisions remain in the store because App releases are immutable. */
+  appReleases: ReadonlyMap<string, ReadonlySet<string>>
+}
+
 export interface SkillRegistryStore {
   listRegistryIDs(): Promise<string[]>
   getState(registryID: string): Promise<SkillRegistryState | null>
   getStateWithVersion(registryID: string): Promise<SkillRegistryStateRead>
   putState(state: SkillRegistryState, expectedVersion?: string | null): Promise<void>
   getSnapshot(registryID: string, revision: string): Promise<SkillRegistrySnapshot | null>
+  listStoredRefs(registryID: string): Promise<StoredRegistryRefs>
   putAppRelease(release: AppRelease): Promise<{ revision: string; stored: boolean }>
   getAppRelease(registryID: string, appID: string, revision: string): Promise<AppRelease | null>
   publishSnapshot(

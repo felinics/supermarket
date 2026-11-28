@@ -32,8 +32,10 @@ An App is the unit Memoh users browse and install. It bundles Skills and may ref
 
 ## Connect-It Apps
 
-The Memoh registry includes one App for each of the 105 connector definitions
-registered by Connect-It at `0dcd18de667d4d936203a28b99a2aaf8d58c33ea`.
+The Memoh registry publishes one App for each of 105 of the 112 connector
+definitions registered by Connect-It at `0dcd18de667d4d936203a28b99a2aaf8d58c33ea`;
+the other 7 are temporarily hidden with `enabled: false` and stay out of the
+catalog until they are re-enabled.
 The exact source revision and exported catalog are recorded in
 [`registries/memoh/connect-it.catalog.json`](registries/memoh/connect-it.catalog.json).
 This snapshot contains public provider metadata only, never credentials.
@@ -148,7 +150,7 @@ postinstall:                    # optional
 
 An App must contain at least one Skill, dependency reference or connector reference. App revisions cover the manifest, references and Skills; dependency definitions keep their own revisions, so an App never pins one. Dependencies can be shared by multiple Apps or required transitively; implementation helpers do not need separate storefront Apps.
 
-Setting `enabled: false` delists an App temporarily: its manifest is still validated, but the App, its Skills and its connector references stay out of the published snapshot until the flag is removed. Disabled Apps keep no trace in the catalog, so clients see the same result as a deletion; the source directory remains as the recovery path. Record the reason in a comment next to the flag.
+Setting `enabled: false` delists an App temporarily: its manifest is still validated, but the App, its Skills and its connector references stay out of the published snapshot until the flag is removed. Disabled Apps keep no trace in the catalog, so clients see the same result as a deletion; the source directory remains as the recovery path. Record the reason in a comment next to the flag. Re-enabling an App also requires restoring its connector entry in `connect-it.catalog.json` — the coverage test requires the published connector set to match that file — and rebuilding the release lock.
 
 2. Add Skills under `registries/memoh/apps/<app-id>/skills/<skill-id>/SKILL.md` with YAML frontmatter. For an independent Skill, use the Skill ID as both the app and Skill ID:
 

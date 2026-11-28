@@ -306,6 +306,31 @@ describe('Immutable digest-addressed uploads', () => {
     objects.set(`skill-images/${image.digest}`, new TextEncoder().encode('corrupt'))
     await expect(store.putImage(image, imageBytes)).rejects.toThrow('immutable')
   }, 15_000)
+
+  test('lists an image as stored only when its object and metadata are both present', async () => {
+    const { backend, objects } = memoryBackend()
+    const store = new BlobSkillRegistryStore(backend)
+    const imageBytes = new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"><title>pair</title></svg>')
+    const image: SkillImageAsset = {
+      digest: await sha256(imageBytes), size: imageBytes.length, content_type: 'image/svg+xml',
+    }
+    await store.putImage(image, imageBytes)
+    expect((await store.listStoredRefs('example')).images.has(image.digest)).toBe(true)
+
+    // putImage writes the object before its metadata. A crash between the two
+    // puts (or a restore that lost only .json files) leaves the object alone;
+    // the incomplete pair must not count as stored, so a later publish calls
+    // putImage again and it heals the metadata.
+    objects.delete(`skill-images/${image.digest}.json`)
+    expect((await store.listStoredRefs('example')).images.has(image.digest)).toBe(false)
+    await store.putImage(image, imageBytes)
+    expect((await store.getImage(image.digest))?.bytes).toEqual(imageBytes)
+    expect((await store.listStoredRefs('example')).images.has(image.digest)).toBe(true)
+
+    // The reverse split (metadata without the object) is also incomplete.
+    objects.delete(`skill-images/${image.digest}`)
+    expect((await store.listStoredRefs('example')).images.has(image.digest)).toBe(false)
+  })
 })
 
 function mockR2Bucket() {

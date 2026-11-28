@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { parseGzipTarArchive } from '../../client/archive'
-import type { SkillRegistryDefinition } from '../types'
+import type { AppRelease, SkillArtifactDescriptor, SkillImageAsset, SkillRegistryDefinition } from '../types'
 import { LocalSkillRegistryStore } from '../storage/local'
 import { buildSkillRegistryCandidate } from './candidate'
 import type { RegistryReleaseLock } from './release-lock'
@@ -22,6 +22,47 @@ const definition: SkillRegistryDefinition = {
   source: { type: 'local', path: 'skills' },
 }
 
+class CountingStore extends LocalSkillRegistryStore {
+  appReleases: string[] = []
+  artifacts = 0
+  images = 0
+  /** Apps whose stored release is hidden from listStoredRefs, as if lost. */
+  hiddenAppReleases: string[] = []
+  /** Stored Artifacts hidden from listStoredRefs, as if lost. */
+  hideArtifacts = false
+  /** Stored images hidden from listStoredRefs, as if lost. */
+  hideImages = false
+  /** Forces listStoredRefs to fail, exercising the full-upload fallback. */
+  failListStoredRefs = false
+
+  override async listStoredRefs(registryID: string) {
+    if (this.failListStoredRefs) throw new Error('simulated list failure')
+    const refs = await super.listStoredRefs(registryID)
+    const appReleases = new Map(refs.appReleases)
+    for (const appID of this.hiddenAppReleases) appReleases.delete(appID)
+    return {
+      artifacts: this.hideArtifacts ? new Set<string>() : refs.artifacts,
+      images: this.hideImages ? new Set<string>() : refs.images,
+      appReleases,
+    }
+  }
+
+  override async putAppRelease(release: AppRelease) {
+    this.appReleases.push(release.app_id)
+    return super.putAppRelease(release)
+  }
+
+  override async putArtifact(descriptor: SkillArtifactDescriptor, bytes: Uint8Array) {
+    this.artifacts += 1
+    return super.putArtifact(descriptor, bytes)
+  }
+
+  override async putImage(descriptor: SkillImageAsset, bytes: Uint8Array) {
+    this.images += 1
+    return super.putImage(descriptor, bytes)
+  }
+}
+
 async function writeSkill(projectRoot: string, description: string) {
   const directory = path.join(projectRoot, 'registries/memoh/skills/alpha')
   await mkdir(directory, { recursive: true })
@@ -29,6 +70,31 @@ async function writeSkill(projectRoot: string, description: string) {
     path.join(directory, 'SKILL.md'),
     `---\nname: Alpha\ndescription: ${description}\n---\n\n# Alpha\n`,
   )
+}
+
+const memohDefinition: SkillRegistryDefinition = {
+  ...definition,
+  adapter: { type: 'memoh' },
+  source: { type: 'local', path: 'apps' },
+}
+
+async function writeApp(projectRoot: string, appID: string, description: string, icon: string) {
+  const appRoot = path.join(projectRoot, 'registries/memoh/apps', appID)
+  const skillRoot = path.join(appRoot, 'skills', appID)
+  await mkdir(skillRoot, { recursive: true })
+  await writeFile(
+    path.join(skillRoot, 'SKILL.md'),
+    `---\nname: ${appID}\ndescription: ${description}\n---\n\n# ${appID}\n`,
+  )
+  await writeFile(path.join(appRoot, 'icon.svg'), icon)
+  await writeFile(path.join(appRoot, 'app.yaml'), `schema_version: "2"
+id: ${appID}
+version: 1.0.0
+name: ${appID}
+description: ${appID} app
+icon: icon.svg
+category: other
+`)
 }
 
 async function releaseLock(
@@ -69,6 +135,86 @@ describe('SkillRegistryPublisher', () => {
     await writeFile(path.join(projectRoot, 'registries/memoh/skills/alpha/SKILL.md'), '# invalid')
     await expect(publisher.publish(definition, lock)).rejects.toThrow('frontmatter')
     expect((await store.getState('memoh'))?.current_snapshot).toBe(firstState?.current_snapshot)
+  })
+
+  test('publishes only Apps, Artifacts and images that changed since the previous Snapshot', async () => {
+    const projectRoot = await mkdtemp(path.join(os.tmpdir(), 'registry-incremental-project-'))
+    const dataRoot = await mkdtemp(path.join(os.tmpdir(), 'registry-incremental-data-'))
+    roots.push(projectRoot, dataRoot)
+    await writeApp(projectRoot, 'alpha', 'Alpha version one', '<svg xmlns="http://www.w3.org/2000/svg"><title>alpha</title></svg>')
+    await writeApp(projectRoot, 'beta', 'Beta version one', '<svg xmlns="http://www.w3.org/2000/svg"><title>beta</title></svg>')
+    const store = new CountingStore(dataRoot)
+    const publisher = new SkillRegistryPublisher(store, projectRoot)
+
+    const firstLock = await releaseLock(projectRoot, memohDefinition)
+    await publisher.publish(memohDefinition, firstLock)
+    expect(store.appReleases.sort()).toEqual(['alpha', 'beta'])
+    expect(store.artifacts).toBe(2)
+    expect(store.images).toBe(2)
+
+    await writeApp(projectRoot, 'beta', 'Beta version two', '<svg xmlns="http://www.w3.org/2000/svg"><title>beta</title></svg>')
+    const secondLock = await releaseLock(projectRoot, memohDefinition)
+    store.appReleases = []
+    store.artifacts = 0
+    store.images = 0
+    const second = await publisher.publish(memohDefinition, secondLock)
+    expect(second.skipped).toBeUndefined()
+    expect(store.appReleases).toEqual(['beta'])
+    expect(store.artifacts).toBe(1)
+    expect(store.images).toBe(0)
+    expect((await store.getState('memoh'))?.current_snapshot).toBe(second.revision)
+
+    // An unchanged publication still repairs objects missing from the store.
+    store.appReleases = []
+    store.artifacts = 0
+    store.images = 0
+    store.hiddenAppReleases = ['beta']
+    const unchanged = await publisher.publish(memohDefinition, secondLock)
+    expect(unchanged.skipped).toBe('unchanged')
+    expect(store.appReleases).toEqual(['beta'])
+    expect(store.artifacts).toBe(0)
+    expect(store.images).toBe(0)
+    store.hiddenAppReleases = []
+
+    // A stored App release missing from the listing is re-uploaded (self-heal).
+    store.appReleases = []
+    store.artifacts = 0
+    store.images = 0
+    store.hiddenAppReleases = ['beta']
+    await writeApp(projectRoot, 'alpha', 'Alpha version three', '<svg xmlns="http://www.w3.org/2000/svg"><title>alpha</title></svg>')
+    const thirdLock = await releaseLock(projectRoot, memohDefinition)
+    await publisher.publish(memohDefinition, thirdLock)
+    expect(store.appReleases.sort()).toEqual(['alpha', 'beta'])
+    expect(store.artifacts).toBe(1)
+    expect(store.images).toBe(0)
+    store.hiddenAppReleases = []
+
+    // Stored Artifacts and images missing from the listing are re-uploaded too.
+    store.appReleases = []
+    store.artifacts = 0
+    store.images = 0
+    store.hideArtifacts = true
+    store.hideImages = true
+    await writeApp(projectRoot, 'alpha', 'Alpha version four', '<svg xmlns="http://www.w3.org/2000/svg"><title>alpha</title></svg>')
+    const fourthLock = await releaseLock(projectRoot, memohDefinition)
+    await publisher.publish(memohDefinition, fourthLock)
+    expect(store.appReleases).toEqual(['alpha'])
+    expect(store.artifacts).toBe(2)
+    expect(store.images).toBe(2)
+    store.hideArtifacts = false
+    store.hideImages = false
+
+    // A listing failure falls back to a full upload.
+    store.appReleases = []
+    store.artifacts = 0
+    store.images = 0
+    store.failListStoredRefs = true
+    await writeApp(projectRoot, 'alpha', 'Alpha version five', '<svg xmlns="http://www.w3.org/2000/svg"><title>alpha</title></svg>')
+    const fifthLock = await releaseLock(projectRoot, memohDefinition)
+    await publisher.publish(memohDefinition, fifthLock)
+    expect(store.appReleases.sort()).toEqual(['alpha', 'beta'])
+    expect(store.artifacts).toBe(2)
+    expect(store.images).toBe(2)
   })
 
   test('disabling a Registry hides it without deleting its approved Snapshot', async () => {
